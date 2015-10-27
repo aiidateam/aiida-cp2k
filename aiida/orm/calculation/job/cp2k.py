@@ -9,6 +9,7 @@ from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.remote import RemoteData 
 
 from aiida.common.datastructures import CalcInfo
+from aiida.common.datastructures import CodeInfo
 
 
 class CP2KCalculation(JobCalculation):   
@@ -93,6 +94,10 @@ class CP2KCalculation(JobCalculation):
             raise InputValidationError("No structure specified for this calculation")
         if not isinstance(structure,  StructureData):
             raise InputValidationError("structure is not of type StructureData")
+        try:
+            code = inputdict.pop(self.get_linkname('code'))
+        except KeyError:
+            raise InputValidationError("No code specified for this calculation")
 
         # Settings can be undefined, and defaults to an empty dictionary
         settings = inputdict.pop(self.get_linkname('settings'),None)
@@ -223,10 +228,22 @@ class CP2KCalculation(JobCalculation):
             #~ infile.write('{}'.format(parameterdict))
 
         settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
+        
+        
+        cmdline_params = settings_dict.pop('CMDLINE', [])
+        
+        codeinfo = CodeInfo()
+        codeinfo.cmdline_params = (list(cmdline_params)
+                                   + ["-in", self._INPUT_FILE_NAME])
+        #calcinfo.stdin_name = self._INPUT_FILE_NAME
+        codeinfo.stdout_name = self._OUTPUT_FILE_NAME
+        codeinfo.code_uuid = code.uuid
+        
+        
         calcinfo = CalcInfo()
 
         calcinfo.uuid = self.uuid
-        cmdline_params = settings_dict.pop('CMDLINE', [])
+        
         calcinfo.cmdline_params = (list(cmdline_params)
                                    + ["-in", self._INPUT_FILE_NAME])
         calcinfo.local_copy_list = local_copy_list
@@ -234,8 +251,9 @@ class CP2KCalculation(JobCalculation):
         calcinfo.stdin_name = self._INPUT_FILE_NAME
         calcinfo.stdout_name = self._OUTPUT_FILE_NAME
         calcinfo.remote_symlink_list = remote_symlink_list
-        
+        calcinfo.codes_info = [codeinfo]
         # Retrieve by default the output file and the xml file
+        
         calcinfo.retrieve_list = []        
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
         

@@ -8,7 +8,7 @@ from aiida.orm import DataFactory
 
 
 # Put the name of the computer you want to run
-computer = Computer.get('thea')
+computer = Computer.get('theos')
 
 # Put the code, cp2k, which uses the plugin cp2k.CP2KCalculation
 code =  Code.get('cp2k')

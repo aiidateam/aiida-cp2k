@@ -14,13 +14,11 @@ from aiida.common.datastructures import CodeInfo
 
 class CP2KCalculation(JobCalculation):   
     """
-    Car-Parrinello molecular dynamics code (cp.x) of the
-    Quantum ESPRESSO distribution.
-    For more information, refer to http://www.quantum-espresso.org/
+    This is a CP2KCalculation, subclass of JobCalculation, to prepare input for cp2k
     """
-    
+    # The files that we need:
     _INPUT_FILE_NAME = 'aiida.in'
-    _OUTPUT_FILE_NAME = 'aiida.out'
+    _OUTPUT_FILE_NAME = 'aiida.out'  
     
     def _init_internal_params(self):
         super(CP2KCalculation, self)._init_internal_params()
@@ -31,6 +29,9 @@ class CP2KCalculation(JobCalculation):
         This will be manually added to the _use_methods in each subclass
         """
         retdict = JobCalculation._use_methods
+        # So far we need a structure, parameters, settings, and a parent_folder if we are restarting.
+        # Potentials and basis sets need to be put as well
+        # Anything else??
         
         retdict.update({
             "structure": {
@@ -63,8 +64,7 @@ class CP2KCalculation(JobCalculation):
         return retdict
 
     
-    def _prepare_for_submission(self,tempfolder,
-                                    inputdict):        
+    def _prepare_for_submission(self,tempfolder, inputdict):        
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.
@@ -77,8 +77,10 @@ class CP2KCalculation(JobCalculation):
         from aiida.common.utils import get_unique_filename, get_suggestion
         import re
         
-        local_copy_list = []
-        remote_copy_list = []
+        
+        
+        local_copy_list = []  
+        remote_copy_list = []  
         remote_symlink_list = []
         
         try:
@@ -123,24 +125,28 @@ class CP2KCalculation(JobCalculation):
                 "unrecognized: {}".format(inputdict.keys()))
 
         
-        ################################# LET'S START WRITING SOME INPUT #################################
+        ######################## LET'S START WRITING SOME INPUT #######################
         # I have the parameters stored in the dictionary
-        # First of all, I want everything to be stored uppercase 
-        def convert_to_uppercase(dictionary):
-            """This method recursively goes through a dictionary and converts all the keys to uppercase.
-            On the fly, it also converts the values (if strings) to upppercase"""
+        # First of all, I want everything to be stored uppercase, if the user did not bother.
+        # It will make sure that there is no ambiguoity in the queries, everything is uppercase!
+        def convert_to_uppercase(item_in_dict):
+            """
+            This method recursively goes through a dictionary 
+            and converts all the keys to uppercase.
+            On the fly, it also converts the values (if strings) to upppercase
+            
+            """
             try:
-                
-                for key in dictionary.keys():
-                    dictionary[key.upper()] = convert_to_uppercase(dictionary.pop(key))
+                for key in item_in_dict.keys():
+                    item_in_dict[key.upper()] = convert_to_uppercase(item_in_dict.pop(key))
             except AttributeError:
                 try:
-                    return dictionary.upper()
+                    return item_in_dict.upper()
                 except AttributeError:
-                    return dictionary
-            return dictionary
+                    return item_in_dict
+            return item_in_dict
             
-        def print_parameters_cp2k_style(infile, param, indent = 0):
+        def print_parameters_cp2k_style(infile, params, indent = 0):
             """It takes a dictionary and recurses through.
             
             For key-value pair it checks whether the value is a dictionary and prepends the key with &
@@ -173,18 +179,19 @@ class CP2KCalculation(JobCalculation):
                 ===> TEMP [K] 300   
                 dict['TEMP'] = ('K', 300)
                 ===> TEMP [K] 300   
-            TODO: change this, many databases do not store tuples!!!
+            TODO: Needs to be better defined here, how about TEMP__UNIT == 'K' 
+            
             """
             
             
-            for key, val in param.items():
+            for key, val in params.items():
                 if type(val) == dict:
                     infile.write('{}&{} {}\n'.format(' '*indent, key, val.pop('_', '')))
                     print_parameters_cp2k_style(infile, val, indent + 3)
                     infile.write('{}&END {}\n'.format(' '*indent, key))
                 elif type(val) == list:
                     for listitem in val:
-                        print_parameters_cp2k_style(infile,{key:listitem}, indent)
+                        print_parameters_cp2k_style(infile,  {key:listitem}, indent)
                 elif type(val) == tuple:
                     try:
                         floatvalue, unit = float(val[0]), val[1]
@@ -198,7 +205,9 @@ class CP2KCalculation(JobCalculation):
         parameterdict = parameters.get_dict()
         parameterdict = convert_to_uppercase(parameterdict)
         
-        #I will take the structure data and convert CP2k style to the parameterdict
+        #I will take the structure data and append it to the parameter dictionary.
+        # Makes sure everything has the same output...
+        # TODO: potentials, basis sets?
         subsysdict = {}
         
         ######HERE
@@ -207,36 +216,38 @@ class CP2KCalculation(JobCalculation):
                                 'BASIS_SET':'TODO',
                                 'POTENTIAL': 'TODO',
                                 } for site in structure.sites]
-        #~ print structure.cell
-        subsysdict['CELL'] = {d:'{:<15} {:<15} {:<15}'.format(*structure.cell[i]) for i,d in enumerate(['A', 'B', 'C'])}
+        # Deal with the cell:
+        subsysdict['CELL'] = {cell_direction:'{:<15} {:<15} {:<15}'.format(*structure.cell[index]) 
+                        for index,cell_direction in enumerate(['A', 'B', 'C'])}
         subsysdict['COORD'] = '\n'+'\n'.join([
                     '{:<9}{:<2} {:<15} {:<15} {:<15}'.format(
                                     '', site.kind_name, *site.position
                                     ) 
                             for site in structure.sites])
+        # Here I am appending to the parameter - dictionary
         parameterdict['FORCEVAL'] = {'SUBSYS': subsysdict}
         
-        #THIS IS THE INPUT:
-        
+        #THIS IS THE INPUT FILE:
         input_filename = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
 
-        
-
+        # Writing to input file:
         with open(input_filename,'w') as infile:
             print_parameters_cp2k_style(infile, parameterdict)
             
             #~ infile.write('{}'.format(parameterdict))
 
+        
+        # TODO: Retrieving, commandline:
         settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
-        
-        
         cmdline_params = settings_dict.pop('CMDLINE', [])
         
+        
+        # Initialize codeinfo, set attributes...
         codeinfo = CodeInfo()
         codeinfo.cmdline_params = (list(cmdline_params)
-                                   + ["-in", self._INPUT_FILE_NAME])
+                                   + ["-in", self._INPUT_FILE_NAME, "-o", self._OUTPUT_FILE_NAME])
         #calcinfo.stdin_name = self._INPUT_FILE_NAME
-        codeinfo.stdout_name = self._OUTPUT_FILE_NAME
+        #~ codeinfo.stdout_name = self._OUTPUT_FILE_NAME
         codeinfo.code_uuid = code.uuid
         
         
@@ -244,20 +255,18 @@ class CP2KCalculation(JobCalculation):
 
         calcinfo.uuid = self.uuid
         
-        calcinfo.cmdline_params = (list(cmdline_params)
-                                   + ["-in", self._INPUT_FILE_NAME])
+        #~ calcinfo.cmdline_params = (list(cmdline_params)
+                #~ + ["-in", self._INPUT_FILE_NAME, "-o", self._OUTPUT_FILE_NAME])
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = remote_copy_list
         calcinfo.stdin_name = self._INPUT_FILE_NAME
-        calcinfo.stdout_name = self._OUTPUT_FILE_NAME
+        #~ calcinfo.stdout_name = self._OUTPUT_FILE_NAME
         calcinfo.remote_symlink_list = remote_symlink_list
         calcinfo.codes_info = [codeinfo]
         # Retrieve by default the output file and the xml file
         
         calcinfo.retrieve_list = []        
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
-        
-        
         calcinfo.retrieve_list += settings_retrieve_list
         #~ calcinfo.retrieve_list += self._internal_retrieve_list
         

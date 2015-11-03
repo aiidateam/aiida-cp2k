@@ -154,9 +154,9 @@ class CP2KCalculation(JobCalculation):
                 
                 or
                 
-                dict['KIND'] = [{'KEYWORD': 'Ba', 'ELEMENT':'Ba'},
-                                {'KEYWORD': 'Ti', 'ELEMENT':'Ti'}, 
-                                {'KEYWORD': 'O', 'ELEMENT':'O'}]
+                dict['KIND'] = [{'_': 'Ba', 'ELEMENT':'Ba'},
+                                {'_': 'Ti', 'ELEMENT':'Ti'}, 
+                                {'_': 'O', 'ELEMENT':'O'}]
                 ====>
                       &KIND Ba
                          ELEMENT  Ba
@@ -179,7 +179,7 @@ class CP2KCalculation(JobCalculation):
             
             for key, val in param.items():
                 if type(val) == dict:
-                    infile.write('{}&{} {}\n'.format(' '*indent, key, val.pop('KEYWORD', '')))
+                    infile.write('{}&{} {}\n'.format(' '*indent, key, val.pop('_', '')))
                     print_parameters_cp2k_style(infile, val, indent + 3)
                     infile.write('{}&END {}\n'.format(' '*indent, key))
                 elif type(val) == list:
@@ -202,7 +202,7 @@ class CP2KCalculation(JobCalculation):
         subsysdict = {}
         
         ######HERE
-        subsysdict['KIND'] = [{'KEYWORD': site.kind_name,
+        subsysdict['KIND'] = [{'_': site.kind_name,
                                 'ELEMENT':site.kind_name,
                                 'BASIS_SET':'TODO',
                                 'POTENTIAL': 'TODO',

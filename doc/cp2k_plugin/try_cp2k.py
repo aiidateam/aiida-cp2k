@@ -52,7 +52,7 @@ parameters = ParameterData(dict={
                       },
                   'xc': {
                       'xc_functional': {
-                          'keyword': 'PADE',
+                          '_': 'PADE',
                           },
                        },   
                     },
@@ -62,16 +62,16 @@ parameters = ParameterData(dict={
                        'MAX_SCF': 300,
                        'ADDED_MOS': 10,
                        'DIAGONALIZATION': {
-                          'keyword': 'ON',
+                          '_': 'ON',
                           'ALGORITHM': 'STANDARD',
                            },
                        'MIXING': {
-                           'keyword': 'T',
+                           '_': 'T',
                            'METHOD': 'BROYDEN_MIXING',
                            'ALPHA': 0.4,
                            'NBROYDEN': 8,
                            'SMEAR': {
-                               'keyword': 'ON',
+                               '_': 'ON',
                                'METHOD': 'FERMI_DIRAC',
                                'ELECTRONIC_TEMPERATURE': ('K',300)
                                },

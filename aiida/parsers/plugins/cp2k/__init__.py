@@ -19,11 +19,14 @@ class CP2KBasicParser():
         Does all the logic here.
         """
         from aiida.common.exceptions import InvalidOperation
-        import os
-        import glob
-
+        import os, re
+        # import glob
+        pos_regex = re.compile(
+            """
+            ([ \t]* [A-Z][a-z]?  ([ \t]+ [-]?[0-9]+([\.][0-9]+([E | e][+|-]?[0-9]+)?)?){3} [ \t]* [\n])+
+            """,  re.M | re.X)
         successful = True
-
+        return_dict = {}
         calc_input = self._calc.inp.parameters.get_dict()
         
         # look for eventual flags of the parser
@@ -41,3 +44,42 @@ class CP2KBasicParser():
             self.logger.error("Standard output not found")
             successful = False
             return successful, ()
+            
+        with open(self._calc._OUTPUT_FILE_NAME) as outputfile:
+            output_text = outputfile.read()
+            return_dict['final_energy'] = 5
+            return_dict['final_force'] = 3
+            energy_results = {}
+            for key, var in [('kin_E', ekin), ('temperature',temp),('pot_E', epot),('conserved_Q',consqty)]:
+                results[key] = {}
+                slope, intercept, r_value, p_value, std_err = linregress(times,var)
+                energy_results[key]['slope'] = slope
+                energy_results[key]['intercept'] = intercept
+                energy_results[key]['r_value'] = r_value
+                energy_results[key]['p_value'] = p_value
+                energy_results[key]['std_err'] = std_err
+            results_dict [ 'energy_results'] = energy_results
+            
+        with open(self._calc._TRAJ_FILE_NAME) as trajfile:
+            timestep_in_fs = calc_input['MOTION']['MD'].get('TIMESTEP'))
+            traj_txt =  trajfile.read()
+            traj_arr =  np.array([[[float(pos) for pos in line.split()[1:4] if line] 
+                                        for line in block.group(0).split('\n')[:-1] if block] 
+                                            for block in pos_regex.finditer(traj_txt)])
+            
+            return_list.append({'content': {'array': traj_arr, 'timestep_in_fs':timestep_in_fs}})
+    
+    #~ total_time = np.sum(usedtime)
+    results['total_time'] = np.sum(usedtime)
+    results['time_p_timestep'] = np.mean(usedtime)
+        
+        
+        
+        with open(self._calc._ENER_FILE) as enerfile:
+            txt = enerfile.read()
+            data = [[float(val) for val in line.split()]
+                        for line in txt.split('\n')[1:-1]]
+            steps, times, ekin, temp, epot, consqty, usedtime = zip(*data)
+            
+            
+            

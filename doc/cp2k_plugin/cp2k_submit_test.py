@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import json
 from aiida import load_dbenv
 load_dbenv()
 
@@ -7,11 +8,12 @@ from aiida.orm import Code, Computer
 from aiida.orm import DataFactory
 
 
-# Put the name of the computer you want to run
-computer = Computer.get('local')
+# Read computer and code from file (local_config.json)
+with open('local_config.json') as f:
+    in_dict = json.load(f)
+    computer = Computer.get(in_dict['computer'])
+    code = Code.get(in_dict['code'])
 
-# Put the code, cp2k, which uses the plugin cp2k.CP2KCalculation
-code =  Code.get('cp2k_local')
 
 
 #Let's define a simple cubic structure, e.g BaTO3
@@ -58,8 +60,8 @@ parameters = ParameterData(dict={
                     },
                   'scf': {
                        'SCF_GUESS': ['ATOMIC','GUESS'],
-                       'EPS_SCF': 1.0E-17,
-                       'MAX_SCF': 300,
+                       'EPS_SCF': 1.0E-07,
+                       'MAX_SCF': 30,
                        'ADDED_MOS': 10,
                        'DIAGONALIZATION': {
                           '_': 'ON',

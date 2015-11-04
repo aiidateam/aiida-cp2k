@@ -211,11 +211,13 @@ class CP2KCalculation(JobCalculation):
         subsysdict = {}
         
         ######HERE
-        subsysdict['KIND'] = [{'_': site.kind_name,
-                                'ELEMENT':site.kind_name,
+        subsysdict['KIND'] = [{'_': kind.name,
+                                'ELEMENT':kind.name,
                                 'BASIS_SET':'TODO',
                                 'POTENTIAL': 'TODO',
-                                } for site in structure.sites]
+                                'MASS': kind.mass,
+                                } 
+                                for kind in structure.kinds]
         # Deal with the cell:
         subsysdict['CELL'] = {cell_direction:'{:<15} {:<15} {:<15}'.format(*structure.cell[index]) 
                         for index,cell_direction in enumerate(['A', 'B', 'C'])}

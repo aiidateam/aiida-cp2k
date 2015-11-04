@@ -247,7 +247,7 @@ class CP2KCalculation(JobCalculation):
         # Initialize codeinfo, set attributes...
         codeinfo = CodeInfo()
         codeinfo.cmdline_params = (list(cmdline_params)
-                                   + ["-in", self._INPUT_FILE_NAME, "-o", self._OUTPUT_FILE_NAME])
+                                   + ["-i", self._INPUT_FILE_NAME, "-o", self._OUTPUT_FILE_NAME])
         #calcinfo.stdin_name = self._INPUT_FILE_NAME
         #~ codeinfo.stdout_name = self._OUTPUT_FILE_NAME
         codeinfo.code_uuid = code.uuid

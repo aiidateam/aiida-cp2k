@@ -12,6 +12,8 @@ from aiida.common.datastructures import CodeInfo
 
 from aiida.common.exceptions import InputValidationError
 
+import collections
+
 class CP2KCalculation(JobCalculation):   
     """
     This is a CP2KCalculation, subclass of JobCalculation, to prepare input for cp2k
@@ -92,6 +94,22 @@ class CP2KCalculation(JobCalculation):
                 except AttributeError:
                     return item_in_dict
             return item_in_dict
+
+        def nested_key_iter(nested):
+            """
+            Iterator for nested mixed list and dict structure,
+            yielding keys only.
+            """
+            if isinstance(nested, collections.Mapping):
+                for key, value in nested.items():
+                    yield key
+                    for inner_key in nested_key_iter(value):
+                        yield inner_key
+
+            elif isinstance(nested, collections.MutableSequence):
+                for value in nested:
+                    for inner_key in nested_key_iter(value):
+                        yield inner_key
 
         local_copy_list = []  
         remote_copy_list = []  
@@ -197,6 +215,10 @@ class CP2KCalculation(JobCalculation):
                     infile.write('{}{}  {}\n'.format(' '*indent, key, val, nonindent = 14))
         
         parameters_dict = convert_to_uppercase(parameters.get_dict())
+
+        for key in nested_key_iter(parameters_dict):
+            if key.startswith('@') or key.startswith('$'):
+                raise InputValidationError("CP2K internal input preprocessor not supported in AiiDA")
 
         #I will take the structure data and append it to the parameter dictionary.
         # Makes sure everything has the same output...

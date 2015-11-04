@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 
-import os
 from aiida.orm.calculation.job import JobCalculation
 from aiida.common.utils import classproperty #Do i need this?
 from aiida.orm.data.structure import StructureData
@@ -11,6 +10,7 @@ from aiida.orm.data.remote import RemoteData
 from aiida.common.datastructures import CalcInfo
 from aiida.common.datastructures import CodeInfo
 
+from aiida.common.exceptions import InputValidationError
 
 class CP2KCalculation(JobCalculation):   
     """

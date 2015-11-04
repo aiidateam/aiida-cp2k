@@ -196,9 +196,8 @@ class CP2KCalculation(JobCalculation):
                 else:    
                     infile.write('{}{}  {}\n'.format(' '*indent, key, val, nonindent = 14))
         
-        parameterdict = parameters.get_dict()
-        parameterdict = convert_to_uppercase(parameterdict)
-        
+        parameters_dict = convert_to_uppercase(parameters.get_dict())
+
         #I will take the structure data and append it to the parameter dictionary.
         # Makes sure everything has the same output...
         # TODO: potentials, basis sets?
@@ -221,16 +220,16 @@ class CP2KCalculation(JobCalculation):
                                     ) 
                             for site in structure.sites])}
         # Here I am appending to the parameter - dictionary
-        parameterdict['FORCEVAL'] = {'SUBSYS': subsysdict}
+        parameters_dict['FORCEVAL'] = {'SUBSYS': subsysdict}
         
         #THIS IS THE INPUT FILE:
         input_filename = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
 
         # Writing to input file:
         with open(input_filename,'w') as infile:
-            print_parameters_cp2k_style(infile, parameterdict)
+            print_parameters_cp2k_style(infile, parameters_dict)
             
-            #~ infile.write('{}'.format(parameterdict))
+            #~ infile.write('{}'.format(parameters_dict))
 
         
         # TODO: Retrieving, commandline:

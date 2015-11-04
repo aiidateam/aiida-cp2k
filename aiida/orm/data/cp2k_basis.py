@@ -2,7 +2,7 @@
 """
 This module manages the UPF pseudopotentials in the local repository.
 """
-from aiida.orm.data.singlefile import SinglefileData
+from aiida.orm.data import Data
 from aiida.common.utils import classproperty
 import re
 
@@ -178,7 +178,7 @@ def parse_potential(txt):
     #~ raw_input()
 
 
-class GaussianBasisSet(SinglefileData):
+class GaussianBasisSet(Data):
     @classmethod
     def get_or_create(cls, txt):
         from aiida.common.utils import md5_file

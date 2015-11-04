@@ -8,10 +8,10 @@ from aiida.orm import DataFactory
 
 
 # Put the name of the computer you want to run
-computer = Computer.get('theos')
+computer = Computer.get('local')
 
 # Put the code, cp2k, which uses the plugin cp2k.CP2KCalculation
-code =  Code.get('cp2k')
+code =  Code.get('cp2k_local')
 
 
 #Let's define a simple cubic structure, e.g BaTO3

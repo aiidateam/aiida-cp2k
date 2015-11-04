@@ -124,8 +124,6 @@ class CP2KCalculation(JobCalculation):
         # Settings converted to uppercase
         settings_dict = convert_to_uppercase(settings.get_dict())
 
-        check_settings(settings_dict)
-
         parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'),None)
         if parent_calc_folder is not None:
             if not isinstance(parent_calc_folder, RemoteData):

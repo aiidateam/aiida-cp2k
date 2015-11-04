@@ -63,7 +63,7 @@ class CP2KCalculation(JobCalculation):
             })
         return retdict
 
-    
+
     def _prepare_for_submission(self,tempfolder, inputdict):        
         """
         This is the routine to be called when you want to create
@@ -76,9 +76,23 @@ class CP2KCalculation(JobCalculation):
         """
         from aiida.common.utils import get_unique_filename, get_suggestion
         import re
-        
-        
-        
+
+        def convert_to_uppercase(item_in_dict):
+            """
+            This method recursively goes through a dictionary
+            and converts all the keys to uppercase.
+            On the fly, it also converts the values (if strings) to upppercase
+            """
+            try:
+                for key in item_in_dict.keys():
+                    item_in_dict[key.upper()] = convert_to_uppercase(item_in_dict.pop(key))
+            except AttributeError:
+                try:
+                    return item_in_dict.upper()
+                except AttributeError:
+                    return item_in_dict
+            return item_in_dict
+
         local_copy_list = []  
         remote_copy_list = []  
         remote_symlink_list = []
@@ -94,28 +108,27 @@ class CP2KCalculation(JobCalculation):
             structure = inputdict.pop(self.get_linkname('structure'))
         except KeyError:
             raise InputValidationError("No structure specified for this calculation")
-        if not isinstance(structure,  StructureData):
+        if not isinstance(structure, StructureData):
             raise InputValidationError("structure is not of type StructureData")
         try:
             code = inputdict.pop(self.get_linkname('code'))
         except KeyError:
             raise InputValidationError("No code specified for this calculation")
 
-        # Settings can be undefined, and defaults to an empty dictionary
-        settings = inputdict.pop(self.get_linkname('settings'),None)
-        if settings is None:
-            settings_dict = {}
-        else:
-            if not isinstance(settings,  ParameterData):
-                raise InputValidationError("settings, if specified, must be of "
-                                           "type ParameterData")
-            # Settings converted to uppercase
-            settings_dict = _uppercase_dict(settings.get_dict(),
-                                            dict_name='settings')
-        
+        # Settings can be undefined, and defaults to an empty dictionary/ParameterData
+        settings = inputdict.pop(self.get_linkname('settings'), ParameterData())
+
+        if not isinstance(settings, ParameterData):
+            raise InputValidationError("settings, if specified, must be of "
+                                        "type ParameterData")
+        # Settings converted to uppercase
+        settings_dict = convert_to_uppercase(settings.get_dict())
+
+        check_settings(settings_dict)
+
         parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'),None)
         if parent_calc_folder is not None:
-            if not isinstance(parent_calc_folder,  RemoteData):
+            if not isinstance(parent_calc_folder, RemoteData):
                 raise InputValidationError("parent_calc_folder, if specified,"
                     "must be of type RemoteData")
 
@@ -129,23 +142,6 @@ class CP2KCalculation(JobCalculation):
         # I have the parameters stored in the dictionary
         # First of all, I want everything to be stored uppercase, if the user did not bother.
         # It will make sure that there is no ambiguoity in the queries, everything is uppercase!
-        def convert_to_uppercase(item_in_dict):
-            """
-            This method recursively goes through a dictionary 
-            and converts all the keys to uppercase.
-            On the fly, it also converts the values (if strings) to upppercase
-            
-            """
-            try:
-                for key in item_in_dict.keys():
-                    item_in_dict[key.upper()] = convert_to_uppercase(item_in_dict.pop(key))
-            except AttributeError:
-                try:
-                    return item_in_dict.upper()
-                except AttributeError:
-                    return item_in_dict
-            return item_in_dict
-            
         def print_parameters_cp2k_style(infile, params, indent = 0):
             """It takes a dictionary and recurses through.
             

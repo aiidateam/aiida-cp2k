@@ -207,7 +207,7 @@ class CP2KCalculation(JobCalculation):
         ######HERE
         subsysdict['KIND'] = [{'_': kind.name,
                                 'ELEMENT':kind.name,
-                                'BASIS_SET':'TODO',
+                                'BASIS_SET': 'TODO',
                                 'POTENTIAL': 'TODO',
                                 'MASS': kind.mass,
                                 } 
@@ -215,11 +215,11 @@ class CP2KCalculation(JobCalculation):
         # Deal with the cell:
         subsysdict['CELL'] = {cell_direction:'{:<15} {:<15} {:<15}'.format(*structure.cell[index]) 
                         for index,cell_direction in enumerate(['A', 'B', 'C'])}
-        subsysdict['COORD'] = '\n'+'\n'.join([
+        subsysdict['COORD'] = {'_':'\n'+'\n'.join([
                     '{:<9}{:<2} {:<15} {:<15} {:<15}'.format(
                                     '', site.kind_name, *site.position
                                     ) 
-                            for site in structure.sites])
+                            for site in structure.sites])}
         # Here I am appending to the parameter - dictionary
         parameterdict['FORCEVAL'] = {'SUBSYS': subsysdict}
         

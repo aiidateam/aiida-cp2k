@@ -202,12 +202,6 @@ calc.use_parameters(parameters)
 
 calc.label = "My first calculation"
 print calc.store_all()
-print calc.submit()
-#I just want a submit-test
-#~ subfolder, script_filename = calc.store()
+calc.submit()
 
-#~ print "Test submit file in {}".format(os.path.join(
-            #~ os.path.relpath(subfolder.abspath),
-            #~ script_filename
-            #~ ))
 

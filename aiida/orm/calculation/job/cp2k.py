@@ -19,9 +19,12 @@ class CP2KCalculation(JobCalculation):
     This is a CP2KCalculation, subclass of JobCalculation, to prepare input for cp2k
     """
     # The files that we need:
+    _PROJECT_NAME = 'AIIDA-PROJECT'
     _INPUT_FILE_NAME = 'aiida.in'
     _OUTPUT_FILE_NAME = 'aiida.out'  
-    
+    _TRAJ_FILE_NAME = '{}-pos-1.xyz'.format(_PROJECT_NAME)
+    _VEL_FILE_NAME = '{}-vel-1.xyz'.format(_PROJECT_NAME)
+    _ENER_FILE_NAME = '{}-1.ener'.format(_PROJECT_NAME)
     def _init_internal_params(self):
         super(CP2KCalculation, self)._init_internal_params()
     
@@ -159,7 +162,8 @@ class CP2KCalculation(JobCalculation):
         # First of all, I want everything to be stored uppercase, if the user did not bother.
         # It will make sure that there is no ambiguoity in the queries, everything is uppercase!
         def print_parameters_cp2k_style(infile, params, indent = 0):
-            """It takes a dictionary and recurses through.
+            """
+            It takes a dictionary and recurses through.
             
             For key-value pair it checks whether the value is a dictionary and prepends the key with &
             It passes the valued to the same function, increasing the indentation
@@ -210,12 +214,14 @@ class CP2KCalculation(JobCalculation):
                     except ValueError:
                         floatvalue, unit = float(val[1]), val[0]
                     infile.write('{}{} [{}] {}\n'.format(' '*indent, key, unit, floatvalue))
-        
                 else:    
                     infile.write('{}{}  {}\n'.format(' '*indent, key, val, nonindent = 14))
         
         parameters_dict = convert_to_uppercase(parameters.get_dict())
-
+        # Whatever the user wrote, the project  name is set by aiida, otherwise file retrieving will not work
+        parameters_dict['GLOBAL']['PROJECT'] = _PROJECT_NAME
+        
+        
         for key in nested_key_iter(parameters_dict):
             if key.startswith('@') or key.startswith('$'):
                 raise InputValidationError("CP2K internal input preprocessor not supported in AiiDA")
@@ -225,6 +231,7 @@ class CP2KCalculation(JobCalculation):
         # TODO: potentials, basis sets?
         subsysdict = {}
         
+        ######### PATCH ################
         ### A patch to  make it work right now...
         potentials_dict = {}
         potentials_dict['H'] = 'GTH-PBE-q1'
@@ -236,6 +243,8 @@ class CP2KCalculation(JobCalculation):
         #~ basis_set_dict['O'] = 'TZV2P-GTH'
         basis_set_file_name = '../../GTH_BASIS_SETS'
         potential_file_name = '../../POTENTIAL'
+        ########## PATCH #################
+        
         #~ parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = basis_set_file_name
         #~ parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = potential_file_name
         
@@ -285,7 +294,6 @@ class CP2KCalculation(JobCalculation):
         calcinfo = CalcInfo()
 
         calcinfo.uuid = self.uuid
-        
         #~ calcinfo.cmdline_params = (list(cmdline_params)
                 #~ + ["-in", self._INPUT_FILE_NAME, "-o", self._OUTPUT_FILE_NAME])
         calcinfo.local_copy_list = local_copy_list
@@ -295,12 +303,13 @@ class CP2KCalculation(JobCalculation):
         calcinfo.remote_symlink_list = remote_symlink_list
         calcinfo.codes_info = [codeinfo]
         # Retrieve by default the output file and the xml file
-        
         calcinfo.retrieve_list = []        
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
+        calcinfo.retrieve_list.append(self._TRAJ_FILE_NAME)
+        calcinfo.retrieve_list.append(self._VEL_FILE_NAME)
+        calcinfo.retrieve_list.append(self._ENER_FILE_NAME)
         calcinfo.retrieve_list += settings_retrieve_list
         #~ calcinfo.retrieve_list += self._internal_retrieve_list
-        
         if settings_dict:
             try:
                 Parserclass = self.get_parserclass()
@@ -311,6 +320,5 @@ class CP2KCalculation(JobCalculation):
                 raise InputValidationError("The following keys have been found in "
                   "the settings input node, but were not understood: {}".format(
                   ",".join(settings_dict.keys())))
-        
         return calcinfo
 

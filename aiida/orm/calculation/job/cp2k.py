@@ -232,8 +232,8 @@ class CP2KCalculation(JobCalculation):
         basis_set_dict = {}
         basis_set_dict['H'] = 'TZV2P-GTH'
         basis_set_dict['O'] = 'TZV2P-GTH'
-        basis_set_file_name = '../../../GTH_BASIS_SETS'
-        potential_file_name = '../../../POTENTIAL'
+        basis_set_file_name = '../../GTH_BASIS_SETS'
+        potential_file_name = '../../POTENTIAL'
         parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = basis_set_file_name
         parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = potential_file_name
         

@@ -1,6 +1,9 @@
 from aiida.orm.calculation.job.cp2k import CP2KCalculation
 from aiida.parsers.parser import Parser
+from aiida.parsers.exceptions import OutputParsingError
 
+class CP2KParsingError(OutputParsingError):
+    pass
 class CP2KBasicParser(Parser):
     """
     Basic class to parse CP2K calculations  
@@ -23,6 +26,9 @@ class CP2KBasicParser(Parser):
         """
         from aiida.common.exceptions import InvalidOperation
         import os, re
+        from scipy.stats import linregress
+        import numpy as np
+        
         # import glob
         pos_regex = re.compile(
             """
@@ -46,33 +52,59 @@ class CP2KBasicParser(Parser):
         list_of_files = out_folder.get_folder_list()
         # at least the stdout should exist
         print list_of_files
+        print self._calc._OUTPUT_FILE_NAME
         if not self._calc._OUTPUT_FILE_NAME in list_of_files:
             self.logger.error("Standard output not found")
             successful = False
             return successful, ()
+
+        output_file_path = os.path.join(out_folder.get_abs_path('.'),
+                                self._calc._OUTPUT_FILE_NAME)
+        
+        with open(output_file_path) as f:
+            txt = f.read()
+            if not txt:
+                raise CP2KParsingError('Empty output file')
+            #PARSE THE OUTPUT FILE HERE
+
+
+        # PARSING THE ENERGY FILE:
+        ener_file_path = os.path.join(out_folder.get_abs_path('.'),
+                                self._calc._ENER_FILE_NAME)
+        with open(ener_file_path) as f:
+            txt = f.read()
+            #read the energy file:
+            data = [map(float,line.split())
+                        for line in txt.split('\n')[1:-1]]
+            steps, times, ekin, temp, epot, consqty, usedtime = zip(*data)
+            #steps are integers!
+            steps = map(int, steps)
+            results = {}
             
-        with open('{}{}'.format(folder_path, self._calc._OUTPUT_FILE_NAME)) as outputfile:
-            output_text = outputfile.read()
-            return_dict['final_energy'] = 5
-            return_dict['final_force'] = 3
-            energy_results = {}
+            
             for key, var in [('kin_E', ekin), ('temperature',temp),('pot_E', epot),('conserved_Q',consqty)]:
                 results[key] = {}
                 slope, intercept, r_value, p_value, std_err = linregress(times,var)
-                energy_results[key]['slope'] = slope
-                energy_results[key]['intercept'] = intercept
-                energy_results[key]['r_value'] = r_value
-                energy_results[key]['p_value'] = p_value
-                energy_results[key]['std_err'] = std_err
-            results_dict [ 'energy_results'] = energy_results
-            
-        with open(self._calc._TRAJ_FILE_NAME) as trajfile:
+                results[key]['slope'] = slope
+                results[key]['intercept'] = intercept
+                results[key]['r_value'] = r_value
+                results[key]['p_value'] = p_value
+                results[key]['std_err'] = std_err
+                
+            #~ total_time = np.sum(usedtime)
+            results['total_time'] = np.sum(usedtime)
+            results['time_p_timestep'] = np.mean(usedtime)
+
+        traj_file_path = os.path.join(out_folder.get_abs_path('.'),
+                                self._calc._TRAJ_FILE_NAME)    
+        with open(traj_file_path) as f:
+            txt = f.read()
+            print calc_input
             timestep_in_fs = calc_input['MOTION']['MD'].get('TIMESTEP')
-            traj_txt =  trajfile.read()
             #~ traj_arr =  np.array([[[float(pos) for pos in line.split()[1:4] if line] 
                                         #~ for line in block.group(0).split('\n')[:-1] if block] 
                                             #~ for block in pos_regex.finditer(traj_txt)])
-            blocks = [block for block in  pos_block_regex.finditer(xyz_txt)]
+            blocks = [block for block in  pos_block_regex.finditer(txt)]
             traj = np.array([[[float(match.group('x')) ,float(match.group('y')) ,float(match.group('z'))] 
                     for  match in pos_regex.finditer(block.group(0))] 
                         for block in blocks])

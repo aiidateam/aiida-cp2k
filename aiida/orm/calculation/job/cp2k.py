@@ -277,6 +277,8 @@ class CP2KCalculation(JobCalculation):
         #I will take the structure data and append it to the parameter dictionary.
         # Makes sure everything has the same output...
         # TODO: potentials, basis sets?
+        parameters.set_dict(parameters_dict)
+        
         subsysdict = {}
         
         ######### PATCH ################

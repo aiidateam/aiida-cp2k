@@ -25,6 +25,8 @@ class CP2KCalculation(JobCalculation):
     _TRAJ_FILE_NAME = '{}-pos-1.xyz'.format(_PROJECT_NAME)
     _VEL_FILE_NAME = '{}-vel-1.xyz'.format(_PROJECT_NAME)
     _ENER_FILE_NAME = '{}-1.ener'.format(_PROJECT_NAME)
+    _COORDS_FILE_NAME = 'aiida.coords.xyz'
+
     def _init_internal_params(self):
         super(CP2KCalculation, self)._init_internal_params()
     
@@ -259,11 +261,15 @@ class CP2KCalculation(JobCalculation):
         # Deal with the cell:
         subsysdict['CELL'] = {cell_direction:'{:<15} {:<15} {:<15}'.format(*structure.cell[index]) 
                         for index,cell_direction in enumerate(['A', 'B', 'C'])}
-        subsysdict['COORD'] = {'_':'\n'+'\n'.join([
-                    '{:<9}{:<2} {:<15} {:<15} {:<15}'.format(
-                                    '', site.kind_name, *site.position
-                                    ) 
-                            for site in structure.sites])}
+
+        # Export the structure as XYZ file and make CP2K use that one
+        # TODO: CP2K recommends PDB, but AiiDA does not have a PDB exporter yet
+        subsysdict['TOPOLOGY'] = {
+                'COORD_FILE_NAME': self._COORDS_FILE_NAME,
+                'COORD_FILE_FORMAT': "xyz",
+                }
+        structure.export(tempfolder.get_abs_path(self._COORDS_FILE_NAME), 'xyz')
+
         # Here I am appending to the parameter - dictionary
         parameters_dict['FORCE_EVAL']['SUBSYS'] = subsysdict
         

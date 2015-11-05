@@ -221,7 +221,7 @@ class CP2KCalculation(JobCalculation):
         
         parameters_dict = convert_to_uppercase(parameters.get_dict())
         # Whatever the user wrote, the project  name is set by aiida, otherwise file retrieving will not work
-        parameters_dict['GLOBAL']['PROJECT'] = _PROJECT_NAME
+        parameters_dict['GLOBAL']['PROJECT'] = self._PROJECT_NAME
         
         
         for key in nested_key_iter(parameters_dict):

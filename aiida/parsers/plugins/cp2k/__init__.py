@@ -1,3 +1,5 @@
+from aiida.orm.calculation.job
+
 
 class CP2KBasicParser():
     """
@@ -63,19 +65,19 @@ class CP2KBasicParser():
             results_dict [ 'energy_results'] = energy_results
             
         with open(self._calc._TRAJ_FILE_NAME) as trajfile:
-            timestep_in_fs = calc_input['MOTION']['MD'].get('TIMESTEP'))
+            timestep_in_fs = calc_input['MOTION']['MD'].get('TIMESTEP')
             traj_txt =  trajfile.read()
             #~ traj_arr =  np.array([[[float(pos) for pos in line.split()[1:4] if line] 
                                         #~ for line in block.group(0).split('\n')[:-1] if block] 
                                             #~ for block in pos_regex.finditer(traj_txt)])
-            all_positions =  [(match.group('sym'), float(match.group('x')) ,float(match.group('y')) ,float(match.group('z')))
-                            for match in pos_regex.finditer(traj_txt)])
-            
+            blocks = [block for block in  pos_block_regex.finditer(xyz_txt)]
+            traj = np.array([[[float(match.group('x')) ,float(match.group('y')) ,float(match.group('z'))] 
+                    for  match in pos_regex.finditer(block.group(0))] 
+                        for block in blocks])
             return_list.append({'content': {'array': traj_arr, 'timestep_in_fs':timestep_in_fs}})
     
-    #~ total_time = np.sum(usedtime)
-    results['total_time'] = np.sum(usedtime)
-    results['time_p_timestep'] = np.mean(usedtime)
+        results['total_time'] = np.sum(usedtime)
+        results['time_p_timestep'] = np.mean(usedtime)
         
         
         

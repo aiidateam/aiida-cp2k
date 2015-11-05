@@ -24,8 +24,10 @@ class CP2KCalculation(JobCalculation):
     _OUTPUT_FILE_NAME = 'aiida.out'  
     _TRAJ_FILE_NAME = '{}-pos-1.xyz'.format(_PROJECT_NAME)
     _VEL_FILE_NAME = '{}-vel-1.xyz'.format(_PROJECT_NAME)
+    _FORCES_FILE_NAME = '{}-frc-1.xyz'.format(_PROJECT_NAME)
     _ENER_FILE_NAME = '{}-1.ener'.format(_PROJECT_NAME)
     _COORDS_FILE_NAME = 'aiida.coords.xyz'
+
 
     def _init_internal_params(self):
         super(CP2KCalculation, self)._init_internal_params()
@@ -314,6 +316,7 @@ class CP2KCalculation(JobCalculation):
         calcinfo.retrieve_list.append(self._TRAJ_FILE_NAME)
         calcinfo.retrieve_list.append(self._VEL_FILE_NAME)
         calcinfo.retrieve_list.append(self._ENER_FILE_NAME)
+        calcinfo.retrieve_list.append(self._FORCES_FILE_NAME)
         calcinfo.retrieve_list += settings_retrieve_list
         #~ calcinfo.retrieve_list += self._internal_retrieve_list
         if settings_dict:

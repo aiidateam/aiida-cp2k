@@ -1,7 +1,7 @@
-from aiida.orm.calculation.job
+from aiida.orm.calculation.job.cp2k import CP2KCalculation
+from aiida.parsers.parser import Parser
 
-
-class CP2KBasicParser():
+class CP2KBasicParser(Parser):
     """
     Basic class to parse CP2K calculations  
     """
@@ -10,6 +10,7 @@ class CP2KBasicParser():
         Initialize the instance of PwParser
         """
         # check for valid input
+        print calc
         if not isinstance(calc, CP2KCalculation):
             raise QEOutputParsingError("Input calc must be a CP2KCalculation")
 
@@ -41,15 +42,16 @@ class CP2KBasicParser():
         except KeyError:
             self.logger.error("No retrieved folder found")
             return False, ()
-
+        folder_path = out_folder.get_abs_path()
         list_of_files = out_folder.get_folder_list()
         # at least the stdout should exist
+        print list_of_files
         if not self._calc._OUTPUT_FILE_NAME in list_of_files:
             self.logger.error("Standard output not found")
             successful = False
             return successful, ()
             
-        with open(self._calc._OUTPUT_FILE_NAME) as outputfile:
+        with open('{}{}'.format(folder_path, self._calc._OUTPUT_FILE_NAME)) as outputfile:
             output_text = outputfile.read()
             return_dict['final_energy'] = 5
             return_dict['final_force'] = 3

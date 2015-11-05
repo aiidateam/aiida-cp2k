@@ -34,21 +34,24 @@ RE_FLAGS = re.M | re.X
 
         
 potentials_regex = re.compile("""
-            #First line: Element symbol  Name of the potential  Alias names (Ex: H GTH-PADE-q1 GTH-LDA-q1)
-            (?P<element>[A-Z][a-z]{0,1}) 
-                    ([ \t]+(?P<name>[-\w]+))+[ \t]*[\n]  
+            # First line: Element symbol
+            #   Name of the potential
+            #   Alias names (Ex: H GTH-PADE-q1 GTH-LDA-q1)
+          (?P<element>[A-Z][a-z]{0,1}) (?P<name> ([ \t\r\f\v]+[-\w]+)+)[ \t\r\f\v]*[\n]
             # The second line contains the electronic configuration of valence electrons
-            # n_elec(s)  n_elec(p)  n_elec(d)  ... (n_elec   : Number of electrons for each angular momentum quantum number)
-            ([ \t\r\f\v]*[0-9]+)+[ \t\r\f\v]*[\n]  
+            # n_elec(s)  n_elec(p)  n_elec(d)  ...
+            # (n_elec   : Number of electrons for each angular momentum quantum number)
+          (?P<el_config> ([ \t\r\f\v]*[0-9]+)+ ) [ \t\r\f\v]*[\n]
             # Third line:
             # r_loc   nexp_ppl        cexp_ppl(1) ... cexp_ppl(nexp_ppl)
             # r_loc    (float) : Radius for the local part defined by the Gaussian function exponent alpha_erf
             # nexp_ppl (int): Number of the local pseudopotential functions
             # cexp_ppl (float) : Coefficients of the local pseudopotential functions
-        [ \t\r\f\v]*[\d\.]+ [ \t\r\f\v]* [\d]+  ([ \t\r\f\v]+ -?[\d]+.[\d]+)* [ \t\r\f\v]* [\n]   
+          (?P<body_loc>
+            [ \t\r\f\v]*[\d\.]+ [ \t\r\f\v]* [\d]+  ([ \t\r\f\v]+ -?[\d]+.[\d]+)* ) [ \t\r\f\v]* [\n]  
             # Fourth line:
             # nprj  (int)   : Number of the non-local projectors => nprj = SIZE(nprj_ppnl(:))
-        [ \t\r\f\v]* [\d]+[ \t\r\f\v]*[\n]  
+          (?P<nproj_nonloc> [ \t\r\f\v]* [\d]+ ) [ \t\r\f\v]*[\n]
             #Following lines:
             # r(1)    nprj_ppnl(1)    ((hprj_ppnl(1,i,j),j=i,nprj_ppnl(1)),i=1,nprj_ppnl(1))
             # r(2)    nprj_ppnl(2)    ((hprj_ppnl(2,i,j),j=i,nprj_ppnl(2)),i=1,nprj_ppnl(2))
@@ -63,11 +66,12 @@ potentials_regex = re.compile("""
             # nprj_ppnl (float): Number of the non-local projectors for the angular momentum
             #            quantum number l
             # hprj_ppnl (float): Coefficients of the non-local projector functions            
-        (
-        [ \t\r\f\v]*[\d\.]+ [ \t\r\f\v]* [\d]+  ( ([ \t\r\f\v]+ -?[\d]+.[\d]+)+ [ \t\r\f\v]*[\n])+  #This line greps the individual of function representing the core
-        )*   #Multipline lines can exist, obviously, but also none (e.g. hydrogen)
+        (?P<body_nonloc> (
+          [ \t\r\f\v]*[\d\.]+ [ \t\r\f\v]* [\d]+  ( ([ \t\r\f\v]+ -?[\d]+.[\d]+)+ [ \t\r\f\v]* [\n] )*
+                         )*
+        ) #Multipline lines can exist, obviously, but also none (e.g. hydrogen)
          """, RE_FLAGS)
- # Basis set format:
+# Basis set format:
 #
 # Element symbol  Name of the basis set  Alias names
 # nset (repeat the following block of lines nset times)
@@ -133,8 +137,29 @@ UPFGROUP_TYPE = 'data.upf.family'
 
 def parse_single_potentials(match):
 
+    # TESTING
     element =  match.group('element')
-    
+    #name = match.group('name')
+    #el_config = match.group('el_config')
+    #body_loc = match.group('body_loc')
+    #nproj_nonloc = match.group('nproj_nonloc')
+    #body_nonloc = match.group('body_nonloc')
+
+    ##print "match:", match.group(0)
+    #element=element.strip('\n')
+    #name = name.strip('\n')
+    #name = name.lstrip(' ')
+    #el_config=el_config.strip('\n')
+    #body_loc=body_loc.strip('\n')
+    #nproj_nonloc=nproj_nonloc.strip('\n')
+    #body_nonloc=body_nonloc.strip('\n')
+
+    #print element + ' ' + name
+    #print el_config
+    #print body_loc
+    #print nproj_nonloc
+    #if len(body_nonloc)>0:
+    #  print body_nonloc
 
 def upload_potentials(filename):
     [parse_single_potentials(match) for match in potentials_regex.finditer(open(filename).read())]

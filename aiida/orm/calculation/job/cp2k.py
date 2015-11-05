@@ -28,6 +28,47 @@ class CP2KCalculation(JobCalculation):
     _ENER_FILE_NAME = '{}-1.ener'.format(_PROJECT_NAME)
     _COORDS_FILE_NAME = 'aiida.coords.xyz'
 
+    # List of keywords which are not allowed when running CP2K under AiiDA
+    _KEYWORDS_BLACKLIST = [
+            # We block all possible changes to file names since it may
+            # interfere with AiiDA's file retrieval.
+            'ALL_CONF_FILE_NAME',
+            'BASIS_SET_FILE_NAME',
+            'BINARY_RESTART_FILE_NAME',
+            'BOX2_FILE_NAME',
+            'CALLGRAPH_FILE_NAME',
+            'CELL_FILE_NAME',
+            'CONN_FILE_NAME',
+            'COORD_FILE_NAME',
+            'COORDINATE_FILE_NAME',
+            'DATA_FILE_NAME',
+            'ENERGY_FILE_NAME',
+            'FFTW_WISDOM_FILE_NAME',
+            'IMAGE_RESTART_FILE_NAME',
+            'INPUT_FILE_NAME',
+            'KERNEL_FILE_NAME',
+            'LOCHOMO_RESTART_FILE_NAME',
+            'LOCLUMO_RESTART_FILE_NAME',
+            'MAX_DISP_FILE_NAME',
+            'MM_POTENTIAL_FILE_NAME',
+            'MOLECULES_FILE_NAME',
+            'MOVES_FILE_NAME',
+            'NICS_FILE_NAME',
+            'NMC_FILE_NAME',
+            'OPTIMIZE_FILE_NAME',
+            'OUTPUT_FILE_NAME',
+            'PARAMETER_FILE_NAME',
+            'PARAM_FILE_NAME',
+            'PARM_FILE_NAME',
+            'POTENTIAL_FILE_NAME',
+            'REF_CELL_FILE_NAME',
+            'REF_FORCE_FILE_NAME',
+            'REF_TRAJ_FILE_NAME',
+            'RESTART_FILE_NAME',
+            'TRAJ_FILE_NAME',
+            'WALKERS_FILE_NAME',
+            'WFN_RESTART_FILE_NAME',
+            ]
 
     def _init_internal_params(self):
         super(CP2KCalculation, self)._init_internal_params()
@@ -224,11 +265,14 @@ class CP2KCalculation(JobCalculation):
         parameters_dict = convert_to_uppercase(parameters.get_dict())
         # Whatever the user wrote, the project  name is set by aiida, otherwise file retrieving will not work
         parameters_dict['GLOBAL']['PROJECT'] = self._PROJECT_NAME
-        
-        
+
         for key in nested_key_iter(parameters_dict):
             if key.startswith('@') or key.startswith('$'):
-                raise InputValidationError("CP2K internal input preprocessor not supported in AiiDA")
+                raise InputValidationError("CP2K internal input preprocessor "
+                        "not supported in AiiDA")
+            if key in self._KEYWORDS_BLACKLIST:
+                raise InputValidationError("Manually specifying {} for CP2K "
+                        "not supported in AiiDA".format(key))
 
         #I will take the structure data and append it to the parameter dictionary.
         # Makes sure everything has the same output...

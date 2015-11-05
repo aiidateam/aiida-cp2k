@@ -225,11 +225,23 @@ class CP2KCalculation(JobCalculation):
         # TODO: potentials, basis sets?
         subsysdict = {}
         
-        ######HERE
+        ### A patch to  make it work right now...
+        potentials_dict = {}
+        potentials_dict['H'] = 'GTH-PADE-q1'
+        potentials_dict['O'] = 'GTH-PADE-q6'
+        basis_set_dict = {}
+        basis_set_dict['H'] = 'TZV2P-GTH'
+        basis_set_dict['O'] = 'TZV2P-GTH'
+        basis_set_file_name = '../../../GTH_BASIS_SETS'
+        potential_file_name = '../../../POTENTIAL'
+        parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = basis_set_file_name
+        parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = potential_file_name
+        
+        ######HERE I am writing the cards KIND:
         subsysdict['KIND'] = [{'_': kind.name,
                                 'ELEMENT':kind.name,
-                                'BASIS_SET': 'TODO',
-                                'POTENTIAL': 'TODO',
+                                'BASIS_SET': basis_set_dict[kind.name],
+                                'POTENTIAL': potentials_dict[kind.name],
                                 'MASS': kind.mass,
                                 } 
                                 for kind in structure.kinds]
@@ -242,7 +254,7 @@ class CP2KCalculation(JobCalculation):
                                     ) 
                             for site in structure.sites])}
         # Here I am appending to the parameter - dictionary
-        parameters_dict['FORCEVAL'] = {'SUBSYS': subsysdict}
+        parameters_dict['FORCE_EVAL']['SUBSYS'] = subsysdict
         
         #THIS IS THE INPUT FILE:
         input_filename = tempfolder.get_abs_path(self._INPUT_FILE_NAME)

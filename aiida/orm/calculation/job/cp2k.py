@@ -253,14 +253,18 @@ class CP2KCalculation(JobCalculation):
                 elif type(val) == list:
                     for listitem in val:
                         print_parameters_cp2k_style(infile,  {key:listitem}, indent)
-                elif type(val) == tuple:
-                    try:
-                        floatvalue, unit = float(val[0]), val[1]
-                    except ValueError:
-                        floatvalue, unit = float(val[1]), val[0]
-                    infile.write('{}{} [{}] {}\n'.format(' '*indent, key, unit, floatvalue))
+                # There is (yet) no good possibility to give the units 
+                # elif type(val) == tuple:
+                #    try:
+                #        floatvalue, unit = float(val[0]), val[1]
+                #    except ValueError:
+                #        floatvalue, unit = float(val[1]), val[0]
+                #    infile.write('{}{} [{}] {}\n'.format(' '*indent, key, unit, floatvalue))
+                
+                elif type(val) == bool:    
+                    infile.write('{}{}  {}\n'.format(' '*indent, key, '.true.' if val else '.false.'))
                 else:    
-                    infile.write('{}{}  {}\n'.format(' '*indent, key, val, nonindent = 14))
+                    infile.write('{}{}  {}\n'.format(' '*indent, key, val))
         
         parameters_dict = convert_to_uppercase(parameters.get_dict())
         # Whatever the user wrote, the project  name is set by aiida, otherwise file retrieving will not work
@@ -277,7 +281,7 @@ class CP2KCalculation(JobCalculation):
         #I will take the structure data and append it to the parameter dictionary.
         # Makes sure everything has the same output...
         # TODO: potentials, basis sets?
-        parameters.set_dict(parameters_dict)
+      
         
         subsysdict = {}
         

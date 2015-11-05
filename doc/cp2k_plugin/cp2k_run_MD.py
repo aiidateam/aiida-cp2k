@@ -133,6 +133,7 @@ ParameterData = DataFactory('parameter')
 parameters = ParameterData(dict={
           'global': {
               'project': 'H2O-32',
+              'trace': True, 
               'print_level': 'medium',
               'run_type': 'MD',
               'timings': {

@@ -23,8 +23,10 @@ class CP2KBasicParser():
         # import glob
         pos_regex = re.compile(
             """
-            ([ \t]* [A-Z][a-z]?  ([ \t]+ [-]?[0-9]+([\.][0-9]+([E | e][+|-]?[0-9]+)?)?){3} [ \t]* [\n])+
-            """,  re.M | re.X)
+            '^(?P<sym>[a-zA-Z0-9]+)\s+(?P<x>[\-]?\d+\.\d+)\s+(?P<y>[\-]?\d+\.\d+)\s+(?P<z>[\-]?\d+\.\d+)$'
+            """)
+            #~ ([ \t]* [A-Z][a-z]?  ([ \t]+ [-]?[0-9]+([\.][0-9]+([E | e][+|-]?[0-9]+)?)?){3} [ \t]* [\n])+
+
         successful = True
         return_dict = {}
         calc_input = self._calc.inp.parameters.get_dict()
@@ -63,9 +65,11 @@ class CP2KBasicParser():
         with open(self._calc._TRAJ_FILE_NAME) as trajfile:
             timestep_in_fs = calc_input['MOTION']['MD'].get('TIMESTEP'))
             traj_txt =  trajfile.read()
-            traj_arr =  np.array([[[float(pos) for pos in line.split()[1:4] if line] 
-                                        for line in block.group(0).split('\n')[:-1] if block] 
-                                            for block in pos_regex.finditer(traj_txt)])
+            #~ traj_arr =  np.array([[[float(pos) for pos in line.split()[1:4] if line] 
+                                        #~ for line in block.group(0).split('\n')[:-1] if block] 
+                                            #~ for block in pos_regex.finditer(traj_txt)])
+            all_positions =  [(match.group('sym'), float(match.group('x')) ,float(match.group('y')) ,float(match.group('z')))
+                            for match in pos_regex.finditer(traj_txt)])
             
             return_list.append({'content': {'array': traj_arr, 'timestep_in_fs':timestep_in_fs}})
     
@@ -80,6 +84,7 @@ class CP2KBasicParser():
             data = [[float(val) for val in line.split()]
                         for line in txt.split('\n')[1:-1]]
             steps, times, ekin, temp, epot, consqty, usedtime = zip(*data)
-            
+
+
             
             

@@ -164,12 +164,12 @@ class _GaussianPotential(VerdiCommandWithSubcommands, Importable):
 
         self.dataclass = UpfData
         self.valid_subcommands = {
-            'uploadpotentials': (self.uploadbasis, self.complete_auto),
-            'listpotentials': (self.listbasis, self.complete_none),
+            'uploadpotentials': (self.uploadpotentials, self.complete_auto),
+            'listpotentials': (self.listpotentials, self.complete_none),
             'import': (self.importfile, self.complete_none),
         }
 
-    def uploadbasis(self, *args):
+    def uploadpotentials(self, *args):
         """
         Upload a new pseudopotential family.
         
@@ -210,16 +210,16 @@ class _GaussianPotential(VerdiCommandWithSubcommands, Importable):
             #~ sys.exit(1)
 
         load_dbenv()
-        import aiida.orm.data.gpwbasis as gpwbasis
+        import aiida.orm.data.cp2k_potentials as ormpotentials
        
         
 
-        files_found, files_uploaded = gpwbasis.upload_potentials(filename)
+        files_found, files_uploaded = ormpotentials.upload_potentials(filename)
 
         #~ print "UPF files found: {}. New files uploaded: {}".format(files_found, files_uploaded)
 
 
-    def listbasis(self, *args):
+    def listpotentials(self, *args):
         """
         Print on screen the list of upf families installed
         """

@@ -35,10 +35,11 @@ RE_FLAGS = re.M | re.X
         
 potentials_regex = re.compile("""
             #First line: Element symbol  Name of the potential  Alias names (Ex: H GTH-PADE-q1 GTH-LDA-q1)
-        [A-Z][a-z]{0,1}([ \t]+[-\w]+)+[ \t\r\f\v]*[\n]  
+            (?P<element>[A-Z][a-z]{0,1}) 
+                    ([ \t]+(?P<name>[-\w]+))+[ \t]*[\n]  
             # The second line contains the electronic configuration of valence electrons
             # n_elec(s)  n_elec(p)  n_elec(d)  ... (n_elec   : Number of electrons for each angular momentum quantum number)
-        ([ \t\r\f\v]*[0-9]+)+[ \t\r\f\v]*[\n]  
+            ([ \t\r\f\v]*[0-9]+)+[ \t\r\f\v]*[\n]  
             # Third line:
             # r_loc   nexp_ppl        cexp_ppl(1) ... cexp_ppl(nexp_ppl)
             # r_loc    (float) : Radius for the local part defined by the Gaussian function exponent alpha_erf
@@ -130,8 +131,16 @@ basisset_regex = re.compile("""
 UPFGROUP_TYPE = 'data.upf.family'
 
 
+def parse_single_potentials(match):
 
+    element =  match.group('element')
+    
 
+def upload_potentials(filename):
+    [parse_single_potentials(match) for match in potentials_regex.finditer(open(filename).read())]
+    #~ print matches
+    #~ print m.group('element')
+    #~ print m.group('name')
 
 def upload_basis_set(filename):
     import os, sys
@@ -151,10 +160,6 @@ def upload_basis_set(filename):
         basis_sets = [parse_basisset(chunk) for chunk in basisset_regex.finditer(txt)]
         
 
-
-def parse_basisset(match):
-
-    print match.group('element')
 
 def parse_potential(txt):
     """

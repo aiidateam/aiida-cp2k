@@ -227,15 +227,17 @@ class CP2KCalculation(JobCalculation):
         
         ### A patch to  make it work right now...
         potentials_dict = {}
-        potentials_dict['H'] = 'GTH-PADE-q1'
-        potentials_dict['O'] = 'GTH-PADE-q6'
+        potentials_dict['H'] = 'GTH-PBE-q1'
+        potentials_dict['O'] = 'GTH-PBE-q6'
         basis_set_dict = {}
-        basis_set_dict['H'] = 'TZV2P-GTH'
-        basis_set_dict['O'] = 'TZV2P-GTH'
+        #~ basis_set_dict['H'] = 'TZV2P-GTH'
+        basis_set_dict['H'] = 'DZV-GTH-PBE'
+        basis_set_dict['O'] = 'DZVP-GTH-PBE'
+        #~ basis_set_dict['O'] = 'TZV2P-GTH'
         basis_set_file_name = '../../GTH_BASIS_SETS'
         potential_file_name = '../../POTENTIAL'
-        parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = basis_set_file_name
-        parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = potential_file_name
+        #~ parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = basis_set_file_name
+        #~ parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = potential_file_name
         
         ######HERE I am writing the cards KIND:
         subsysdict['KIND'] = [{'_': kind.name,

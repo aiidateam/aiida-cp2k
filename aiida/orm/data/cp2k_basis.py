@@ -153,7 +153,7 @@ def upload_basis_set(filename):
 
 
 def parse_basisset(match):
-
+    
     print match.group('element')
 
 def parse_potential(txt):

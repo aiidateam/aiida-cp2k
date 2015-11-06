@@ -5,7 +5,7 @@ from aiida.orm.calculation.job import JobCalculation
 from aiida.common.utils import classproperty #Do i need this?
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.remote import RemoteData 
+from aiida.orm.data.remote import RemoteData
 
 from aiida.common.datastructures import CalcInfo
 from aiida.common.datastructures import CodeInfo
@@ -14,14 +14,14 @@ from aiida.common.exceptions import InputValidationError
 
 import collections
 
-class CP2KCalculation(JobCalculation):   
+class CP2KCalculation(JobCalculation):
     """
     This is a CP2KCalculation, subclass of JobCalculation, to prepare input for cp2k
     """
     # The files that we need:
     _PROJECT_NAME = 'AIIDA-PROJECT'
     _INPUT_FILE_NAME = 'aiida.in'
-    _OUTPUT_FILE_NAME = 'aiida.out'  
+    _OUTPUT_FILE_NAME = 'aiida.out'
     _TRAJ_FILE_NAME = '{}-pos-1.xyz'.format(_PROJECT_NAME)
     _VEL_FILE_NAME = '{}-vel-1.xyz'.format(_PROJECT_NAME)
     _FORCES_FILE_NAME = '{}-frc-1.xyz'.format(_PROJECT_NAME)
@@ -77,7 +77,7 @@ class CP2KCalculation(JobCalculation):
 
     def _init_internal_params(self):
         super(CP2KCalculation, self)._init_internal_params()
-    
+
     @classproperty
     def _use_methods(cls):
         """
@@ -87,7 +87,7 @@ class CP2KCalculation(JobCalculation):
         # So far we need a structure, parameters, settings, and a parent_folder if we are restarting.
         # Potentials and basis sets need to be put as well
         # Anything else??
-        
+
         retdict.update({
             "structure": {
                'valid_types': StructureData,
@@ -119,18 +119,16 @@ class CP2KCalculation(JobCalculation):
         return retdict
 
 
-    def _prepare_for_submission(self,tempfolder, inputdict):        
+    def _prepare_for_submission(self, tempfolder, inputdict):
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.
-        
+
         :param tempfolder: a aiida.common.folders.Folder subclass where
                            the plugin should put all its files.
         :param inputdict: a dictionary with the input nodes, as they would
                 be returned by get_inputdata_dict (without the Code!)
         """
-        from aiida.common.utils import get_unique_filename, get_suggestion
-        import re
 
 
 
@@ -150,17 +148,17 @@ class CP2KCalculation(JobCalculation):
                     for inner_key in nested_key_iter(value):
                         yield inner_key
 
-        local_copy_list = []  
-        remote_copy_list = []  
+        local_copy_list = []
+        remote_copy_list = []
         remote_symlink_list = []
-        
+
         try:
             parameters = inputdict.pop(self.get_linkname('parameters'))
         except KeyError:
             raise InputValidationError("No parameters specified for this calculation")
         if not isinstance(parameters, ParameterData):
             raise InputValidationError("parameters is not of type ParameterData")
-        
+
         try:
             structure = inputdict.pop(self.get_linkname('structure'))
         except KeyError:
@@ -181,7 +179,7 @@ class CP2KCalculation(JobCalculation):
         # Settings converted to uppercase
         settings_dict = convert_to_uppercase(settings.get_dict())
 
-        parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'),None)
+        parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'), None)
         if parent_calc_folder is not None:
             if not isinstance(parent_calc_folder, RemoteData):
                 raise InputValidationError("parent_calc_folder, if specified,"
@@ -192,7 +190,7 @@ class CP2KCalculation(JobCalculation):
             raise InputValidationError("The following input data nodes are "
                 "unrecognized: {}".format(inputdict.keys()))
 
-        
+
         ######################## LET'S START WRITING SOME INPUT #######################
         # I have the parameters stored in the dictionary
         # First of all, I want everything to be stored uppercase, if the user did not bother.
@@ -200,20 +198,20 @@ class CP2KCalculation(JobCalculation):
         def print_parameters_cp2k_style(infile, params, indent = 0):
             """
             It takes a dictionary and recurses through.
-            
+
             For key-value pair it checks whether the value is a dictionary and prepends the key with &
             It passes the valued to the same function, increasing the indentation
             If the value is a list, I assume that this is something the user wants to store repetitively
-            eg: 
+            eg:
                 dict['KEY'] = ['val1', 'val2']
-                ===> 
+                ===>
                 KEY val1
                 KEY val2
-                
+
                 or
-                
+
                 dict['KIND'] = [{'_': 'Ba', 'ELEMENT':'Ba'},
-                                {'_': 'Ti', 'ELEMENT':'Ti'}, 
+                                {'_': 'Ti', 'ELEMENT':'Ti'},
                                 {'_': 'O', 'ELEMENT':'O'}]
                 ====>
                       &KIND Ba
@@ -225,23 +223,23 @@ class CP2KCalculation(JobCalculation):
                       &KIND O
                          ELEMENT  O
                       &END KIND
-                     
+
             if the value is a tuple, I assume the first or the second piece is a unit
                 dict['TEMP'] = (300, 'K')
-                ===> TEMP [K] 300   
+                ===> TEMP [K] 300
                 dict['TEMP'] = ('K', 300)
-                ===> TEMP [K] 300   
-            TODO: Needs to be better defined here, how about TEMP__UNIT == 'K' 
-            
+                ===> TEMP [K] 300
+            TODO: Needs to be better defined here, how about TEMP__UNIT == 'K'
+
             """
-            
-            
+
+
             for key, val in params.items():
-                if type(val) == dict:
+                if isinstance(val, dict):
                     infile.write('{}&{} {}\n'.format(' '*indent, key, val.pop('_', '')))
                     print_parameters_cp2k_style(infile, val, indent + 3)
                     infile.write('{}&END {}\n'.format(' '*indent, key))
-                elif type(val) == list:
+                elif isinstance(val, list):
                     for listitem in val:
                         print_parameters_cp2k_style(infile,  {key:listitem}, indent)
                 # There is (yet) no good possibility to give the units 
@@ -258,7 +256,8 @@ class CP2KCalculation(JobCalculation):
                     infile.write('{}{}  {}\n'.format(' '*indent, key, val))
         
         parameters_dict = convert_to_uppercase(parameters.get_dict())
-        # Whatever the user wrote, the project  name is set by aiida, otherwise file retrieving will not work
+        # Whatever the user wrote, the project  name is set by aiida,
+        # otherwise file retrieving will not work
         parameters_dict['GLOBAL']['PROJECT'] = self._PROJECT_NAME
 
         for key in nested_key_iter(parameters_dict):
@@ -269,13 +268,13 @@ class CP2KCalculation(JobCalculation):
                 raise InputValidationError("Manually specifying {} for CP2K "
                         "not supported in AiiDA".format(key))
 
-        #I will take the structure data and append it to the parameter dictionary.
+        # Take the structure data and append it to the parameter dictionary.
         # Makes sure everything has the same output...
         # TODO: potentials, basis sets?
       
         
         subsysdict = {}
-        
+
         ######### PATCH ################
         ### A patch to  make it work right now...
         potentials_dict = {}
@@ -289,11 +288,11 @@ class CP2KCalculation(JobCalculation):
         basis_set_file_name = '../../GTH_BASIS_SETS'
         potential_file_name = '../../POTENTIAL'
         ########## PATCH #################
-        
+
         #~ parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = basis_set_file_name
         #~ parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = potential_file_name
-        
-        ######HERE I am writing the cards KIND:
+
+        # Generate dictionary for KIND based on the AiiDA 'structure.kinds' data
         subsysdict['KIND'] = [{'_': kind.name,
                                 'ELEMENT':kind.name,
                                 'BASIS_SET': basis_set_dict[kind.name],
@@ -302,8 +301,8 @@ class CP2KCalculation(JobCalculation):
                                 } 
                                 for kind in structure.kinds]
         # Deal with the cell:
-        subsysdict['CELL'] = {cell_direction:'{:<15} {:<15} {:<15}'.format(*structure.cell[index]) 
-                        for index,cell_direction in enumerate(['A', 'B', 'C'])}
+        subsysdict['CELL'] = {cell_direction:'{:<15} {:<15} {:<15}'.format(*structure.cell[index])
+                        for index, cell_direction in enumerate(['A', 'B', 'C'])}
 
         # Export the structure as XYZ file and make CP2K use that one
         # TODO: CP2K recommends PDB, but AiiDA does not have a PDB exporter yet
@@ -315,22 +314,17 @@ class CP2KCalculation(JobCalculation):
 
         # Here I am appending to the parameter - dictionary
         parameters_dict['FORCE_EVAL']['SUBSYS'] = subsysdict
-        
-        #THIS IS THE INPUT FILE:
-        input_filename = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
 
         # Writing to input file:
-        with open(input_filename,'w') as infile:
+        input_filename = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
+        with open(input_filename, 'w') as infile:
             print_parameters_cp2k_style(infile, parameters_dict)
-            
-            #~ infile.write('{}'.format(parameters_dict))
 
-        
         # TODO: Retrieving, commandline:
         settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         cmdline_params = settings_dict.pop('CMDLINE', [])
-        
-        
+
+
         # Initialize codeinfo, set attributes...
         codeinfo = CodeInfo()
         codeinfo.cmdline_params = (list(cmdline_params)
@@ -338,8 +332,8 @@ class CP2KCalculation(JobCalculation):
         #calcinfo.stdin_name = self._INPUT_FILE_NAME
         #~ codeinfo.stdout_name = self._OUTPUT_FILE_NAME
         codeinfo.code_uuid = code.uuid
-        
-        
+
+
         calcinfo = CalcInfo()
 
         calcinfo.uuid = self.uuid
@@ -352,7 +346,7 @@ class CP2KCalculation(JobCalculation):
         calcinfo.remote_symlink_list = remote_symlink_list
         calcinfo.codes_info = [codeinfo]
         # Retrieve by default the output file and the xml file
-        calcinfo.retrieve_list = []        
+        calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
         calcinfo.retrieve_list.append(self._TRAJ_FILE_NAME)
         calcinfo.retrieve_list.append(self._VEL_FILE_NAME)
@@ -366,7 +360,7 @@ class CP2KCalculation(JobCalculation):
                 parser = Parserclass(self)
                 parser_opts = parser.get_parser_settings_key()
                 settings_dict.pop(parser_opts)
-            except (KeyError,AttributeError): # the key parser_opts isn't inside the dictionary
+            except (KeyError, AttributeError): # the key parser_opts isn't inside the dictionary
                 raise InputValidationError("The following keys have been found in "
                   "the settings input node, but were not understood: {}".format(
                   ",".join(settings_dict.keys())))

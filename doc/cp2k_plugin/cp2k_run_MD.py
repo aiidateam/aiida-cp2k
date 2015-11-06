@@ -144,7 +144,7 @@ parameters = ParameterData(dict={
                 'MD': {
                     'ensemble': 'NVE',
                     'steps': 10,
-                    'timestep': 0.5,
+                    'timestep': 0.1,
                     'temperature':300,
                 },
                 'print': {

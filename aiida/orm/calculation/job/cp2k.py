@@ -127,21 +127,7 @@ class CP2KCalculation(JobCalculation):
         from aiida.common.utils import get_unique_filename, get_suggestion
         import re
 
-        def convert_to_uppercase(item_in_dict):
-            """
-            This method recursively goes through a dictionary
-            and converts all the keys to uppercase.
-            On the fly, it also converts the values (if strings) to upppercase
-            """
-            try:
-                for key in item_in_dict.keys():
-                    item_in_dict[key.upper()] = convert_to_uppercase(item_in_dict.pop(key))
-            except AttributeError:
-                try:
-                    return item_in_dict.upper()
-                except AttributeError:
-                    return item_in_dict
-            return item_in_dict
+
 
         def nested_key_iter(nested):
             """
@@ -381,3 +367,18 @@ class CP2KCalculation(JobCalculation):
                   ",".join(settings_dict.keys())))
         return calcinfo
 
+def convert_to_uppercase(item_in_dict):
+    """
+    This method recursively goes through a dictionary
+    and converts all the keys to uppercase.
+    On the fly, it also converts the values (if strings) to upppercase
+    """
+    try:
+        for key in item_in_dict.keys():
+            item_in_dict[key.upper()] = convert_to_uppercase(item_in_dict.pop(key))
+    except AttributeError:
+        try:
+            return item_in_dict.upper()
+        except AttributeError:
+            return item_in_dict
+    return item_in_dict

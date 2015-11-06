@@ -73,6 +73,7 @@ class CP2KCalculation(JobCalculation):
             'COORD',
             'KIND',
             'TOPOLOGY',
+            'PROJECT', 'PROJECT_NAME',
             ]
 
     def _init_internal_params(self):

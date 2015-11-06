@@ -132,7 +132,6 @@ ParameterData = DataFactory('parameter')
 
 parameters = ParameterData(dict={
           'global': {
-              'project': 'H2O-32',
               'print_level': 'medium',
               'run_type': 'energy',
               'timings': {

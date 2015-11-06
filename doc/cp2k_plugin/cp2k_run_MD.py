@@ -132,7 +132,6 @@ ParameterData = DataFactory('parameter')
 
 parameters = ParameterData(dict={
           'global': {
-              'trace': True, 
               'print_level': 'medium',
               'run_type': 'MD',
               'timings': {
@@ -216,7 +215,7 @@ parameters = ParameterData(dict={
 calc = code.new_calc()
 calc.set_computer(computer)
 calc.set_max_wallclock_seconds(30*60) # 30 min
-calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 1})
+calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 12})
 
 calc.use_structure(s)
 calc.use_code(code)

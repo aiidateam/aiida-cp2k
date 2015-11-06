@@ -78,9 +78,11 @@ class CP2KCalculation(JobCalculation):
 
     def _init_internal_params(self):
         # Default output parser provided by AiiDA
-        self._default_parser = 'cp2k.CP2KBasicParser'
+        
         super(CP2KCalculation, self)._init_internal_params()
-
+        self._default_parser = 'cp2k.CP2KBasicParser'
+        
+        
     @classproperty
     def _use_methods(cls):
         """

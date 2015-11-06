@@ -1,9 +1,8 @@
 from aiida.orm.data import Data
 from aiida.common.utils import classproperty
 import argparse 
-import re
 
-RE_FLAGS = re.M | re.X 
+#RE_FLAGS = re.M | re.X 
 """
 A wonderfull description of a GaussianbasissetData class
 
@@ -11,9 +10,9 @@ A wonderfull description of a GaussianbasissetData class
 class GaussianbasissetData(Data):
 
 
-# "Orbitals" is a list containing a set of lists, where each of them describes a particular orbital in the following way: 
+# "OrbitalQuantumNumbers" is a list containing a set of lists, where each of them describes a particular orbital in the following way: 
 # [
-#     [ N, l, m, s, conntracted ],
+#     [ N, l, m, s, contracted ],
 #     ....
 # ]
 #

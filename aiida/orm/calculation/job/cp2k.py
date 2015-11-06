@@ -16,7 +16,10 @@ import collections
 
 class CP2KCalculation(JobCalculation):
     """
-    This is a CP2KCalculation, subclass of JobCalculation, to prepare input for cp2k
+    This is a CP2KCalculation, subclass of JobCalculation, to prepare input for an
+    ab-inition CP2KCalculation.
+    For information on CP2K, refer to: cp2k.org
+    
     """
     # The files that we need:
     _PROJECT_NAME = 'AIIDA-PROJECT'
@@ -77,8 +80,9 @@ class CP2KCalculation(JobCalculation):
             ]
 
     def _init_internal_params(self):
-        # Default output parser provided by AiiDA
-        
+        """
+        Set parameters of instance
+        """
         super(CP2KCalculation, self)._init_internal_params()
         self._default_parser = 'cp2k.CP2KBasicParser'
         
@@ -86,6 +90,7 @@ class CP2KCalculation(JobCalculation):
     @classproperty
     def _use_methods(cls):
         """
+        Extend the parent _use_methods with further keys.
         This will be manually added to the _use_methods in each subclass
         """
         retdict = JobCalculation._use_methods
@@ -152,18 +157,23 @@ class CP2KCalculation(JobCalculation):
                 for value in nested:
                     for inner_key in nested_key_iter(value):
                         yield inner_key
-
+        
         local_copy_list = []
         remote_copy_list = []
         remote_symlink_list = []
-
+        
+        
+        ################ INPUTDICT RETRIEVAL AND VALIDATION #####################
+        
+        ### The parameters given by the user:
         try:
             parameters = inputdict.pop(self.get_linkname('parameters'))
         except KeyError:
             raise InputValidationError("No parameters specified for this calculation")
         if not isinstance(parameters, ParameterData):
             raise InputValidationError("parameters is not of type ParameterData")
-
+            
+        # The structure:
         try:
             structure = inputdict.pop(self.get_linkname('structure'))
         except KeyError:
@@ -228,13 +238,6 @@ class CP2KCalculation(JobCalculation):
                       &KIND O
                          ELEMENT  O
                       &END KIND
-
-            if the value is a tuple, I assume the first or the second piece is a unit
-                dict['TEMP'] = (300, 'K')
-                ===> TEMP [K] 300
-                dict['TEMP'] = ('K', 300)
-                ===> TEMP [K] 300
-            TODO: Needs to be better defined here, how about TEMP__UNIT == 'K'
 
             """
 

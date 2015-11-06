@@ -1,21 +1,28 @@
 from aiida.orm.calculation.job.cp2k import CP2KCalculation, convert_to_uppercase
 from aiida.parsers.parser import Parser
 from aiida.parsers.exceptions import OutputParsingError
+from aiida.orm.data.array.trajectory import TrajectoryData
 
-class CP2KParsingError(OutputParsingError):
+from aiida.parsers.plugins.cp2k.readers import (
+        CP2KOutputFileReader,
+        CP2KEnergyFileReader,
+        CP2KTrajectoryFileReader
+        )
+
+class CP2KOutputParsingError(OutputParsingError):
     pass
+
 class CP2KBasicParser(Parser):
     """
-    Basic class to parse CP2K calculations  
+    Basic class to parse CP2K calculations
     """
     def __init__(self, calc):
         """
-        Initialize the instance of PwParser
+        Initialize the instance of CP2KBasicParser
         """
         # check for valid input
-        print calc
         if not isinstance(calc, CP2KCalculation):
-            raise QEOutputParsingError("Input calc must be a CP2KCalculation")
+            raise CP2KOutputParsingError("Input calc must be a CP2KCalculation")
 
         super(CP2KBasicParser, self).__init__(calc)
 
@@ -24,33 +31,13 @@ class CP2KBasicParser(Parser):
         Receives in input a dictionary of retrieved nodes.
         Does all the logic here.
         """
-        from aiida.common.exceptions import InvalidOperation
-        import os, re
-        from scipy.stats import linregress
-        import numpy as np
-        #~ from aiida.comm
-        # import glob
-        pos_regex = re.compile("""
-        (?P<sym>[a-zA-Z0-9]+)\s+
-        (?P<x>[-]?\d+[\.]?\d+([E | e][+|-]?\+)?)\s+
-        (?P<y>[-]?\d+[\.]?\d+([E | e][+|-]?\+)?)\s+
-        (?P<z>[-]?\d+[\.]?\d+([E | e][+|-]?\+)?)""", re.X)
-            #~ ([ \t]* [A-Z][a-z]?  ([ \t]+ [-]?[0-9]+([\.][0-9]+([E | e][+|-]?[0-9]+)?)?){3} [ \t]* [\n])+
-        pos_block_regex = re.compile("""
-            (
-                \s*   #White space in the beginning (maybe)
-                [A-Za-z0-9]+  #A tag for a species
-                (
-                   \s+ [-]?\d+[\.]?\d+([E | e][+|-]?\+)?  #The number   ([E | e][+|-]?[0-9]+)?)?
-                ){3} 
-                \s* [\n] #White space and line break in the end
-            )+ #A block should one or more lines
-            """, re.X | re.M)
+        from os import path
 
         successful = True
         return_dict = {}
+
         calc_input = convert_to_uppercase(self._calc.inp.parameters.get_dict())
-        
+
         # look for eventual flags of the parser
         #~ try:
             #~ parser_opts = self._calc.inp.settings.get_dict()[self.get_parser_settings_key()]
@@ -67,72 +54,42 @@ class CP2KBasicParser(Parser):
             successful = False
             return successful, ()
 
-        output_file_path = os.path.join(out_folder.get_abs_path('.'),
+        # parse the CP2K output log file
+        output_file_path = path.join(out_folder.get_abs_path('.'),
                                 self._calc._OUTPUT_FILE_NAME)
-        
-        with open(output_file_path) as f:
-            txt = f.read()
-            if not txt:
-                raise CP2KParsingError('Empty output file')
-            #TODO PARSE THE OUTPUT FILE HERE
-            # 
+        cp2koutput = CP2KOutputFileReader(output_file_path)
+        cp2koutput.parse()
 
-        # PARSING THE ENERGY FILE:
-        ener_file_path = os.path.join(out_folder.get_abs_path('.'),
+        # parse the energy file
+        ener_file_path = path.join(out_folder.get_abs_path('.'),
                                 self._calc._ENER_FILE_NAME)
-        with open(ener_file_path) as f:
-            txt = f.read()
-            #read the energy file:
-            data = [map(float,line.split())
-                        for line in txt.split('\n')[1:-1]]
-            steps, times, ekin, temp, epot, consqty, usedtime = zip(*data)
-            #steps are integers!
-            steps = map(int, steps)
-            results = {}
-            
-            
-            for key, var in [('kin_E', ekin), ('temperature',temp),('pot_E', epot),('conserved_Q',consqty)]:
-                results[key] = {}
-                slope, intercept, r_value, p_value, std_err = linregress(times,var)
-                results[key]['slope'] = slope
-                results[key]['intercept'] = intercept
-                results[key]['r_value'] = r_value
-                results[key]['p_value'] = p_value
-                results[key]['std_err'] = std_err
-                
-            #~ total_time = np.sum(usedtime)
-            results['total_time'] = np.sum(usedtime)
-            results['time_p_timestep'] = np.mean(usedtime)
-            #~ print results
-        traj_file_path = os.path.join(out_folder.get_abs_path('.'),
-                                self._calc._TRAJ_FILE_NAME)    
-        with open(traj_file_path) as f:
-            txt = f.read()
-            #~ print calc_input
-            timestep_in_fs = calc_input['MOTION']['MD'].get('TIMESTEP')
-            print timestep_in_fs
-            #~ traj_arr =  np.array([[[float(pos) for pos in line.split()[1:4] if line] 
-                                        #~ for line in block.group(0).split('\n')[:-1] if block] 
-                                            #~ for block in pos_regex.finditer(traj_txt)])
-            blocks = [block for block in  pos_block_regex.finditer(txt)]
-            print len(blocks)
-            #~ print txt[:10000]
-            #~ print '############'
-            
+        energies = CP2KEnergyFileReader(ener_file_path)
+        energies.parse()
 
-            #~ print pos_block_regex_2.search(txt).group(0)
-            
-            #~ print len(blocks)
-            #~ print txt
-            traj = np.array([[[float(match.group('x')) ,float(match.group('y')) ,float(match.group('z'))] 
-                    for  match in pos_regex.finditer(block.group(0))] 
-                        for block in blocks])
-            print traj.shape
-            return_list.append({'content': {'array': traj_arr, 'timestep_in_fs':timestep_in_fs}})
-    
-        results['total_time'] = np.sum(usedtime)
-        results['time_p_timestep'] = np.mean(usedtime)
-        
-        
+        # parse the trajectory file
+        traj_file_path = path.join(out_folder.get_abs_path('.'),
+                                self._calc._TRAJ_FILE_NAME)
+        trajectories = CP2KTrajectoryFileReader(traj_file_path,
+                calc_input['MOTION']['MD'].get('TIMESTEP'))
+        trajectories.parse()
 
-            
+        traj = TrajectoryData()
+        traj.set_trajectory(steps=raw_trajectory['steps'],
+                            cells=raw_trajectory['cells'],
+                            symbols=raw_trajectory['symbols'],
+                            positions=raw_trajectory['positions_ordered'],
+                            times=raw_trajectory['times'],
+                            velocities=raw_trajectory['velocities_ordered'],
+        )
+
+        for this_name in evp_keys:
+            traj.set_array(this_name, raw_trajectory[this_name])
+        new_nodes_list = [(self.get_linkname_trajectory(), traj)]
+
+        
+        # Update the result dictionary with the parsed data
+        return_dict.update(cp2koutput.data)
+        return_dict.update(energies.data)
+        return_dict.update(trajectories.data)
+
+        return successful, return_dict

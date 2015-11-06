@@ -68,6 +68,11 @@ class CP2KCalculation(JobCalculation):
             'TRAJ_FILE_NAME',
             'WALKERS_FILE_NAME',
             'WFN_RESTART_FILE_NAME',
+            # the following keys/sections are (over)written by AiiDA
+            'CELL',
+            'COORD',
+            'KIND',
+            'TOPOLOGY',
             ]
 
     def _init_internal_params(self):

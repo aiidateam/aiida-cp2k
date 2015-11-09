@@ -7,6 +7,7 @@ import argparse
 A wonderfull description of a GaussianbasissetData class
 
 """
+parser = argparse.ArgumentParser()
 class GaussianbasissetData(Data):
 
 
@@ -93,7 +94,6 @@ class GaussianbasissetData(Data):
             i+=1
 
         if return_oqn == [] and return_ecc == []:
-            parser = argparse.ArgumentParser()
             parser.error("Error! Can not find orbital n={}, l={}, m={}, n={}".format(n,l,m,n))
 
         return return_oqn, return_ecc
@@ -112,6 +112,28 @@ class GaussianbasissetData(Data):
             self.tmp_Exponent_ContractionCoefficients = []
 
         self.tmp_Exponent_ContractionCoefficients.append(Exponent_ContractionCoefficient )
+
+        return True
+    
+    
+    def add_WholeBasisSet(self,QuantumNumbers, Exponent_ContractionCoefficient):
+        if len (QuantumNumbers) != len (Exponent_ContractionCoefficient):
+            parser.error( "Error! The array with quantum numbers and the array with exponents have different size! Something is wrong...")
+
+        size = len (QuantumNumbers)
+        
+        i=0
+        while i < size:
+            self.add_Orbital(Exponent_ContractionCoefficient = Exponent_ContractionCoefficient[i] , n=QuantumNumbers[i][0],l=QuantumNumbers[i][1],m=QuantumNumbers[i][2],s=QuantumNumbers[i][3], contraction=QuantumNumbers[i][4])
+            i+=1
+
+        return True
+
+
+
+
+
+
 
 
 

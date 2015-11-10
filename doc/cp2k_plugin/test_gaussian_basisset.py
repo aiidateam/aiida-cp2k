@@ -21,7 +21,7 @@ gg.add_Orbital(exponent_contractioncoefficient,   n=2, l=1, m=0, s=0)
 print gg.get_Norbitals()
 
 print gg.get_Orbital(1,0,0)
-#print gg.get_Orbital(2,0,0)
+print gg.get_Orbital(2,0,0)
 
 
 gg.store_all_in_DB()

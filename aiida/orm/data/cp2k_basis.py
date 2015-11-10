@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+__copyright__ = ""
+__license__ = "MIT license, see LICENSE.txt file"
+__version__ = "0.4.1"
+__contributors__ = "Aliaksandr Yakutovich, ..."
 from aiida.orm.data import Data
 from aiida.common.utils import classproperty
 from aiida.orm.data.gaussian_basis import GaussianbasissetData
@@ -8,6 +13,9 @@ import re
 
 
 class Cp2kbasissetData(GaussianbasissetData):
+    """
+    Cp2kbasissetData is a class which provides functionality to manipulate with basis sets for cp2k.
+    """
     def __init__ (self, atom_kind, basis_type, version="" ):
         super(Cp2kBasisset,self).__init__(atom_kind, basis_type, version)
 
@@ -18,21 +26,50 @@ class Cp2kbasissetData(GaussianbasissetData):
 
 
 
-# ParseSingleBasiset takes a list of strings, where each string contains a line read from the basis set file. 
-# The whole list contains a SINGLE basis set
 
 
 def ParseSingleBasiset(basis):
+    """
+    :param basis:  a list of strings, where each string contains a line read from the basis set file. The whole list contains a SINGLE basis set
 
+    :return Name: name of the atom in the periodic table
+    :return Type: basis set typ
+    :return Version: basis set version
+    :return OrbitalQuantumNumbers: is a list containing a set of lists, where each of them describes a particular orbital in the following way:
+        [
+            [ N, l, m, s, contracted ],
+            ....
+        ]
+        
+        Where:
+        N           - principle quantum number
+        l           - angular momentum
+        m           - magnetic quantum number
+        s           - spin
+        contracted  - [n1,n2], if this orbital is contracted with some other orbitals n1 and n2, []  otherwise. 
+
+    :return exponent_contractioncoefficient: s a list containing a set of lists, with a set of exponent + contraction coefficient paris. For example:
+        [ 
+           [
+               [ 2838.2104843030,  -0.0007019523 ], 
+               [  425.9069835160,  -0.0054237190 ],
+               [   96.6806600316,  -0.0277505669 ],
+                ....
+           ],
+           ....,
+        ]
+    """
+    
 # This code takes name of the atom and basis set type. 
-# Needs to be improved. 
     Name,Type= basis[0].split()[0], basis[0].split()[1]
     Version = "v1.0"
+    
     
 
 
 # Second line contains the number of blocks
     n_blocks=int (basis[1].split()[0])
+
 
 #    print "name", Name
 #    print "type", Type
@@ -123,6 +160,11 @@ def ParseSingleBasiset(basis):
 
 
 def ParseAndStore_BasissetFile(filename):
+    """
+    Read different basis sets from a file and store them into a database
+
+    :param filename: string containing a path to a file with basis sets
+    """
     if not os.path.exists(filename):
         raise ValueError("Not a valid file")
     with open(filename) as f:
@@ -163,9 +205,9 @@ def ParseAndStore_BasissetFile(filename):
                 tmp_basis[0]=re.sub('\([^)]*\)', '', tmp_basis[0])
                 name,tp,version,orbqn,expn=ParseSingleBasiset(tmp_basis)
 
-                AAA=Cp2kBasisset(name,tp,version)
-                AAA.add_WholeBasisSet(orbqn,expn)
-                AAA.store_all()
+#               CP2KBASISSET=Cp2kBasisset(name,tp,version)
+#               CP2KBASISSET.add_WholeBasisSet(orbqn,expn)
+#               CP2KBASISSET.store_all()
 
 #                print name, tp, version, orbqn
                 tmp_basis = [] # empty the temporary basis set storage

@@ -10,7 +10,7 @@ from aiida.common.utils import classproperty
 import argparse 
 
 parser = argparse.ArgumentParser()
-class GaussianbasissetData(Data):
+class Gaussian_basisData(Data):
     """
     GaussianbasissetData is a class aimed to provide a general way to store gaussian basissets from different codes within AiiDA framework. 
     

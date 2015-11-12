@@ -103,7 +103,9 @@ class _GaussianBasis(VerdiCommandWithSubcommands, Importable):
 
         from aiida.orm import DataFactory
 
-
+        BasisSets = DataFactory('gaussian_basis')
+        
+        
         UpfData = DataFactory('upf')
 
         groups = UpfData.get_upf_groups(filter_elements=parsed_args.element)

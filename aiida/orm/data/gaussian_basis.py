@@ -46,6 +46,14 @@ class Gaussian_basisData(Data):
     
     tmp_OrbitalQuantumNumbers and tmp_Exponent_ContractionCoefficients  must be consistent
     """
+    @classmethod
+    def get_basis_sets(cls, filter_elements = None):
+        """
+        Return the UpfFamily group with the given name.
+        """
+        
+
+        return Gaussian_basisData.get()
              
     def __init__(self,atom_kind, basis_type, version=""):
         """
@@ -228,7 +236,9 @@ class Gaussian_basisData(Data):
         return True
 
 
-
+    @property
+    def element(self):
+        return self.get_attr('element', None)
 
 
 
@@ -239,8 +249,8 @@ class Gaussian_basisData(Data):
         """
         This function which you run once your data are ready to be stored in the database. 
         """
-        self._set_attr('AtomKind', self.tmp_AtomKind)
-        self._set_attr('BasisSetName', self.tmp_BasisType)
-        self._set_attr('Version', self.tmp_Version)
-        self._set_attr('OrbitalQuantumNumbers', self.tmp_OrbitalQuantumNumbers)
-        self._set_attr('Exponent_ContractionCoefficients', self.tmp_Exponent_ContractionCoefficients)
+        self._set_attr('element', self.tmp_AtomKind)
+        self._set_attr('type', self.tmp_BasisType)
+        self._set_attr('version', self.tmp_Version)
+        self._set_attr('orbital_quantum_numbers', self.tmp_OrbitalQuantumNumbers)
+        self._set_attr('exponent_contraction_coefficients', self.tmp_Exponent_ContractionCoefficients)

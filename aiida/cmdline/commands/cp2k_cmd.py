@@ -50,6 +50,7 @@ class _GaussianBasis(VerdiCommandWithSubcommands, Importable):
             #~ sys.exit(1)
 
         filename = os.path.abspath(args[0])
+        print filename
         #~ group_name = args[1]
         #~ group_description = args[2]
         #~ stop_if_existing = False
@@ -103,8 +104,11 @@ class _GaussianBasis(VerdiCommandWithSubcommands, Importable):
 
         from aiida.orm import DataFactory
 
-        BasisSets = DataFactory('gaussian_basis')
+        BasisSet = DataFactory('gaussian_basis')
         
+        basissets = BasisSet.get_basis_sets(filter_elements = parsed_args.element)
+        for basisset in basissets:
+            print basisset
         
         UpfData = DataFactory('upf')
 

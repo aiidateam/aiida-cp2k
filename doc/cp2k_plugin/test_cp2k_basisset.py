@@ -1,7 +1,7 @@
-from aiida.orm.data.cp2k_basis import Cp2kbasissetData, ParseAndStore_BasissetFile
+from aiida.orm.data.cp2k_basis import Cp2kbasissetData, parseandstore_basissetfile
 
 
-ParseAndStore_BasissetFile("BASIS_SET_SMALL")
+parseandstore_basissetfile("BASIS_SET_SMALL")
 
 
 

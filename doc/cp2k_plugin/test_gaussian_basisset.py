@@ -2,7 +2,7 @@
 
 from aiida.orm.data import gaussian_basis
 
-gg = gaussian_basis.GaussianbasissetData("C", "GTH-TZVP")
+gg = gaussian_basis.GaussianbasisData("C", "GTH-TZVP")
 
 
 exponent_contractioncoefficient=[
@@ -13,21 +13,21 @@ exponent_contractioncoefficient=[
 
 ]
 
-gg.add_Orbital(exponent_contractioncoefficient,   n=1, l=0, m=0, s=0)
-gg.add_Orbital(exponent_contractioncoefficient,   n=1, l=0, m=0, s=0)
-gg.add_Orbital(exponent_contractioncoefficient,   n=2, l=1, m=0, s=0)
+gg.add_orbital(exponent_contractioncoefficient,   n_qn=1, l_qn=0, m_qn=0, spin=0)
+gg.add_orbital(exponent_contractioncoefficient,   n_qn=1, l_qn=0, m_qn=0, spin=0)
+gg.add_orbital(exponent_contractioncoefficient,   n_qn=2, l_qn=1, m_qn=0, spin=0)
 
 
-print gg.get_Norbitals()
+print gg.get_norbitals()
 
-print gg.get_Orbital(1,0,0)
-print gg.get_Orbital(2,0,0)
+print gg.get_orbital(1,0,0)
+print gg.get_orbital(2,0,0)
 
 
-gg.store_all_in_DB()
+gg.store_all_in_db()
 
 print "!!!!!!!!After_saving"
 
-print gg.get_Orbital(2,1,0)
+print gg.get_orbital(2,1,0)
 
 print gg

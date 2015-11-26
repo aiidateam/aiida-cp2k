@@ -157,7 +157,7 @@ def parse_single_basiset(basis):
             exponent_contractioncoefficient)
 
 
-def parseandstore_basissetfile(filename):
+def upload_basissetfile(filename):
     """
     Read different basis sets from a file and store them into a database
 

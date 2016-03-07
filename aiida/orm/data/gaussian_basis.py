@@ -119,6 +119,10 @@ class GaussianbasisData(Data):
             qtmp = models.DbAttribute.objects.filter(
                    key='element', tval=filter_elements)
             q =q.filter(dbattributes__in=qtmp)
+        if filter_types != None:
+            qtmp = models.DbAttribute.objects.filter(
+                   key='type', tval=filter_types)
+            q =q.filter(dbattributes__in=qtmp)
 
         for _ in q:
             yield _.get_aiida_class()

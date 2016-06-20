@@ -9,7 +9,7 @@ from aiida.orm import Data
 
 _RE_FLAGS = re.M | re.X
 
-class gpp(Data):
+class GaussianpseudoData(Data):
     """
     Gaussian Pseudopotential (gpp) class to store gpp's in database and
     retrieve them.
@@ -158,7 +158,7 @@ class gpp(Data):
 
         from aiida.common.exceptions import ValidationError
 
-        super(gpp, self)._validate()
+        super(GaussianpseudoData, self)._validate()
 
         gpp_dict = dict(self.iterattrs())
 
@@ -209,7 +209,7 @@ class gpp(Data):
                 e.message))
 
     def __eq__(self, other):
-        if isinstance(other, gpp):
+        if isinstance(other, GaussianpseudoData):
             other_dict = dict(other.iterattrs())
         elif isinstance(other, dict):
             other_dict = other

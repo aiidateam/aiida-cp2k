@@ -90,7 +90,7 @@ parameters = ParameterData(dict={
 calc = code.new_calc()
 calc.set_computer(computer)
 calc.set_max_wallclock_seconds(30*60) # 30 min
-calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 1})
+calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 4})
 
 calc.use_structure(s)
 calc.use_code(code)

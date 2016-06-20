@@ -2,19 +2,20 @@
 import os
 import json
 from aiida import load_dbenv
-load_dbenv()
+#load_dbenv()
 
 from aiida.orm import Code, Computer
 from aiida.orm import DataFactory
 
 
 # Read computer and code from file (local_config.json)
+'''
 with open('local_config.json') as f:
     in_dict = json.load(f)
     computer = Computer.get(in_dict['computer'])
     code = Code.get(in_dict['code'])
-
-
+'''
+code = Code.get_from_string('cp2k3.0')
 
 #Let's define a simple cubic structure, e.g BaTO3
 StructureData = DataFactory('structure')
@@ -188,9 +189,12 @@ parameters = ParameterData(dict={
 
 #Set up the calculation:
 calc = code.new_calc()
-calc.set_computer(computer)
-calc.set_max_wallclock_seconds(30*60) # 30 min
-calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 1})
+#calc.set_computer(computer)
+
+calc.set_max_wallclock_seconds(1*60*60)
+calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 4})
+calc.set_queue_name("infinijazz")
+
 
 calc.use_structure(s)
 calc.use_code(code)
@@ -199,7 +203,7 @@ calc.use_parameters(parameters)
 #~ calc.use_pseudos_from_family('all_uspp')
 
 
-calc.label = "My first calculation"
+calc.label = "My first cp2k run"
 print calc.store_all()
 calc.submit()
 

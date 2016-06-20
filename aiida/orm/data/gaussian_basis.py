@@ -2,6 +2,7 @@
 Gaussian basis set module
 """
 import os
+import sys
 import re
 from aiida.orm.data import Data
 import argparse
@@ -334,7 +335,7 @@ class GaussianbasisData(Data):
             self._set_attr('exponent_contraction_coefficients',
                            self.__expcontr_coeff)
             self.store()
-    def print_cp2k(self):
+    def print_cp2k(self, filename=None):
 #        print "Hey from print cp2k"
 #        print self.element, self.type
         i=0
@@ -383,24 +384,29 @@ class GaussianbasisData(Data):
                 to_print[j][0][4+l]+=1
                 to_print[j].append(self.exponent_contraction_coefficients[i])
             i+=1
-        
-        print self.element, self.type
-        print len(to_print)
+        if filename and filename != '-':
+            fh = open(filename, 'a')
+        else:
+            fh = sys.stdout
+
+        fh.write( "{} {}\n".format(self.element, self.type))
+        fh.write( "{}\n".format(len(to_print)))
         for bset in to_print :
             for out in bset[0]:
-                print out,
-            print ""
+                fh.write( "{} ".format(out))
+            fh.write( "\n" ) 
             i=0
             while i<bset[0][3]:
-                print "\t",
-                print bset[1][i][0], bset[1][i][1],
+                fh.write( "\t",)
+                fh.write( "{} {}  ".format(bset[1][i][0], bset[1][i][1]))
                 j=1
                 while j<sum(bset[0][4:]):
-                    print bset[1+j][i][1],
+                    fh.write ("{} ".format(bset[1+j][i][1]))
                     j+=1
-                print ""
+                fh.write ( "\n")
                 i+=1
-
+        if fh is not sys.stdout:
+            fh.close()
 # uncomment for the production run
 def parse_single_cp2k_basiset(basis):
     """

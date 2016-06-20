@@ -29,6 +29,8 @@ class CP2KCalculation(JobCalculation):
     _VEL_FILE_NAME = '{}-vel-1.xyz'.format(_PROJECT_NAME)
     _FORCES_FILE_NAME = '{}-frc-1.xyz'.format(_PROJECT_NAME)
     _ENER_FILE_NAME = '{}-1.ener'.format(_PROJECT_NAME)
+    _BASIS_SET_FILE_NAME = 'aiida.basis'
+    _PSEUDO_FILE_NAME = 'aiida.pseudo'
     _COORDS_FILE_NAME = 'aiida.coords.xyz'
 
     # List of keywords which are not allowed when running CP2K under AiiDA
@@ -293,12 +295,18 @@ class CP2KCalculation(JobCalculation):
         basis_set_dict['H'] = 'DZV-GTH-PBE'
         basis_set_dict['O'] = 'DZVP-GTH-PBE'
         #~ basis_set_dict['O'] = 'TZV2P-GTH'
-        basis_set_file_name = '../../GTH_BASIS_SETS'
-        potential_file_name = '../../POTENTIAL'
+        basis_set_file_name = tempfolder.get_abs_path(self._BASIS_SET_FILE_NAME)
+        potential_file_name = '../../../../POTENTIAL'
         ########## PATCH #################
 
-        #~ parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = basis_set_file_name
-        #~ parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = potential_file_name
+        parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = self._BASIS_SET_FILE_NAME
+        parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = potential_file_name
+        from aiida.orm.data.gaussian_basis import GaussianbasisData as BasisSet
+        for at_kind, basis_kind in basis_set_dict.items():
+            basissets = BasisSet.get_basis_sets(filter_elements = 
+            at_kind, filter_types=basis_kind)
+            for basisset in basissets:
+                basisset.print_cp2k(basis_set_file_name)
 
         # Generate dictionary for KIND based on the AiiDA 'structure.kinds' data
         subsysdict['KIND'] = [{'_': kind.name,
@@ -308,6 +316,8 @@ class CP2KCalculation(JobCalculation):
                                 'MASS': kind.mass,
                                 } 
                                 for kind in structure.kinds]
+
+        print sybsysdict['KIND']
         # Deal with the cell:
         subsysdict['CELL'] = {cell_direction:'{:<15} {:<15} {:<15}'.format(*structure.cell[index])
                         for index, cell_direction in enumerate(['A', 'B', 'C'])}

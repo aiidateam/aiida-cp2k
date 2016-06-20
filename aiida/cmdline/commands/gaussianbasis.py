@@ -40,7 +40,7 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
        # print filename
 
         load_dbenv()
-        from aiida.orm.data.gaussian_basis import upload_cp2k_basissetfile
+        from aiida.orm.data.gaussianbasis import upload_cp2k_basissetfile
 
         upload_cp2k_basissetfile(filename)
 
@@ -63,7 +63,7 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
         args = list(args)
         parsed_args = parser.parse_args(args)
         load_dbenv()
-        from aiida.orm.data.gaussian_basis import GaussianbasisData as BasisSet
+        from aiida.orm.data.gaussianbasis import GaussianbasisData as BasisSet
         basissets = BasisSet.get_basis_sets(filter_elements = parsed_args.element)
         for basisset in basissets:
             print ("Found a basis set for the element {} of type "
@@ -94,7 +94,7 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
         if parsed_args.format not in output_formats:
             raise NameError("Format "+parsed_args.format+" is not known. Please "
                             "use -h option to get a list of available formats")
-        from aiida.orm.data.gaussian_basis import GaussianbasisData as BasisSet
+        from aiida.orm.data.gaussianbasis import GaussianbasisData as BasisSet
         basissets = BasisSet.get_basis_sets(filter_elements =
         parsed_args.element, filter_types=parsed_args.type)
         for basisset in basissets:

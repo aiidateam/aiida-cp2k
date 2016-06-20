@@ -5,6 +5,7 @@ from aiida.orm.calculation.job import JobCalculation
 from aiida.common.utils import classproperty #Do i need this?
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.parameter import ParameterData
+from aiida.orm.data.gaussianbasis import GaussianbasisData
 from aiida.orm.data.remote import RemoteData
 
 from aiida.common.datastructures import CalcInfo
@@ -127,9 +128,45 @@ class CP2KCalculation(JobCalculation):
                'docstring': ("Use a remote folder as parent folder (for "
                              "restarts and similar"),
                },
+            "basisset": {
+               'valid_types': GaussianbasisData,
+               'additional_parameter': 'kind',
+               'linkname': cls._get_linkname_basisset ,
+               'docstring': ("Use a basisset of a cetrain type"),
+               },
             })
         return retdict
 
+    @classmethod
+    def _get_linkname_basisset(cls, kind):
+        with open("/home/yakutovich/test.txt", "a") as myfile:
+            myfile.write(kind)
+        if isinstance(kind, (tuple, list)):
+            suffix_string = "_".join(kind)
+        elif isinstance(kind, basestring):
+            suffix_string = kind
+        else:
+            raise TypeError("The parameter 'kind' of _get_linkname_basisset can "
+                            "only be a string or a list of strings")
+        return "basisset_{}".format(suffix_string)
+    
+
+    def use_basissets_type(self, type_name):
+        try:
+            structure = self.get_inputs_dict()[self.get_linkname('structure')]
+        except AttributeError:
+            raise ValueError("Structure is not set yet! Therefore, the method "
+                             "use_basissets_type cannot automatically set "
+                             "the basissets")
+        for at_kind in structure.kinds:
+            with open("/home/yakutovich/test.txt", "a") as myfile:
+                myfile.write("Hello:{}:".format(at_kind.name))
+            basissets = GaussianbasisData.get_basis_sets(filter_elements = 
+            at_kind.name, filter_types=type_name)
+            for basisset in basissets:
+                self.use_basisset(basisset, at_kind.name)
+
+    
 
     def _prepare_for_submission(self, tempfolder, inputdict):
         """
@@ -201,6 +238,12 @@ class CP2KCalculation(JobCalculation):
             if not isinstance(parent_calc_folder, RemoteData):
                 raise InputValidationError("parent_calc_folder, if specified,"
                     "must be of type RemoteData")
+
+        with open("/home/yakutovich/test.dict", 'w') as fff:
+            fff.write(inputdict.__str__())
+        basis_set_dict = {}
+        for kind in structure.kinds:
+            basis_set_dict[kind.name]=inputdict.pop(self.get_linkname('basisset', kind.name))
 
         # Here, there should be no more parameters...
         if inputdict:
@@ -290,10 +333,11 @@ class CP2KCalculation(JobCalculation):
         potentials_dict = {}
         potentials_dict['H'] = 'GTH-PBE-q1'
         potentials_dict['O'] = 'GTH-PBE-q6'
-        basis_set_dict = {}
+        with open("/home/yakutovich/test", 'w') as fff:
+            fff.write(basis_set_dict.__str__())
         #~ basis_set_dict['H'] = 'TZV2P-GTH'
-        basis_set_dict['H'] = 'DZV-GTH-PBE'
-        basis_set_dict['O'] = 'DZVP-GTH-PBE'
+#        basis_set_dict['H'] = 'DZV-GTH-PBE'
+#        basis_set_dict['O'] = 'DZVP-GTH-PBE'
         #~ basis_set_dict['O'] = 'TZV2P-GTH'
         basis_set_file_name = tempfolder.get_abs_path(self._BASIS_SET_FILE_NAME)
         potential_file_name = '../../../../POTENTIAL'
@@ -301,23 +345,18 @@ class CP2KCalculation(JobCalculation):
 
         parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = self._BASIS_SET_FILE_NAME
         parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = potential_file_name
-        from aiida.orm.data.gaussian_basis import GaussianbasisData as BasisSet
-        for at_kind, basis_kind in basis_set_dict.items():
-            basissets = BasisSet.get_basis_sets(filter_elements = 
-            at_kind, filter_types=basis_kind)
-            for basisset in basissets:
-                basisset.print_cp2k(basis_set_file_name)
+        for at_kind, basisset in basis_set_dict.items():
+            basisset.print_cp2k(basis_set_file_name)
 
         # Generate dictionary for KIND based on the AiiDA 'structure.kinds' data
         subsysdict['KIND'] = [{'_': kind.name,
                                 'ELEMENT':kind.name,
-                                'BASIS_SET': basis_set_dict[kind.name],
+                                'BASIS_SET': basis_set_dict[kind.name].type,
                                 'POTENTIAL': potentials_dict[kind.name],
                                 'MASS': kind.mass,
                                 } 
                                 for kind in structure.kinds]
 
-        print sybsysdict['KIND']
         # Deal with the cell:
         subsysdict['CELL'] = {cell_direction:'{:<15} {:<15} {:<15}'.format(*structure.cell[index])
                         for index, cell_direction in enumerate(['A', 'B', 'C'])}

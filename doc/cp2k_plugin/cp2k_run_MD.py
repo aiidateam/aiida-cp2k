@@ -215,13 +215,13 @@ parameters = ParameterData(dict={
 #Set up the calculation:
 calc = code.new_calc()
 #calc.set_computer(computer)
-
 calc.set_max_wallclock_seconds(1*60*60)
 calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 4})
 calc.set_queue_name("infinijazz")
 
 
 calc.use_structure(s)
+calc.use_basissets_type("DZVP-GTH-PBE")
 calc.use_code(code)
 calc.use_parameters(parameters)
 #~ calc.use_kpoints(kpoints)

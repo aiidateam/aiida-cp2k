@@ -1,4 +1,4 @@
-from aiida.orm.data.gaussian_basis import GaussianbasisData, upload_cp2k_basissetfile
+from aiida.orm.data.gaussianbasis import GaussianbasisData, upload_cp2k_basissetfile
 from aiida.djsite.db import models
 upload_cp2k_basissetfile("BASIS_SET_SMALL")
 q = models.DbNode.objects.filter(

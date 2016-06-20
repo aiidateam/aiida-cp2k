@@ -1,8 +1,8 @@
 #/usr/bin/python
 
-from aiida.orm.data import gaussian_basis
+from aiida.orm.data import gaussianbasis
 
-gg = gaussian_basis.GaussianbasisData("C", "GTH-TZVP")
+gg = gaussianbasis.GaussianbasisData("C", "GTH-TZVP")
 
 
 exponent_contractioncoefficient=[

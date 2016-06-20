@@ -104,7 +104,7 @@ class _GaussianBasis(VerdiCommandWithSubcommands, Importable):
 
         from aiida.orm import DataFactory
 
-        BasisSet = DataFactory('gaussian_basis')
+        BasisSet = DataFactory('gaussianbasis')
         
         basissets = BasisSet.get_basis_sets(filter_elements = parsed_args.element)
         for basisset in basissets:

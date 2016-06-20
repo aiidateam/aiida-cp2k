@@ -142,7 +142,7 @@ parameters = ParameterData(dict={
           'motion': {
                 'MD': {
                     'ensemble': 'NVE',
-                    'steps': 10,
+                    'steps': 1,
                     'timestep': 0.1,
                     'temperature':300,
                 },
@@ -188,10 +188,10 @@ parameters = ParameterData(dict={
                           '_': 'ON',
                           'MINIMIZER': 'DIIS',
                       },
-                      'MAX_SCF': 20,
+                      'MAX_SCF': 10,
                       'EPS_SCF': 1.0E-07,
                       'OUTER_SCF': {
-                          'MAX_SCF': 10,
+                          'MAX_SCF': 1,
                           'EPS_SCF': 1.0E-7,
                       },
                       'PRINT': {

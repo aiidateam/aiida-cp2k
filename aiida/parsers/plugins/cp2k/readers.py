@@ -26,13 +26,19 @@ class CP2KOutputFileReader(CP2KBaseReader):
         if stat(filename).st_size == 0:
             raise RuntimeError("CP2K output log file is empty")
 
-        self._fh = file(filename, 'r')
+        self._fn = filename
 
     def parse(self):
         """
         TODO: dummy function
         """
-        pass
+        with open (self._fn, 'r') as f:
+            output_file_lines = f.readlines()
+
+        for line in output_file_lines:
+            if ('ENERGY|' in line):
+                self._results['energy']=line.split()[8]
+
 
 
 class CP2KEnergyFileReader(CP2KBaseReader):

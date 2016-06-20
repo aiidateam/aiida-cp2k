@@ -222,6 +222,7 @@ calc.set_queue_name("infinijazz")
 
 calc.use_structure(s)
 calc.use_basissets_type("DZVP-GTH-PBE")
+calc.use_pseudo_type(gpp_type="GTH", xc="PBE")
 calc.use_code(code)
 calc.use_parameters(parameters)
 #~ calc.use_kpoints(kpoints)

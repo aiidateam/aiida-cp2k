@@ -65,7 +65,7 @@ class CP2KBasicParser(Parser):
                                 self._calc._ENER_FILE_NAME)
         energies = CP2KEnergyFileReader(ener_file_path)
         energies.parse()
-
+        '''
         # parse the trajectory file
         traj_file_path = path.join(out_folder.get_abs_path('.'),
                                 self._calc._TRAJ_FILE_NAME)
@@ -86,10 +86,10 @@ class CP2KBasicParser(Parser):
             traj.set_array(this_name, raw_trajectory[this_name])
         new_nodes_list = [(self.get_linkname_trajectory(), traj)]
 
-        
+        '''
         # Update the result dictionary with the parsed data
         return_dict.update(cp2koutput.data)
         return_dict.update(energies.data)
-        return_dict.update(trajectories.data)
+#        return_dict.update(trajectories.data)
 
         return successful, return_dict

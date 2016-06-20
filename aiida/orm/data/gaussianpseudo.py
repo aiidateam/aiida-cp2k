@@ -312,6 +312,10 @@ class GaussianpseudoData(Data):
         f.write('\n')
         f.close()
 
+    def get_full_type(self):
+        return "{}-{}-q{}".format(self.get_attr("gpp_type"),
+        self.get_attr("xc")[0], self.get_attr("n_val"))
+
 def _dict_to_list(di):
     li = [[k, v] for k, v in di.items()]
     li.sort()

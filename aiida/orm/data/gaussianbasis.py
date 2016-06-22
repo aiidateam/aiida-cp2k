@@ -86,11 +86,17 @@ class GaussianbasisData(Data):
         """
         return self.get_attr('element', None)
     @property
-    def type(self):
+    def id(self):
         """
-        return: type
+        return: id
         """
-        return self.get_attr('type', None)
+        return self.get_attr('id', None)
+    @property
+    def tags(self):
+        """
+        return: tags
+        """
+        return self.get_attr('tags', None)
     @property
     def version(self):
         """
@@ -110,7 +116,7 @@ class GaussianbasisData(Data):
         """
         return self.get_attr('exponent_contraction_coefficients', None)
     @classmethod
-    def get_basis_sets(cls, filter_elements=None, filter_types=None):
+    def get_basis_sets(cls, filter_elements=None, filter_tags=None):
         """
         Return the UpfFamily group with the given name.
         """
@@ -120,10 +126,12 @@ class GaussianbasisData(Data):
             qtmp = models.DbAttribute.objects.filter(
                    key='element', tval=filter_elements)
             q =q.filter(dbattributes__in=qtmp)
-        if filter_types != None:
-            qtmp = models.DbAttribute.objects.filter(
-                   key='type', tval=filter_types)
-            q =q.filter(dbattributes__in=qtmp)
+        if filter_tags:
+            for tag in filter_tags:
+                qtmp = models.DbAttribute.objects.filter(
+                    key__startswith='tags.',
+                    tval=tag)
+                q =q.filter(dbattributes__in=qtmp)
 
         for _ in q:
             yield _.get_aiida_class()
@@ -245,12 +253,12 @@ class GaussianbasisData(Data):
         self.__expcontr_coeff.append(
             exp_contr_coeff)
         return True
-    def add_whole_basisset(self, atom_kind, basis_type, quantum_numbers,
+    def add_whole_basisset(self, atom_kind, tags, quantum_numbers,
                            exp_contr_coeffs):
         """
         Add a full set of orbitals to the basis set
         param: atom_kind: name of the atom in the periodic table
-        param: basis_type: basis set type
+        param: tags: tags characterizing basis
         param: version: basis set Version
         param: quantum_numbers: a list containing a set of lists, where each of
         them describes a particular orbital in the following way:
@@ -282,7 +290,8 @@ class GaussianbasisData(Data):
 
         """
         self.__atomkind = atom_kind
-        self.__basistype = basis_type
+        self.__tags = tags
+        self.__id = "-".join(tags)
         if len(quantum_numbers) != len(exp_contr_coeffs):
             parser.error("Error! The array with quantum numbers and the array "
                          "with exponents have different size! Something "
@@ -316,24 +325,25 @@ class GaussianbasisData(Data):
         print ("There are {} basissets for the {} element in the "
                "DB".format(len(q), self.__atomkind))
         qtmp = models.DbAttribute.objects.filter(
-            key='type', tval=self.__basistype)
+            key='id', tval=self.__id)
         q = q.filter(dbattributes__in=qtmp)
-        self._set_attr('type', self.__basistype)
+        self._set_attr('id', self.__id)
         print ("Among them, there are {} basissets of "
-               "type: {}".format(len(q), self.__basistype))
+               "type: {}".format(len(q), self.__id))
         if len(q) > 0:
             print("ERROR: The new basiset of type {} for the {} "
                   "atom  can NOT be  uploaded because it already exists in the "
                   "database\nOr is it a new version of the "
-                  "basiset?".format(self.__basistype, self.__atomkind))
+                  "basiset?".format(self.__id, self.__atomkind))
         else:
             print ("SUCCESS: Apploading the basiset {} {} "
-                   .format(self.__atomkind, self.__basistype))
+                   .format(self.__atomkind, self.__id))
             self._set_attr('version', '1.0')
             self._set_attr('orbital_quantum_numbers',
                            self.__orb_qm_numbers)
             self._set_attr('exponent_contraction_coefficients',
                            self.__expcontr_coeff)
+            self._set_attr('tags',self.__tags)
             self.store()
     def print_cp2k(self, filename=None):
 #        print "Hey from print cp2k"
@@ -389,7 +399,7 @@ class GaussianbasisData(Data):
         else:
             fh = sys.stdout
 
-        fh.write( "{} {}\n".format(self.element, self.type))
+        fh.write( "{} {}\n".format(self.element, self.id))
         fh.write( "{}\n".format(len(to_print)))
         for bset in to_print :
             for out in bset[0]:
@@ -442,8 +452,11 @@ def parse_single_cp2k_basiset(basis):
            ....,
         ]
     """
+
+    import re
 # This code takes name of the atom and basis set type.
     name, btype = basis[0].split()[0], basis[0].split()[1]
+    tags=re.split(r"(?=\D)-(?=\D)",btype,flags=re.I)
 # Second line contains the number of blocks
     n_blocks = int(basis[1].split()[0])
     nline = 1
@@ -502,7 +515,7 @@ def parse_single_cp2k_basiset(basis):
             l_qn += 1
         nline += int(qnumbers[3]) - 1
         i_bl += 1
-    return (name, btype, orbital_quantum_numbers,
+    return (name, tags, orbital_quantum_numbers,
             exponent_contractioncoefficient)
 def upload_cp2k_basissetfile(filename):
     """
@@ -545,10 +558,10 @@ def upload_cp2k_basissetfile(filename):
 # Using regular expressions to remove text in parantheses from the very first
 # line, which contains the name of the basis set
                 tmp_basis[0] = re.sub('\([^)]*\)', '', tmp_basis[0]) # pylint: disable=anomalous-backslash-in-string
-                name, basis_type, orbqn, expn = parse_single_cp2k_basiset(
+                name, tags, orbqn, expn = parse_single_cp2k_basiset(
                     tmp_basis)
                 cp2k_basis = GaussianbasisData()
-                cp2k_basis.add_whole_basisset(name, basis_type, orbqn, expn)
+                cp2k_basis.add_whole_basisset(name, tags, orbqn, expn)
                 cp2k_basis.store_all_in_db()
                 tmp_basis = [] # empty the temporary basis set storage
                 line_number = -1

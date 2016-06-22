@@ -59,16 +59,17 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
         parser.add_argument('-e', '--element', type=str, default=None,
                             help="Filter the families only to those containing "
                                  "a pseudo for each of the specified elements")
+        parser.add_argument('tags',metavar='tag',type=str,nargs='*',help='tags')
         parser.set_defaults(with_description=False)
         args = list(args)
         parsed_args = parser.parse_args(args)
         load_dbenv()
         from aiida.orm.data.gaussianbasis import GaussianbasisData as BasisSet
-        basissets = BasisSet.get_basis_sets(filter_elements = parsed_args.element)
+        basissets = BasisSet.get_basis_sets(filter_elements = parsed_args.element, filter_tags=parsed_args.tags)
         for basisset in basissets:
             print ("Found a basis set for the element {} of type "
             "{}".format(basisset.element,
-            basisset.type))
+            ", ".join(basisset.tags)))
     def printbasisset(self, *args):
         """
         Print on screen a given basiset
@@ -78,11 +79,10 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
         parser = argparse.ArgumentParser(
             prog=self.get_full_command_name(),
             description='Print a particular AiiDA gaussian basisset.')
-        parser.add_argument('element',  type=str,
+        parser.add_argument('-e', '--element', type=str, default=None,
                             help="Filter the families only to those containing "
                                  "a pseudo for each of the specified elements")
-        parser.add_argument('-t', '--type',  type=str, default=None,
-                            help="Show also the description for the UPF family")
+        parser.add_argument('tags',metavar='tag',type=str,nargs='*',help='tags')
         parser.add_argument('-f', '--format', type=str,
                             default='cp2k',
                             help="Chose the output format for the "
@@ -96,11 +96,8 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
                             "use -h option to get a list of available formats")
         from aiida.orm.data.gaussianbasis import GaussianbasisData as BasisSet
         basissets = BasisSet.get_basis_sets(filter_elements =
-        parsed_args.element, filter_types=parsed_args.type)
+        parsed_args.element, filter_tags=parsed_args.tags)
         for basisset in basissets:
-            print ("Found a basis set for the element {} of type "
-            "{}".format(basisset.element,
-            basisset.type))
             if parsed_args.format == 'cp2k':
                 basisset.print_cp2k()
             if parsed_args.format == 'gaussian':

@@ -65,9 +65,6 @@ class GaussianpseudoData(Data):
         from aiida.common.exceptions import UniquenessError, PluginInternalError
 
         gpp_data['n_val'] = sum(gpp_data['n_elec'])
-        gpp_data['id'] = ['{}-{}-q{}'.format(
-            gpp_data['gpp_type'], _, gpp_data['n_val'])
-                          for _ in gpp_data['xc']]
         is_new = True
         # query for element and id to check if gpp with same name exists
         for pid in gpp_data['id']:
@@ -94,6 +91,7 @@ class GaussianpseudoData(Data):
                 raise PluginInternalError('found 2 gpps in DB with same id')
 
         if is_new:
+            print "uploading to db"
             instance = cls()
             for k, v in gpp_data.iteritems():
                 instance._set_attr(k, v)
@@ -101,6 +99,7 @@ class GaussianpseudoData(Data):
             instance.store()
             return instance
         else:
+            print "already exists in db"
             return None
 
     @classmethod
@@ -371,48 +370,61 @@ def _parse_single_cp2k_gpp(match):
     from aiida.common.exceptions import ParsingError
     element = match.group('element').strip(' \t\r\f\v\n')
     names = match.group('name').strip(' \t\r\f\v\n').split()
-    try:
-        n_elec = [int(el) for el in (match.group('el_config').strip(
-            ' \t\r\f\v\n').split())]
-        body_loc = match.group('body_loc').strip(' \t\r\f\v\n').split()
-        nprj = int(match.group('nproj_nonloc').strip(' \t\r\f\v\n'))
-        body_nonloc = match.group('body_nonloc').strip(' \t\r\f\v\n')
+    print "parsing", element, ", ".join(names)
 
-        r_loc = float(body_loc[0])
-        nexp_ppl = int(body_loc[1])
-        cexp_ppl = []
-        for val in body_loc[2:]:
-            cexp_ppl.append(float(val))
-        next_proj = True
-        n = 0
-        r = []
-        nprj_ppnl = []
-        hprj_ppnl = []
-        for line in body_nonloc.splitlines():
-            line = line.split()
-            offset = 0
-            if next_proj:
-                hprj_ppnl.append([])
-                r.append(float(line[offset]))
-                nprj_ppnl.append(int(line[offset+1]))
-                nhproj = nprj_ppnl[-1]*(nprj_ppnl[-1]+1)/2
-                offset = 2
-            for data in line[offset:]:
-                hprj_ppnl[n].append(float(data))
-            next_proj = len(hprj_ppnl[n]) == nhproj
-            if next_proj:
-                n = n+1
+    n_elec = [int(el) for el in (match.group('el_config').strip(
+        ' \t\r\f\v\n').split())]
+    body_loc = match.group('body_loc').strip(' \t\r\f\v\n').split()
+    nprj = int(match.group('nproj_nonloc').strip(' \t\r\f\v\n'))
+    body_nonloc = match.group('body_nonloc').strip(' \t\r\f\v\n')
 
-        namessp = [_.split('-') for _ in names]
+    r_loc = float(body_loc[0])
+    nexp_ppl = int(body_loc[1])
+    cexp_ppl = []
+    for val in body_loc[2:]:
+        cexp_ppl.append(float(val))
+    next_proj = True
+    n = 0
+    r = []
+    nprj_ppnl = []
+    hprj_ppnl = []
+    for line in body_nonloc.splitlines():
+        line = line.split()
+        offset = 0
+        if next_proj:
+            hprj_ppnl.append([])
+            r.append(float(line[offset]))
+            nprj_ppnl.append(int(line[offset+1]))
+            nhproj = nprj_ppnl[-1]*(nprj_ppnl[-1]+1)/2
+            offset = 2
+        for data in line[offset:]:
+            hprj_ppnl[n].append(float(data))
+        next_proj = len(hprj_ppnl[n]) == nhproj
+        if next_proj:
+            n = n+1
 
-        gpp_type = [_[0] for _ in namessp if len(_) >= 1]
-        xc = [_[1] for _ in namessp if len(_) >= 2]
-        n_val = [_[2] for _ in namessp if len(_) >= 3]
+    namessp = [_.split('-') for _ in names]
 
-        xc = list(set(xc))
-        unique_type = list(set(gpp_type))
-        unique_n_val = list(set(n_val))
+    parse_name = any(len(_) > 1 for _ in namessp)
 
+    gpp_type = [_[0] for _ in namessp if len(_) >= 1]
+    xc = [_[1] for _ in namessp if len(_) >= 2]
+    n_val = [_[2] for _ in namessp if len(_) >= 3]
+
+    xc = list(set(xc))
+    unique_type = list(set(gpp_type))
+    if not n_val:
+        n_val = [str(sum(n_elec))]
+    unique_n_val = list(set(n_val))
+
+    data_to_store = ('element', 'gpp_type', 'xc', 'n_elec', 'r_loc',
+                     'nexp_ppl', 'cexp_ppl', 'nprj', 'r', 'nprj_ppnl',
+                     'hprj_ppnl')
+    gpp_data = {}
+    for _ in data_to_store:
+        gpp_data[_] = locals()[_]
+
+    if parse_name:
         if len(unique_type) == 1 and len(unique_n_val) == 1:
             gpp_type = unique_type[0]
             n_val = unique_n_val[0]
@@ -421,18 +433,26 @@ def _parse_single_cp2k_gpp(match):
                 'gpp_type and n_val in pseudo name gpp_type-xc-n_val must be '
                 'unique')
 
-        n_val = int(n_val.lstrip('q'))
+        try:
+            n_val = int(n_val.lstrip('q'))
+        except ValueError:
+            raise ValueError('pseudo potential name should be "type-xc-q<nval>" with nval the number of valence electrons.')
+
+
+        gpp_data['id'] = ['{}-{}-q{}'.format(gpp_type, _, n_val) 
+                for _ in gpp_data['xc']]
+        gpp_data['gpp_type'] = gpp_type
+        gpp_data['n_val']=n_val
+        gpp_data['xc'] = xc
 
         if n_val != sum(n_elec):
             raise ParsingError(
                 'number of valence electron must be sum of occupancy')
-        data_to_store = ('element', 'gpp_type', 'xc', 'n_elec', 'r_loc',
-                         'nexp_ppl', 'cexp_ppl', 'nprj', 'r', 'nprj_ppnl',
-                         'hprj_ppnl')
-        gpp_data = {}
-        for _ in data_to_store:
-            gpp_data[_] = locals()[_]
-    except:
-        raise ParsingError('invalid format for {} {}'.format(
-            element, ' '.join(names)))
+
+    else:
+        gpp_data['id'] = names
+        gpp_data['gpp_type'] = ''
+        gpp_data['n_val'] = ''
+        gpp_data['xc'] = []
+
     return gpp_data

@@ -9,6 +9,7 @@ from aiida.orm import Data
 
 _RE_FLAGS = re.M | re.X
 
+
 class GaussianpseudoData(Data):
     """
     Gaussian Pseudopotential (gpp) class to store gpp's in database and
@@ -119,8 +120,8 @@ class GaussianpseudoData(Data):
         from aiida.djsite.db import models
         from aiida.common.exceptions import PluginInternalError
 
-        q = models.DbNode.objects.filter(type__startswith=
-                                         cls._query_type_string)
+        q = models.DbNode.objects.filter(
+            type__startswith=cls._query_type_string)
 
         notnone = 0
         if element is not None:
@@ -151,7 +152,6 @@ class GaussianpseudoData(Data):
 
         for _ in q:
             yield _.get_aiida_class()
-
 
     def _validate(self):
 
@@ -198,7 +198,7 @@ class GaussianpseudoData(Data):
             # check size of upper triangular part of hprj_ppnl matrices
             for iprj in range(0, len(gpp_dict['nprj_ppnl'])):
                 nprj = gpp_dict['nprj_ppnl'][iprj]
-                if len(gpp_dict['hprj_ppnl'][iprj]) != nprj*(nprj+1)/2:
+                if len(gpp_dict['hprj_ppnl'][iprj]) != nprj * (nprj + 1) / 2:
                     raise ValidationError(
                         'Incorrect number of hprj_ppnl coefficients')
         except ValidationError as e:
@@ -268,7 +268,6 @@ class GaussianpseudoData(Data):
         n_uploaded = n_gpp - uploaded.count(None)
         return n_gpp, n_uploaded
 
-
     def write_cp2k_gpp_to_file(self, filename, mode='w'):
         """
         Write a gpp instance to file in CP2K format.
@@ -296,7 +295,7 @@ class GaussianpseudoData(Data):
         f.write('\n')
         f.write(fitg(gpp_data['nprj']) + '\n')
         for i in range(gpp_data['nprj']):
-            f.write(ffp(gpp_data['r'][i]) +  fitg(gpp_data['nprj_ppnl'][i]))
+            f.write(ffp(gpp_data['r'][i]) + fitg(gpp_data['nprj_ppnl'][i]))
             nwrite = gpp_data['nprj_ppnl'][i]
             hprj = iter(gpp_data['hprj_ppnl'][i])
             n_intend = 0
@@ -305,20 +304,22 @@ class GaussianpseudoData(Data):
                     f.write(ffp(hprj.next()))
                 f.write('\n')
                 n_intend += 1
-                nwrite = nwrite-1
+                nwrite = nwrite - 1
                 if nwrite > 0:
-                    f.write(' '*20+' '*15*n_intend)
+                    f.write(' ' * 20 + ' ' * 15 * n_intend)
         f.write('\n')
         f.close()
 
     def get_full_type(self):
         return "{}-{}-q{}".format(self.get_attr("gpp_type"),
-        self.get_attr("xc")[0], self.get_attr("n_val"))
+                                  self.get_attr("xc")[0], self.get_attr("n_val"))
+
 
 def _dict_to_list(di):
     li = [[k, v] for k, v in di.items()]
     li.sort()
     return li
+
 
 def _li_round(li, prec=6):
     if isinstance(li, float):
@@ -394,14 +395,14 @@ def _parse_single_cp2k_gpp(match):
         if next_proj:
             hprj_ppnl.append([])
             r.append(float(line[offset]))
-            nprj_ppnl.append(int(line[offset+1]))
-            nhproj = nprj_ppnl[-1]*(nprj_ppnl[-1]+1)/2
+            nprj_ppnl.append(int(line[offset + 1]))
+            nhproj = nprj_ppnl[-1] * (nprj_ppnl[-1] + 1) / 2
             offset = 2
         for data in line[offset:]:
             hprj_ppnl[n].append(float(data))
         next_proj = len(hprj_ppnl[n]) == nhproj
         if next_proj:
-            n = n+1
+            n = n + 1
 
     namessp = [_.split('-') for _ in names]
 
@@ -436,13 +437,13 @@ def _parse_single_cp2k_gpp(match):
         try:
             n_val = int(n_val.lstrip('q'))
         except ValueError:
-            raise ValueError('pseudo potential name should be "type-xc-q<nval>" with nval the number of valence electrons.')
+            raise ValueError(
+                'pseudo potential name should be "type-xc-q<nval>" with nval the number of valence electrons.')
 
-
-        gpp_data['id'] = ['{}-{}-q{}'.format(gpp_type, _, n_val) 
-                for _ in gpp_data['xc']]
+        gpp_data['id'] = ['{}-{}-q{}'.format(gpp_type, _, n_val)
+                          for _ in gpp_data['xc']]
         gpp_data['gpp_type'] = gpp_type
-        gpp_data['n_val']=n_val
+        gpp_data['n_val'] = n_val
         gpp_data['xc'] = xc
 
         if n_val != sum(n_elec):

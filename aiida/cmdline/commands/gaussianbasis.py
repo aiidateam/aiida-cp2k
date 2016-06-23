@@ -44,8 +44,6 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
 
         upload_cp2k_basissetfile(filename)
 
-
-
     def listbasis(self, *args):
         """
         Print on screen the list of gaussian basissets installed
@@ -70,6 +68,7 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
             print ("Found a basis set for the element {} of type "
             "{}".format(basisset.element,
             ", ".join(basisset.tags)))
+
     def printbasisset(self, *args):
         """
         Print on screen a given basiset

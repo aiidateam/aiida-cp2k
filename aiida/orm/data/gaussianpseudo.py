@@ -93,19 +93,25 @@ class GaussianpseudoData(Data):
         gpp_data['version'] = version
 
         if is_new:
+            do_upload = True
             if any(_ > 1 for _ in gpp_data['version']):
-                print "pseudo with same id already exists, uploading it to db as newer version"
-            else:
+                print "pseudo with same id but different coefficients already exists, do you want to upload a new version? [y/N]"
+                do_upload = raw_input().strip().lower() == 'y'
+            if do_upload:
                 print "uploading to db"
-            instance = cls()
-            for k, v in gpp_data.iteritems():
-                instance._set_attr(k, v)
-            instance._set_attr('default', True)
-            instance._validate()
-            instance.store()
-            return instance
+                instance = cls()
+                for k, v in gpp_data.iteritems():
+                    instance._set_attr(k, v)
+                instance._set_attr('default', True)
+                instance._validate()
+                instance.store()
+                return instance
+            else:
+                print "no upload"
+                return None
         else:
-            print "already exists in db"
+            print "pseudo already exists"
+            print "no upload"
             return None
 
     @classmethod

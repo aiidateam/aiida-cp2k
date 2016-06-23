@@ -17,6 +17,9 @@ class GaussianpseudoData(Data):
     fixme: extend to NLCC pseudos.
     """
 
+    def _init_internal_params(self):
+        self._updatable_attributes = ['default']
+
     @classmethod
     def create_if_not_existing(cls, gpp_data):
         """
@@ -67,6 +70,7 @@ class GaussianpseudoData(Data):
 
         gpp_data['n_val'] = sum(gpp_data['n_elec'])
         is_new = True
+        version = []
         # query for element and id to check if gpp with same name exists
         for pid in gpp_data['id']:
             q = models.DbNode.objects.filter(
@@ -77,25 +81,26 @@ class GaussianpseudoData(Data):
             qtmp = models.DbAttribute.objects.filter(
                 key__startswith='id.', tval=pid)
             q = q.filter(dbattributes__in=qtmp)
-            if len(q) == 1:
-                qq = q[0].get_aiida_class()
-                # if upf with same name exists, do not create a new one,
-                # but throw an error if it is not equal
-                # (within some tolerance of 1.0E-6)
-                if qq == gpp_data:
+
+            version.append(len(q) + 1)
+            pseudos_with_same_id = [_.get_aiida_class() for _ in q]
+            for pseudo in pseudos_with_same_id:
+                if pseudo == gpp_data:
                     is_new = False
-                else:
-                    raise UniquenessError(
-                        'another gpp already exists under the same name {} {}'
-                        .format(gpp_data['element'], pid))
-            elif len(q) > 1:
-                raise PluginInternalError('found 2 gpps in DB with same id')
+                elif pseudo.get_attr('default', None):
+                    pseudo._set_attr('default', False)
+
+        gpp_data['version'] = version
 
         if is_new:
-            print "uploading to db"
+            if any(_ > 1 for _ in gpp_data['version']):
+                print "pseudo with same id already exists, uploading it to db as newer version"
+            else:
+                print "uploading to db"
             instance = cls()
             for k, v in gpp_data.iteritems():
                 instance._set_attr(k, v)
+            instance._set_attr('default', True)
             instance._validate()
             instance.store()
             return instance
@@ -104,7 +109,7 @@ class GaussianpseudoData(Data):
             return None
 
     @classmethod
-    def get_pseudos(cls, element=None, gpp_type=None, xc=None, n_val=None):
+    def get_pseudos(cls, element=None, gpp_type=None, xc=None, n_val=None, version=None, default=True):
         """
         Return all instances stored in DB that match a number of optional
         parameters.
@@ -144,14 +149,21 @@ class GaussianpseudoData(Data):
                                                      ival=n_val)
             q = q.filter(dbattributes__in=qtmp)
             notnone += 1
+        if version is not None:
+            qtmp = models.DbAttribute.objects.filter(key__startswith='version.',
+                                                     ival=version)
+            q = q.filter(dbattributes__in=qtmp)
+            notnone += 1
 
         q = q.distinct()
 
-        if notnone == 4 and len(q) > 1:
+        if notnone == 5 and len(q) > 1:
             raise PluginInternalError('found gpp is not unique.')
 
         for _ in q:
-            yield _.get_aiida_class()
+            pseudo = _.get_aiida_class()
+            if (not default) or pseudo.get_attr('default', None):
+                yield pseudo
 
     def _validate(self):
 
@@ -214,7 +226,12 @@ class GaussianpseudoData(Data):
             other_dict = other
         else:
             return False
-        self_vals = _li_round(_dict_to_list(dict(self.iterattrs())))
+        self_dict = dict(self.iterattrs())
+        self_dict.pop('version', None)
+        self_dict.pop('default', None)
+        other_dict.pop('version', None)
+        other_dict.pop('default', None)
+        self_vals = _li_round(_dict_to_list(self_dict))
         other_vals = _li_round(_dict_to_list(other_dict))
         return self_vals == other_vals
 
@@ -293,7 +310,9 @@ class GaussianpseudoData(Data):
         for cexp in gpp_data['cexp_ppl']:
             f.write(ffp(cexp))
         f.write('\n')
-        f.write(fitg(gpp_data['nprj']) + '\n')
+        f.write(fitg(gpp_data['nprj']))
+        if gpp_data['nprj'] > 0:
+            f.write('\n')
         for i in range(gpp_data['nprj']):
             f.write(ffp(gpp_data['r'][i]) + fitg(gpp_data['nprj_ppnl'][i]))
             nwrite = gpp_data['nprj_ppnl'][i]
@@ -307,7 +326,7 @@ class GaussianpseudoData(Data):
                 nwrite = nwrite - 1
                 if nwrite > 0:
                     f.write(' ' * 20 + ' ' * 15 * n_intend)
-        f.write('\n')
+        f.write('\n\n')
         f.close()
 
     def get_full_type(self):

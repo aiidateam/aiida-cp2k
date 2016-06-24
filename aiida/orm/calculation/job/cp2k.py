@@ -364,16 +364,6 @@ class CP2KCalculation(JobCalculation):
         
         subsysdict = {}
 
-        ######### PATCH ################
-        ### A patch to  make it work right now...
-#        potentials_dict['H'] = 'GTH-PBE-q1'
-#        potentials_dict['O'] = 'GTH-PBE-q6'
-#        with open("/home/yakutovich/test", 'w') as fff:
-#            fff.write(basis_set_dict.__str__())
-        #~ basis_set_dict['H'] = 'TZV2P-GTH'
-#        basis_set_dict['H'] = 'DZV-GTH-PBE'
-#        basis_set_dict['O'] = 'DZVP-GTH-PBE'
-        #~ basis_set_dict['O'] = 'TZV2P-GTH'
         basis_set_file_name = tempfolder.get_abs_path(self._BASIS_SET_FILE_NAME)
         potential_file_name = tempfolder.get_abs_path(self._PSEUDO_FILE_NAME) 
         ########## PATCH #################

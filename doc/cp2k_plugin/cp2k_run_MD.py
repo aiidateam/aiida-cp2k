@@ -204,14 +204,6 @@ parameters = ParameterData(dict={
           },
 })
 
-
-#what about k-points?
-#~ KpointsData = DataFactory('array.kpoints')
-#~ kpoints = KpointsData()
-#~ kpoints.set_kpoints_mesh([5,5,5])
-#~ kpoints.set_kpoints_mesh([5,5,5],offset=(0.5,0.5,0.5))
-
-
 #Set up the calculation:
 calc = code.new_calc()
 #calc.set_computer(computer)

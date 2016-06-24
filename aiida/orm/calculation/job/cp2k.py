@@ -275,7 +275,8 @@ class CP2KCalculation(JobCalculation):
         basis_set_dict = {}
         for kind in structure.kinds:
             basis_set_dict[kind.name]=inputdict.pop(self.get_linkname('basisset', kind.name))
-
+        print "Hello"
+        print inputdict
         potentials_dict = {}
         for kind in structure.kinds:
             potentials_dict[kind.name]=inputdict.pop(self.get_linkname('pseudo', kind.name))
@@ -378,7 +379,7 @@ class CP2KCalculation(JobCalculation):
         # Generate dictionary for KIND based on the AiiDA 'structure.kinds' data
         subsysdict['KIND'] = [{'_': kind.name,
                                 'ELEMENT':kind.name,
-                                'BASIS_SET': basis_set_dict[kind.name].type,
+                                'BASIS_SET': "-".join(basis_set_dict[kind.name].tags),
                                 'POTENTIAL': potentials_dict[kind.name].get_full_type(),
                                 'MASS': kind.mass,
                                 } 

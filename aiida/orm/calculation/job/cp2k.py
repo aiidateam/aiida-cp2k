@@ -166,7 +166,7 @@ class CP2KCalculation(JobCalculation):
         return "pseudo_{}".format(suffix_string)
     
 
-    def use_basissets_type(self, type_name):
+    def use_basissets_type(self, tags):
         try:
             structure = self.get_inputs_dict()[self.get_linkname('structure')]
         except AttributeError:
@@ -175,7 +175,7 @@ class CP2KCalculation(JobCalculation):
                              "the basissets")
         for at_kind in structure.kinds:
             basissets = GaussianbasisData.get_basis_sets(filter_elements = 
-            at_kind.name, filter_types=type_name)
+            at_kind.name, filter_tags=tags)
             for basisset in basissets:
                 self.use_basisset(basisset, at_kind.name)
 

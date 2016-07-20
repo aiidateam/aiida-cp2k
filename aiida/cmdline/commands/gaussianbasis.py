@@ -16,6 +16,9 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
         """
         A dictionary with valid commands and functions to be called.
         """
+        from aiida.backends.utils import load_dbenv, is_dbenv_loaded
+        if not is_dbenv_loaded():
+            load_dbenv()
         from aiida.orm.data.upf import UpfData
 
         self.dataclass = UpfData
@@ -39,7 +42,6 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
         filename = os.path.abspath(args[0])
        # print filename
 
-        load_dbenv()
         from aiida.orm.data.gaussianbasis import upload_cp2k_basissetfile
 
         upload_cp2k_basissetfile(filename)
@@ -61,7 +63,6 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
         parser.set_defaults(with_description=False)
         args = list(args)
         parsed_args = parser.parse_args(args)
-        load_dbenv()
         from aiida.orm.data.gaussianbasis import GaussianbasisData as BasisSet
         basissets = BasisSet.get_basis_sets(filter_elements = parsed_args.element, filter_tags=parsed_args.tags)
         for basisset in basissets:
@@ -88,7 +89,6 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
                                   "basiset: "+', '.join(output_formats))
         args = list(args)
         parsed_args = parser.parse_args(args)
-        load_dbenv()
 
         if parsed_args.format not in output_formats:
             raise NameError("Format "+parsed_args.format+" is not known. Please "

@@ -65,7 +65,7 @@ class GaussianpseudoData(Data):
                          coefficients of the non-local projector functions
         :return: the created gpp instance.
         """
-        from aiida.djsite.db import models
+        from aiida.backends.djsite.db import models
         from aiida.common.exceptions import UniquenessError, PluginInternalError
 
         gpp_data['n_val'] = sum(gpp_data['n_elec'])
@@ -128,7 +128,7 @@ class GaussianpseudoData(Data):
         :return: generator for found gpp's
         """
 
-        from aiida.djsite.db import models
+        from aiida.backends.djsite.db import models
         from aiida.common.exceptions import PluginInternalError
 
         q = models.DbNode.objects.filter(

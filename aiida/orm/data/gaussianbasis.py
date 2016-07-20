@@ -6,7 +6,7 @@ import sys
 import re
 from aiida.orm.data import Data
 import argparse
-from aiida.djsite.db import models
+from aiida.backends.djsite.db import models
 # -*- coding: utf-8 -*-
 __copyright__ = ""
 __license__ = "MIT license, see LICENSE.txt file"

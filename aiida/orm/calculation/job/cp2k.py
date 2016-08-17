@@ -270,13 +270,9 @@ class CP2KCalculation(JobCalculation):
                 raise InputValidationError("parent_calc_folder, if specified,"
                     "must be of type RemoteData")
 
-        with open("/home/yakutovich/test.dict", 'w') as fff:
-            fff.write(inputdict.__str__())
         basis_set_dict = {}
         for kind in structure.kinds:
             basis_set_dict[kind.name]=inputdict.pop(self.get_linkname('basisset', kind.name))
-        print "Hello"
-        print inputdict
         potentials_dict = {}
         for kind in structure.kinds:
             potentials_dict[kind.name]=inputdict.pop(self.get_linkname('pseudo', kind.name))

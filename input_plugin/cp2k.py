@@ -176,19 +176,27 @@ class CP2KCalculation(JobCalculation):
             raise ValueError("Structure is not set yet! Therefore, the method "
                              "use_basissets_type cannot automatically set "
                              "the basissets")
+        i=0
         for at_kind in structure.kinds:
             basissets = GaussianbasisData.get_basis_sets(filter_elements = 
-            at_kind.name, filter_tags=tags)
+            at_kind.name, filter_tags=tags) 
             for basisset in basissets:
+                i+=1
                 self.use_basisset(basisset, at_kind.name)
+        if len(structure.kinds) > i : 
+            raise ValueError("Did not find basis sets for all the atoms")
+        if len(structure.kinds) < i:
+            raise ValueError("Found more basissets than atomic kinds, please be"
+                             "more specific")
 
     def use_pseudo_type(self, gpp_type=None, xc=None, n_val=None) :
         try:
             structure = self.get_inputs_dict()[self.get_linkname('structure')]
         except AttributeError:
             raise ValueError("Structure is not set yet! Therefore, the method "
-                             "use_basissets_type cannot automatically set "
-                             "the basissets")
+                             "use_pseudo_type cannot automatically set "
+                             "the pseudos")
+        i=0
         for at_kind in structure.kinds:
             pseudos=GaussianpseudoData.get_pseudos(element=at_kind.name,
             gpp_type=gpp_type, xc=xc, n_val=n_val)
@@ -199,7 +207,13 @@ class CP2KCalculation(JobCalculation):
 #                raise ValueError("More then 1 pseudo found for the atom"
 #                                 "{}\n".formatat(kind.name))
             for pseudo in pseudos:
+                i+=1
                 self.use_pseudo(pseudo, at_kind.name)
+        if len(structure.kinds) > i : 
+            raise ValueError("Did not find pseudos for all the atoms")
+        if len(structure.kinds) < i:
+            raise ValueError("Found more pseudos than atomic kinds, please be"
+                             "more specific")
     
 
     def _prepare_for_submission(self, tempfolder, inputdict):

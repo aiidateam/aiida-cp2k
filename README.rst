@@ -59,8 +59,13 @@ Keeping plugin up-to-date:
 From time to time you might want to update the CP2K plugin for AiiDA. This would require three very simple steps:
 
 1) Go to the directory where the plugin is located:
+
    > cd /path/to/cp2k/plugin
+
 2) Get the update from the server:
+
    > git pull
+
 3) Restart the AiiDA daemon:
+
    > verdi daemon restart

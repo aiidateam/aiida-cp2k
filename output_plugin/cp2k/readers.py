@@ -1,3 +1,5 @@
+import numpy as np
+from aiida.orm import DataFactory
 """
 Collection of CP2K output file readers.
 """
@@ -29,9 +31,6 @@ class CP2KOutputFileReader(CP2KBaseReader):
         self._fn = filename
 
     def parse(self):
-        """
-        TODO: dummy function
-        """
         with open (self._fn, 'r') as f:
             output_file_lines = f.readlines()
 
@@ -93,6 +92,13 @@ class CP2KTrajectoryFileReader(CP2KBaseReader):
         super(CP2KTrajectoryFileReader, self).__init__()
         self._fh = file(filename, 'r')
         self._timestep = timestep
+        self._output_structure = None
+    @property
+    def output_structure(self):
+        """
+        Returns the parsed data as dictionary
+        """
+        return self._output_structure
 
     def parse(self):
         """
@@ -152,7 +158,24 @@ class CP2KTrajectoryFileReader(CP2KBaseReader):
         traj = array([[[float(match.group('x')), float(match.group('y')), float(match.group('z'))]
                 for  match in pos_regex.finditer(block.group(0))]
                     for block in blocks])
+        
+        self._results['steps'] = np.array(range(1,len(traj)+1))
+        self._results['cells'] = np.zeros((len(traj),3,3)) 
+        self._results['symbols'] = array([match.group('sym') for  match in pos_regex.finditer(block.group(0))])
+        self._results['positions_ordered'] = traj
+        StructureData = DataFactory('structure')
+        alat = 9.8528 # angstrom
+        cell = [[alat, 0., 0.,],
+                [0., alat, 0.,],
+                [0., 0., alat,],
+               ]
+        s = StructureData(cell=cell)
+        for i in range(len(self._results['symbols'])):
+            l=traj[-1][i]
+            s.append_atom(position=(l[0],l[1],l[2]),symbols=self._results['symbols'][i])
 
-        self._results['content'] = {
-                'array': traj,
-                'timestep_in_fs':timestep_in_fs}
+        
+        self._output_structure=s
+        
+#        self._results['timestep_in_fs':timestep_in_fs}
+

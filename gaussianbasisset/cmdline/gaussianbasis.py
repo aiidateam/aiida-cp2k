@@ -19,9 +19,6 @@ class _Gaussianbasis(VerdiCommandWithSubcommands, Importable):
         from aiida.backends.utils import load_dbenv, is_dbenv_loaded
         if not is_dbenv_loaded():
             load_dbenv()
-        from aiida.orm.data.upf import UpfData
-
-        self.dataclass = UpfData
         self.valid_subcommands = {
             'uploadbasis': (self.uploadbasis, self.complete_auto),
             'listbasis': (self.listbasis, self.complete_none),

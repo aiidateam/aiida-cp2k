@@ -1,3 +1,5 @@
+from os import path
+import numpy as np
 from aiida.orm.calculation.job.cp2k import CP2KCalculation, convert_to_uppercase
 from aiida.orm.data.parameter import ParameterData
 from aiida.parsers.parser import Parser
@@ -32,7 +34,6 @@ class CP2KBasicParser(Parser):
         Receives in input a dictionary of retrieved nodes.
         Does all the logic here.
         """
-        from os import path
 
         successful = True
         return_dict = {}
@@ -60,38 +61,62 @@ class CP2KBasicParser(Parser):
                                 self._calc._OUTPUT_FILE_NAME)
         cp2koutput = CP2KOutputFileReader(output_file_path)
         cp2koutput.parse()
+        return_dict.update(cp2koutput.data)
 
         # parse the energy file
-#        ener_file_path = path.join(out_folder.get_abs_path('.'),
-#                                self._calc._ENER_FILE_NAME)
-#        energies = CP2KEnergyFileReader(ener_file_path)
-#        energies.parse()
-#        
-#        # parse the trajectory file
-#        traj_file_path = path.join(out_folder.get_abs_path('.'),
-#                                self._calc._TRAJ_FILE_NAME)
-#        trajectories = CP2KTrajectoryFileReader(traj_file_path,
-#                calc_input['MOTION']['MD'].get('TIMESTEP'))
-#        trajectories.parse()
-#
-#        traj = TrajectoryData()
-#        traj.set_trajectory(steps=raw_trajectory['steps'],
-#                            cells=raw_trajectory['cells'],
-#                            symbols=raw_trajectory['symbols'],
-#                            positions=raw_trajectory['positions_ordered'],
-#                            times=raw_trajectory['times'],
-#                            velocities=raw_trajectory['velocities_ordered'],
-#        )
-#
-#        for this_name in evp_keys:
-#            traj.set_array(this_name, raw_trajectory[this_name])
-#        new_nodes_list = [(self.get_linkname_trajectory(), traj)]
+        ener_file_path = path.join(out_folder.get_abs_path('.'),
+                                self._calc._ENER_FILE_NAME)
+        if (path.isfile(ener_file_path)):
+            energies = CP2KEnergyFileReader(ener_file_path)
+            energies.parse()
+            return_dict.update(energies.data)
 
-       
-        # Update the result dictionary with the parsed data
-        return_dict.update(cp2koutput.data)
-#        return_dict.update(energies.data)
-#        return_dict.update(trajectories.data)
+        
+#        # parse the trajectory file
+        traj_file_path = path.join(out_folder.get_abs_path('.'),
+                                self._calc._TRAJ_FILE_NAME)
+        
+
+
+
         output_params = ParameterData(dict=return_dict)
         new_nodes_list = [ (self.get_linkname_outparams(),output_params) ]
+
+	if (path.isfile(ener_file_path)):
+            trajectories = CP2KTrajectoryFileReader(traj_file_path,
+                           calc_input['MOTION']['MD'].get('TIMESTEP'))
+            trajectories.parse()
+    
+    #        return_dict.update(trajectories.data)
+            
+            raw_trajectory = trajectories.data
+            traj = TrajectoryData()
+            traj.set_trajectory(stepids=raw_trajectory['steps'],
+                                cells=raw_trajectory['cells'],
+                                symbols=raw_trajectory['symbols'],
+                                positions=raw_trajectory['positions_ordered'],
+                                #times=raw_trajectory['times'],
+                                #velocities=raw_trajectory['velocities_ordered'],
+            )
+#            return_dict.append((self.get_linkname_outtrajectory(),traj))
+            for x in raw_trajectory.iteritems():
+            	traj.set_array(x[0],np.array(x[1]))
+            new_nodes_list.append((self.get_linkname_outtrajectory(),traj))
+            struct=trajectories.output_structure
+            new_nodes_list.append((self.get_linkname_outstructure(),struct))
+
+        
         return successful, new_nodes_list
+
+    def get_linkname_outtrajectory(self):
+        """
+        Returns the name of the link to the output_trajectory.
+        Node exists in case of calculation='md', 'vc-md', 'relax', 'vc-relax'
+        """
+        return 'output_trajectory'
+    def get_linkname_outstructure(self):
+        """
+        Returns the name of the link to the output_structure
+        Node exists if positions or cell changed.
+        """
+        return 'output_structure'

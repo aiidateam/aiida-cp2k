@@ -16,10 +16,10 @@ from aiida.common.exceptions import InputValidationError
 
 import collections
 
-class CP2KCalculation(JobCalculation):
+class Cp2kCalculation(JobCalculation):
     """
-    This is a CP2KCalculation, subclass of JobCalculation, to prepare input for an
-    ab-inition CP2KCalculation.
+    This is a Cp2kCalculation, subclass of JobCalculation, to prepare input for an
+    ab-inition Cp2kCalculation.
     For information on CP2K, refer to: cp2k.org
     
     """
@@ -90,8 +90,8 @@ class CP2KCalculation(JobCalculation):
         """
         Set parameters of instance
         """
-        super(CP2KCalculation, self)._init_internal_params()
-        self._default_parser = 'cp2k.CP2KBasicParser'
+        super(Cp2kCalculation, self)._init_internal_params()
+        self._default_parser = 'cp2k.Cp2kBasicParser'
         
         
     @classproperty

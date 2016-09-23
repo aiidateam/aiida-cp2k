@@ -31,7 +31,7 @@ except IndexError:
     codename = None
 
 
-code = test_and_get_code(codename, expected_code_type='cp2k.CP2KCalculation')
+code = test_and_get_code(codename, expected_code_type='cp2k')
 #code = Code.get_from_string('cp2k3.0')
 
 #Let's define a simple cubic structure

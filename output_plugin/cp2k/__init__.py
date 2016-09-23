@@ -1,21 +1,21 @@
 from os import path
 import numpy as np
-from aiida.orm.calculation.job.cp2k import CP2KCalculation, convert_to_uppercase
+from aiida.orm.calculation.job.cp2k import Cp2kCalculation, convert_to_uppercase
 from aiida.orm.data.parameter import ParameterData
 from aiida.parsers.parser import Parser
 from aiida.parsers.exceptions import OutputParsingError
 from aiida.orm.data.array.trajectory import TrajectoryData
 
 from aiida.parsers.plugins.cp2k.readers import (
-        CP2KOutputFileReader,
-        CP2KEnergyFileReader,
-        CP2KTrajectoryFileReader
+        Cp2kOutputFileReader,
+        Cp2kEnergyFileReader,
+        Cp2kTrajectoryFileReader
         )
 
-class CP2KOutputParsingError(OutputParsingError):
+class Cp2kOutputParsingError(OutputParsingError):
     pass
 
-class CP2KBasicParser(Parser):
+class Cp2kBasicParser(Parser):
     """
     Basic class to parse CP2K calculations
     """
@@ -24,10 +24,10 @@ class CP2KBasicParser(Parser):
         Initialize the instance of CP2KBasicParser
         """
         # check for valid input
-        if not isinstance(calc, CP2KCalculation):
-            raise CP2KOutputParsingError("Input calc must be a CP2KCalculation")
+        if not isinstance(calc, Cp2kCalculation):
+            raise Cp2kOutputParsingError("Input calc must be a Cp2kCalculation")
 
-        super(CP2KBasicParser, self).__init__(calc)
+        super(Cp2kBasicParser, self).__init__(calc)
 
     def parse_with_retrieved(self, retrieved):
         """
@@ -56,10 +56,10 @@ class CP2KBasicParser(Parser):
             successful = False
             return successful, ()
 
-        # parse the CP2K output log file
+        # parse the Cp2k output log file
         output_file_path = path.join(out_folder.get_abs_path('.'),
                                 self._calc._OUTPUT_FILE_NAME)
-        cp2koutput = CP2KOutputFileReader(output_file_path)
+        cp2koutput = Cp2kOutputFileReader(output_file_path)
         cp2koutput.parse()
         return_dict.update(cp2koutput.data)
 
@@ -67,7 +67,7 @@ class CP2KBasicParser(Parser):
         ener_file_path = path.join(out_folder.get_abs_path('.'),
                                 self._calc._ENER_FILE_NAME)
         if (path.isfile(ener_file_path)):
-            energies = CP2KEnergyFileReader(ener_file_path)
+            energies = Cp2kEnergyFileReader(ener_file_path)
             energies.parse()
             return_dict.update(energies.data)
 
@@ -83,9 +83,9 @@ class CP2KBasicParser(Parser):
         new_nodes_list = [ (self.get_linkname_outparams(),output_params) ]
 
 	if (path.isfile(ener_file_path)):
-            trajectories = CP2KTrajectoryFileReader(traj_file_path,
+            trajectories = Cp2kTrajectoryFileReader(traj_file_path,
                            calc_input['MOTION']['MD'].get('TIMESTEP'))
-            trajectories.parse()
+            trajectories.parse(self._calc)
     
     #        return_dict.update(trajectories.data)
             

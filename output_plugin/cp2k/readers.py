@@ -88,10 +88,10 @@ class Cp2kTrajectoryFileReader(Cp2kBaseReader):
     Parse the .traj file written by CP2K
     """
 
-    def __init__(self, filename, timestep):
+    def __init__(self, filename):
         super(Cp2kTrajectoryFileReader, self).__init__()
         self._fh = file(filename, 'r')
-        self._timestep = timestep
+#        self._timestep = timestep
         self._output_structure = None
     @property
     def output_structure(self):
@@ -140,7 +140,7 @@ class Cp2kTrajectoryFileReader(Cp2kBaseReader):
                     """, re.X | re.M)
 
         txt = mmap.mmap(self._fh.fileno(), 0, prot=mmap.PROT_READ)
-        timestep_in_fs = self._timestep
+#        timestep_in_fs = self._timestep
 
         #~ traj_arr =  np.array([[[float(pos) for pos in line.split()[1:4] if line]
                                     #~ for line in block.group(0).split('\n')[:-1] if block]

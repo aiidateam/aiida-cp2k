@@ -82,9 +82,10 @@ class Cp2kBasicParser(Parser):
         output_params = ParameterData(dict=return_dict)
         new_nodes_list = [ (self.get_linkname_outparams(),output_params) ]
 
-	if (path.isfile(ener_file_path)):
-            trajectories = Cp2kTrajectoryFileReader(traj_file_path,
-                           calc_input['MOTION']['MD'].get('TIMESTEP'))
+	if (path.isfile(traj_file_path)):
+#            trajectories = Cp2kTrajectoryFileReader(traj_file_path,
+#                           calc_input['MOTION']['MD'].get('TIMESTEP'))
+            trajectories = Cp2kTrajectoryFileReader(traj_file_path)
             trajectories.parse(self._calc)
     
     #        return_dict.update(trajectories.data)

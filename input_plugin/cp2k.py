@@ -64,7 +64,7 @@ class Cp2kCalculation(JobCalculation):
             'NMC_FILE_NAME',
             'OPTIMIZE_FILE_NAME',
             'OUTPUT_FILE_NAME',
-            'PARAMETER_FILE_NAME',
+#            'PARAMETER_FILE_NAME',
             'PARAM_FILE_NAME',
             'PARM_FILE_NAME',
             'POTENTIAL_FILE_NAME',

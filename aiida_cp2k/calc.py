@@ -83,7 +83,7 @@ class Cp2kCalculation(JobCalculation):
             'PROJECT', 
             'PROJECT_NAME',
             'PRINT_LEVEL',
-            'PRINT',
+#            'PRINT',
             ]
 
     def _init_internal_params(self):

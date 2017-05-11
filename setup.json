@@ -16,12 +16,12 @@
     ],
     "entry_points": {
         "aiida.calculations": [
-            "quantumespresso.pw = aiida_cp2k.calculations.cp2k:Cp2kCalculation",
+            "quantumespresso.pw = aiida_cp2k.calculations.cp2k:Cp2kCalculation"
         ],
         "aiida.parsers": [
             "quantumespresso.basicpw = aiida_quantumespresso.parsers.basicpw:BasicpwParser",
             "quantumespresso.cp = aiida_quantumespresso.parsers.cp:CpParser",
             "quantumespresso.cp2k = aiida_quantumespresso.parsers.pw:PwParser"
-        ],
+        ]
     }
 }

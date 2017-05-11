@@ -1,0 +1,7 @@
+cp2k
+
+True
+cp2k.cp2k
+/project/bin
+cp2k.psmp
+

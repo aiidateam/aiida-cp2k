@@ -5,8 +5,8 @@ from aiida.orm.calculation.job import JobCalculation
 from aiida.common.utils import classproperty #Do i need this?
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.gaussianbasis import GaussianbasisData
-from aiida.orm.data.gaussianpseudo import GaussianpseudoData
+#from aiida.orm.data.gaussianbasis import GaussianbasisData
+#from aiida.orm.data.gaussianpseudo import GaussianpseudoData
 from aiida.orm.data.remote import RemoteData
 
 from aiida.common.datastructures import CalcInfo
@@ -21,7 +21,7 @@ class Cp2kCalculation(JobCalculation):
     This is a Cp2kCalculation, subclass of JobCalculation, to prepare input for an
     ab-inition Cp2kCalculation.
     For information on CP2K, refer to: cp2k.org
-    
+
     """
     # The files that we need:
     _PROJECT_NAME = 'AIIDA-PROJECT'
@@ -126,13 +126,6 @@ class Cp2kCalculation(JobCalculation):
                'docstring': ("Use a node that specifies the input parameters "
                              "for the namelists"),
                },
-            "parent_folder": {
-               'valid_types': RemoteData,
-               'additional_parameter': None,
-               'linkname': 'parent_calc_folder',
-               'docstring': ("Use a remote folder as parent folder (for "
-                             "restarts and similar"),
-               },
             })
         return retdict
 
@@ -164,57 +157,52 @@ class Cp2kCalculation(JobCalculation):
                 for value in nested:
                     for inner_key in nested_key_iter(value):
                         yield inner_key
-        
         local_copy_list = []
         remote_copy_list = []
         remote_symlink_list = []
-        
-        
+
         ################ INPUTDICT RETRIEVAL AND VALIDATION #####################
-        
-        ### The parameters given by the user:
+
+        # parameters
         try:
             parameters = inputdict.pop(self.get_linkname('parameters'))
         except KeyError:
             raise InputValidationError("No parameters specified for this calculation")
         if not isinstance(parameters, ParameterData):
             raise InputValidationError("parameters is not of type ParameterData")
-            
-        # The structure:
+
+        # structure
         try:
             structure = inputdict.pop(self.get_linkname('structure'))
         except KeyError:
             raise InputValidationError("No structure specified for this calculation")
         if not isinstance(structure, StructureData):
             raise InputValidationError("structure is not of type StructureData")
+
+        # code
         try:
             code = inputdict.pop(self.get_linkname('code'))
         except KeyError:
             raise InputValidationError("No code specified for this calculation")
+        #TODO: check type of code
 
-        # Settings can be undefined, and defaults to an empty dictionary/ParameterData
+        # settings
+        # ... if not provided fall back to empty dict
         settings = inputdict.pop(self.get_linkname('settings'), ParameterData())
-
         if not isinstance(settings, ParameterData):
             raise InputValidationError("settings, if specified, must be of "
                                         "type ParameterData")
-        # Settings converted to uppercase
         settings_dict = convert_to_uppercase(settings.get_dict())
 
+        # parant calc folder
         parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'), None)
         if parent_calc_folder is not None:
             if not isinstance(parent_calc_folder, RemoteData):
                 raise InputValidationError("parent_calc_folder, if specified,"
                     "must be of type RemoteData")
 
-        basis_set_dict = {}
-        for kind in structure.kinds:
-            basis_set_dict[kind.name]=inputdict.pop(self.get_linkname('basisset', kind.name))
-        potentials_dict = {}
-        for kind in structure.kinds:
-            potentials_dict[kind.name]=inputdict.pop(self.get_linkname('pseudo', kind.name))
-        # Here, there should be no more parameters...
 
+        #TODO: handle additional parameter files
 
         if inputdict:
             raise InputValidationError("The following input data nodes are "
@@ -297,29 +285,28 @@ class Cp2kCalculation(JobCalculation):
         # Take the structure data and append it to the parameter dictionary.
         # Makes sure everything has the same output...
         # TODO: potentials, basis sets?
-      
-        
+
         subsysdict = {}
 
         basis_set_file_name = tempfolder.get_abs_path(self._BASIS_SET_FILE_NAME)
         potential_file_name = tempfolder.get_abs_path(self._PSEUDO_FILE_NAME) 
         ########## PATCH #################
 
-        parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = self._BASIS_SET_FILE_NAME
-        parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = self._PSEUDO_FILE_NAME
-        for at_kind, basisset in basis_set_dict.items():
-            basisset.print_cp2k(basis_set_file_name)
-        for at_kind, pseudo in potentials_dict.items():
-            pseudo.write_cp2k_gpp_to_file(potential_file_name, mode='a')
+        #parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = self._BASIS_SET_FILE_NAME
+        #parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = self._PSEUDO_FILE_NAME
+        #for at_kind, basisset in basis_set_dict.items():
+        #    basisset.print_cp2k(basis_set_file_name)
+        #for at_kind, pseudo in potentials_dict.items():
+        #    pseudo.write_cp2k_gpp_to_file(potential_file_name, mode='a')
 
         # Generate dictionary for KIND based on the AiiDA 'structure.kinds' data
-        subsysdict['KIND'] = [{'_': kind.name,
-                                'ELEMENT':kind.name,
-                                'BASIS_SET': "-".join(basis_set_dict[kind.name].tags),
-                                'POTENTIAL': potentials_dict[kind.name].get_full_type(),
-                                'MASS': kind.mass,
-                                } 
-                                for kind in structure.kinds]
+        #subsysdict['KIND'] = [{'_': kind.name,
+        #                        'ELEMENT':kind.name,
+        #                        'BASIS_SET': "-".join(basis_set_dict[kind.name].tags),
+        #                        'POTENTIAL': potentials_dict[kind.name].get_full_type(),
+        #                        'MASS': kind.mass,
+        #                        } 
+        #                        for kind in structure.kinds]
 
         # Deal with the cell:
         subsysdict['CELL'] = {cell_direction:'{:<15} {:<15} {:<15}'.format(*structure.cell[index])
@@ -344,9 +331,7 @@ class Cp2kCalculation(JobCalculation):
         with open(input_filename, 'w') as infile:
             print_parameters_cp2k_style(infile, parameters_dict)
         ################ DONE WRITING TO INPUT FILE HERE ##################
-        
-        
-        
+
         settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         cmdline_params = settings_dict.pop('CMDLINE', [])
         # Initialize codeinfo
@@ -359,7 +344,7 @@ class Cp2kCalculation(JobCalculation):
         # Initialize calcinfo
         calcinfo = CalcInfo()
         calcinfo.stdin_name = self._INPUT_FILE_NAME
-        
+
         calcinfo.uuid = self.uuid
         calcinfo.cmdline_params = (list(cmdline_params)
                  + ["-in", self._INPUT_FILE_NAME, "-o", self._OUTPUT_FILE_NAME])
@@ -369,7 +354,7 @@ class Cp2kCalculation(JobCalculation):
         calcinfo.stdout_name = self._OUTPUT_FILE_NAME
         calcinfo.remote_symlink_list = remote_symlink_list
         calcinfo.codes_info = [codeinfo]
-        
+
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
         calcinfo.retrieve_list.append(self._TRAJ_FILE_NAME)
@@ -377,8 +362,7 @@ class Cp2kCalculation(JobCalculation):
         calcinfo.retrieve_list.append(self._ENER_FILE_NAME)
         calcinfo.retrieve_list.append(self._FORCES_FILE_NAME)
         calcinfo.retrieve_list += settings_retrieve_list
-        
-        
+
         if settings_dict:
             try:
                 Parserclass = self.get_parserclass()

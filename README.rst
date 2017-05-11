@@ -1,11 +1,11 @@
 How to install the CP2K plugin for AiiDA:
 ========================================
 
-1) Obtaining the source code. Clone CP2K-AiiDA plugin from https://yakutovich@bitbucket.org/yakutovich/cp2k-aiida-plugin.git into some directory. If you do not plan to contribute to the plugin development try to keep this folder unchanged. This will simplify for you the updates of the plugin in the future.
+1) Obtaining the source code. Clone CP2K-AiiDA plugin from https://github.com/cp2k/aiida-cp2k.git into some directory. If you do not plan to contribute to the plugin development try to keep this folder unchanged. This will simplify for you the updates of the plugin in the future.
 
 2) Setting up two new data classes (gaussian basisset, gaussian pseudo). For the moment CP2K plugin contains two classes which are not yet known by AiiDA. As soon as they will be incorporated into AiiDA this step of the HOWTO will be removed.
 
-   a) Go into the folder were AiiDA is installed. 
+   a) Go into the folder were AiiDA is installed.
    b) Change directory to aiida/orm/data
 
        > cd aiida/orm/data

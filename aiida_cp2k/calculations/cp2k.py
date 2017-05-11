@@ -91,9 +91,10 @@ class Cp2kCalculation(JobCalculation):
         Set parameters of instance
         """
         super(Cp2kCalculation, self)._init_internal_params()
+        self._INPUT_FILE_NAME = 'aiida.inp'
+        self._OUTPUT_FILE_NAME = 'aiida.out'
         self._default_parser = 'cp2k.Cp2kBasicParser'
-        
-        
+
     @classproperty
     def _use_methods(cls):
         """
@@ -132,89 +133,8 @@ class Cp2kCalculation(JobCalculation):
                'docstring': ("Use a remote folder as parent folder (for "
                              "restarts and similar"),
                },
-            "basisset": {
-               'valid_types': GaussianbasisData,
-               'additional_parameter': 'kind',
-               'linkname': cls._get_linkname_basisset ,
-               'docstring': ("Use a basisset of a cetrain type"),
-               },
-            "pseudo": {
-               'valid_types': GaussianpseudoData,
-               'additional_parameter': 'kind',
-               'linkname': cls._get_linkname_pseudo ,
-               'docstring': ("Use a basisset of a cetrain type"),
-               },
             })
         return retdict
-
-    @classmethod
-    def _get_linkname_basisset(cls, kind):
-        if isinstance(kind, (tuple, list)):
-            suffix_string = "_".join(kind)
-        elif isinstance(kind, basestring):
-            suffix_string = kind
-        else:
-            raise TypeError("The parameter 'kind' of _get_linkname_basisset can "
-                            "only be a string or a list of strings")
-        return "basisset_{}".format(suffix_string)
-    @classmethod
-    def _get_linkname_pseudo(cls, kind):
-        if isinstance(kind, (tuple, list)):
-            suffix_string = "_".join(kind)
-        elif isinstance(kind, basestring):
-            suffix_string = kind
-        else:
-            raise TypeError("The parameter 'kind' of _get_linkname_basisset can "
-                            "only be a string or a list of strings")
-        return "pseudo_{}".format(suffix_string)
-    
-
-    def use_basissets_type(self, tags):
-        try:
-            structure = self.get_inputs_dict()[self.get_linkname('structure')]
-        except AttributeError:
-            raise ValueError("Structure is not set yet! Therefore, the method "
-                             "use_basissets_type cannot automatically set "
-                             "the basissets")
-        i=0
-        for at_kind in structure.kinds:
-            basissets = GaussianbasisData.get_basis_sets(filter_elements = 
-            at_kind.name, filter_tags=tags) 
-            for basisset in basissets:
-                i+=1
-                self.use_basisset(basisset, at_kind.name)
-        if len(structure.kinds) > i : 
-            raise ValueError("Did not find basis sets for all the atoms")
-        if len(structure.kinds) < i:
-            raise ValueError("Found more basissets than atomic kinds, please be"
-                             "more specific")
-
-    def use_pseudo_type(self, gpp_type=None, xc=None, n_val=None) :
-        try:
-            structure = self.get_inputs_dict()[self.get_linkname('structure')]
-        except AttributeError:
-            raise ValueError("Structure is not set yet! Therefore, the method "
-                             "use_pseudo_type cannot automatically set "
-                             "the pseudos")
-        i=0
-        for at_kind in structure.kinds:
-            pseudos=GaussianpseudoData.get_pseudos(element=at_kind.name,
-            gpp_type=gpp_type, xc=xc, n_val=n_val)
-#            if (len(pseudos) == 0):
-#                raise ValueError("No pseudos found for the atom"
-#                                 "{}\n".formatat(kind.name))
-#            elif (len(psudos) > 1):
-#                raise ValueError("More then 1 pseudo found for the atom"
-#                                 "{}\n".formatat(kind.name))
-            for pseudo in pseudos:
-                i+=1
-                self.use_pseudo(pseudo, at_kind.name)
-        if len(structure.kinds) > i : 
-            raise ValueError("Did not find pseudos for all the atoms")
-        if len(structure.kinds) < i:
-            raise ValueError("Found more pseudos than atomic kinds, please be"
-                             "more specific")
-    
 
     def _prepare_for_submission(self, tempfolder, inputdict):
         """

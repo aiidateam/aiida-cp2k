@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 
-
 from aiida.orm.calculation.job import JobCalculation
-from aiida.common.utils import classproperty #Do i need this?
+from aiida.common.utils import classproperty
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.parameter import ParameterData
-#from aiida.orm.data.gaussianbasis import GaussianbasisData
-#from aiida.orm.data.gaussianpseudo import GaussianpseudoData
 from aiida.orm.data.remote import RemoteData
 
 from aiida.common.datastructures import CalcInfo
@@ -23,68 +20,17 @@ class Cp2kCalculation(JobCalculation):
     For information on CP2K, refer to: cp2k.org
 
     """
-    # The files that we need:
-    _PROJECT_NAME = 'AIIDA-PROJECT'
-    _INPUT_FILE_NAME = 'aiida.in'
-    _OUTPUT_FILE_NAME = 'aiida.out'
-    _TRAJ_FILE_NAME = '{}-pos-1.xyz'.format(_PROJECT_NAME)
-    _VEL_FILE_NAME = '{}-vel-1.xyz'.format(_PROJECT_NAME)
-    _FORCES_FILE_NAME = '{}-frc-1.xyz'.format(_PROJECT_NAME)
-    _ENER_FILE_NAME = '{}-1.ener'.format(_PROJECT_NAME)
-    _BASIS_SET_FILE_NAME = 'aiida.basis'
-    _PSEUDO_FILE_NAME = 'aiida.pseudo'
-    _COORDS_FILE_NAME = 'aiida.coords.xyz'
-
-    # List of keywords which are not allowed when running CP2K under AiiDA
-    _KEYWORDS_BLACKLIST = [
-            # We block all possible changes to file names since it may
-            # interfere with AiiDA's file retrieval.
-            'ALL_CONF_FILE_NAME',
-            'BASIS_SET_FILE_NAME',
-            'BINARY_RESTART_FILE_NAME',
-            'BOX2_FILE_NAME',
-            'CALLGRAPH_FILE_NAME',
-            'CELL_FILE_NAME',
-            'CONN_FILE_NAME',
-            'COORD_FILE_NAME',
-            'COORDINATE_FILE_NAME',
-            'DATA_FILE_NAME',
-            'ENERGY_FILE_NAME',
-            'FFTW_WISDOM_FILE_NAME',
-            'IMAGE_RESTART_FILE_NAME',
-            'INPUT_FILE_NAME',
-            'KERNEL_FILE_NAME',
-            'LOCHOMO_RESTART_FILE_NAME',
-            'LOCLUMO_RESTART_FILE_NAME',
-            'MAX_DISP_FILE_NAME',
-            'MM_POTENTIAL_FILE_NAME',
-            'MOLECULES_FILE_NAME',
-            'MOVES_FILE_NAME',
-            'NICS_FILE_NAME',
-            'NMC_FILE_NAME',
-            'OPTIMIZE_FILE_NAME',
-            'OUTPUT_FILE_NAME',
-#            'PARAMETER_FILE_NAME',
-            'PARAM_FILE_NAME',
-            'PARM_FILE_NAME',
-            'POTENTIAL_FILE_NAME',
-            'REF_CELL_FILE_NAME',
-            'REF_FORCE_FILE_NAME',
-            'REF_TRAJ_FILE_NAME',
-            'RESTART_FILE_NAME',
-            'TRAJ_FILE_NAME',
-            'WALKERS_FILE_NAME',
-            'WFN_RESTART_FILE_NAME',
-            # the following keys/sections are (over)written by AiiDA
-            'CELL',
-            'COORD',
-            'KIND',
-            'TOPOLOGY',
-            'PROJECT', 
-            'PROJECT_NAME',
-            'PRINT_LEVEL',
-#            'PRINT',
-            ]
+    # # The files that we need:
+    # _PROJECT_NAME = 'AIIDA-PROJECT'
+    # _INPUT_FILE_NAME = 'aiida.in'
+    # _OUTPUT_FILE_NAME = 'aiida.out'
+    # _TRAJ_FILE_NAME = '{}-pos-1.xyz'.format(_PROJECT_NAME)
+    # _VEL_FILE_NAME = '{}-vel-1.xyz'.format(_PROJECT_NAME)
+    # _FORCES_FILE_NAME = '{}-frc-1.xyz'.format(_PROJECT_NAME)
+    # _ENER_FILE_NAME = '{}-1.ener'.format(_PROJECT_NAME)
+    # _BASIS_SET_FILE_NAME = 'aiida.basis'
+    # _PSEUDO_FILE_NAME = 'aiida.pseudo'
+    # _COORDS_FILE_NAME = 'aiida.coords.xyz'
 
     def _init_internal_params(self):
         """
@@ -140,23 +86,6 @@ class Cp2kCalculation(JobCalculation):
                 be returned by get_inputdata_dict (without the Code!)
         """
 
-
-
-        def nested_key_iter(nested):
-            """
-            Iterator for nested mixed list and dict structure,
-            yielding keys only.
-            """
-            if isinstance(nested, collections.Mapping):
-                for key, value in nested.items():
-                    yield key
-                    for inner_key in nested_key_iter(value):
-                        yield inner_key
-
-            elif isinstance(nested, collections.MutableSequence):
-                for value in nested:
-                    for inner_key in nested_key_iter(value):
-                        yield inner_key
         local_copy_list = []
         remote_copy_list = []
         remote_symlink_list = []
@@ -192,9 +121,11 @@ class Cp2kCalculation(JobCalculation):
         if not isinstance(settings, ParameterData):
             raise InputValidationError("settings, if specified, must be of "
                                         "type ParameterData")
-        settings_dict = convert_to_uppercase(settings.get_dict())
 
-        # parant calc folder
+        #we dont' upper case settings any more.
+        #settings_dict = convert_to_uppercase(settings.get_dict())
+
+        # parent calc folder (not yet used)
         parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'), None)
         if parent_calc_folder is not None:
             if not isinstance(parent_calc_folder, RemoteData):
@@ -209,117 +140,6 @@ class Cp2kCalculation(JobCalculation):
                 "unrecognized: {}".format(inputdict.keys()))
 
 
-        ######################## LET'S START WRITING SOME INPUT #######################
-        # I have the parameters stored in the dictionary
-        # First of all, I want everything to be stored uppercase, if the user did not bother.
-        # It will make sure that there is no ambiguoity in the queries, everything is uppercase!
-        def print_parameters_cp2k_style(infile, params, indent = 0):
-            """
-            It takes a dictionary and recurses through.
-
-            For key-value pair it checks whether the value is a dictionary and prepends the key with &
-            It passes the valued to the same function, increasing the indentation
-            If the value is a list, I assume that this is something the user wants to store repetitively
-            eg:
-                dict['KEY'] = ['val1', 'val2']
-                ===>
-                KEY val1
-                KEY val2
-
-                or
-
-                dict['KIND'] = [{'_': 'Ba', 'ELEMENT':'Ba'},
-                                {'_': 'Ti', 'ELEMENT':'Ti'},
-                                {'_': 'O', 'ELEMENT':'O'}]
-                ====>
-                      &KIND Ba
-                         ELEMENT  Ba
-                      &END KIND
-                      &KIND Ti
-                         ELEMENT  Ti
-                      &END KIND
-                      &KIND O
-                         ELEMENT  O
-                      &END KIND
-
-            """
-
-
-            for key, val in params.items():
-                if isinstance(val, dict):
-                    infile.write('{}&{} {}\n'.format(' '*indent, key, val.pop('_', '')))
-                    print_parameters_cp2k_style(infile, val, indent + 3)
-                    infile.write('{}&END {}\n'.format(' '*indent, key))
-                elif isinstance(val, list):
-                    for listitem in val:
-                        print_parameters_cp2k_style(infile,  {key:listitem}, indent)
-                elif isinstance(val, bool):
-                    infile.write('{}{}  {}\n'.format(   
-                                ' '*indent, 
-                                key, 
-                                '.true.'  if val else '.false.'))
-                # Definition of units not implemented !! Default cp2k-values
-                # elif isinstance(val, tuple):
-                #    try:
-                #        floatvalue, unit = float(val[0]), val[1]
-                #    except ValueError:
-                #        floatvalue, unit = float(val[1]), val[0]
-                #    infile.write('{}{} [{}] {}\n'.format(' '*indent, key, unit, floatvalue))
-                else:
-                    infile.write('{}{}  {}\n'.format(' '*indent, key, val))
-
-        parameters_dict = convert_to_uppercase(parameters.get_dict())
-
-        for key in nested_key_iter(parameters_dict):
-            if key.startswith('@') or key.startswith('$'):
-                raise InputValidationError("CP2K internal input preprocessor "
-                        "not supported in AiiDA")
-            if key in self._KEYWORDS_BLACKLIST:
-                raise InputValidationError("Manually specifying {} for CP2K "
-                        "not supported in AiiDA".format(key))
-        # Whatever the user wrote, the project  name is set by aiida,
-        # otherwise file retrieving will not work
-        parameters_dict['GLOBAL']['PROJECT'] = self._PROJECT_NAME
-        parameters_dict['GLOBAL']['PRINT_LEVEL'] = 'MEDIUM'
-
-        # Take the structure data and append it to the parameter dictionary.
-        # Makes sure everything has the same output...
-        # TODO: potentials, basis sets?
-
-        subsysdict = {}
-
-        basis_set_file_name = tempfolder.get_abs_path(self._BASIS_SET_FILE_NAME)
-        potential_file_name = tempfolder.get_abs_path(self._PSEUDO_FILE_NAME) 
-        ########## PATCH #################
-
-        #parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = self._BASIS_SET_FILE_NAME
-        #parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = self._PSEUDO_FILE_NAME
-        #for at_kind, basisset in basis_set_dict.items():
-        #    basisset.print_cp2k(basis_set_file_name)
-        #for at_kind, pseudo in potentials_dict.items():
-        #    pseudo.write_cp2k_gpp_to_file(potential_file_name, mode='a')
-
-        # Generate dictionary for KIND based on the AiiDA 'structure.kinds' data
-        #subsysdict['KIND'] = [{'_': kind.name,
-        #                        'ELEMENT':kind.name,
-        #                        'BASIS_SET': "-".join(basis_set_dict[kind.name].tags),
-        #                        'POTENTIAL': potentials_dict[kind.name].get_full_type(),
-        #                        'MASS': kind.mass,
-        #                        } 
-        #                        for kind in structure.kinds]
-
-        # Deal with the cell:
-        subsysdict['CELL'] = {cell_direction:'{:<15} {:<15} {:<15}'.format(*structure.cell[index])
-                        for index, cell_direction in enumerate(['A', 'B', 'C'])}
-
-        # Export the structure as XYZ file and make CP2K use that one
-        # TODO: CP2K recommends PDB, but AiiDA does not have a PDB exporter yet
-        subsysdict['TOPOLOGY'] = {
-                'COORD_FILE_NAME': self._COORDS_FILE_NAME,
-                'COORD_FILE_FORMAT': "xyz",
-                }
-        # Here I am appending to the parameter - dictionary
-        parameters_dict['FORCE_EVAL']['SUBSYS'] = subsysdict
 
 
         ################ WRITING STRUCTURE ############################
@@ -375,18 +195,151 @@ class Cp2kCalculation(JobCalculation):
                   ",".join(settings_dict.keys())))
         return calcinfo
 
-def convert_to_uppercase(item_in_dict):
-    """
-    This method recursively goes through a dictionary
-    and converts all the keys to uppercase.
-    On the fly, it also converts the values (if strings) to upppercase
-    """
-    try:
-        for key in item_in_dict.keys():
-            item_in_dict[key.upper()] = convert_to_uppercase(item_in_dict.pop(key))
-    except AttributeError:
+
+#===============================================================================
+class Cp2kInput():
+    def __init__(self, param_dict):
+        self.params = param_dict
+
+    def convert_to_uppercase(item_in_dict):
+        """
+        This method recursively goes through a dictionary
+        and converts all the keys to uppercase.
+        On the fly, it also converts the values (if strings) to upppercase
+        """
         try:
-            return item_in_dict.upper()
+            for key in item_in_dict.keys():
+                item_in_dict[key.upper()] = convert_to_uppercase(item_in_dict.pop(key))
         except AttributeError:
-            return item_in_dict
-    return item_in_dict
+            try:
+                return item_in_dict.upper()
+            except AttributeError:
+                return item_in_dict
+        return item_in_dict
+
+    def nested_key_iter(nested):
+            """
+            Iterator for nested mixed list and dict structure,
+            yielding keys only.
+            """
+            if isinstance(nested, collections.Mapping):
+                for key, value in nested.items():
+                    yield key
+                    for inner_key in nested_key_iter(value):
+                        yield inner_key
+
+            elif isinstance(nested, collections.MutableSequence):
+                for value in nested:
+                    for inner_key in nested_key_iter(value):
+                        yield inner_key
+    ######################## LET'S START WRITING SOME INPUT #######################
+    # I have the parameters stored in the dictionary
+    # First of all, I want everything to be stored uppercase, if the user did not bother.
+    # It will make sure that there is no ambiguoity in the queries, everything is uppercase!
+    def print_parameters_cp2k_style(infile, params, indent = 0):
+        """
+        It takes a dictionary and recurses through.
+
+        For key-value pair it checks whether the value is a dictionary and prepends the key with &
+        It passes the valued to the same function, increasing the indentation
+        If the value is a list, I assume that this is something the user wants to store repetitively
+        eg:
+            dict['KEY'] = ['val1', 'val2']
+            ===>
+            KEY val1
+            KEY val2
+
+            or
+
+            dict['KIND'] = [{'_': 'Ba', 'ELEMENT':'Ba'},
+                            {'_': 'Ti', 'ELEMENT':'Ti'},
+                            {'_': 'O', 'ELEMENT':'O'}]
+            ====>
+                  &KIND Ba
+                     ELEMENT  Ba
+                  &END KIND
+                  &KIND Ti
+                     ELEMENT  Ti
+                  &END KIND
+                  &KIND O
+                     ELEMENT  O
+                  &END KIND
+
+        """
+
+
+        for key, val in params.items():
+            if isinstance(val, dict):
+                infile.write('{}&{} {}\n'.format(' '*indent, key, val.pop('_', '')))
+                print_parameters_cp2k_style(infile, val, indent + 3)
+                infile.write('{}&END {}\n'.format(' '*indent, key))
+            elif isinstance(val, list):
+                for listitem in val:
+                    print_parameters_cp2k_style(infile,  {key:listitem}, indent)
+            elif isinstance(val, bool):
+                infile.write('{}{}  {}\n'.format(   
+                            ' '*indent, 
+                            key, 
+                            '.true.'  if val else '.false.'))
+            # Definition of units not implemented !! Default cp2k-values
+            # elif isinstance(val, tuple):
+            #    try:
+            #        floatvalue, unit = float(val[0]), val[1]
+            #    except ValueError:
+            #        floatvalue, unit = float(val[1]), val[0]
+            #    infile.write('{}{} [{}] {}\n'.format(' '*indent, key, unit, floatvalue))
+            else:
+                infile.write('{}{}  {}\n'.format(' '*indent, key, val))
+
+    parameters_dict = convert_to_uppercase(parameters.get_dict())
+
+    for key in nested_key_iter(parameters_dict):
+        if key.startswith('@') or key.startswith('$'):
+            raise InputValidationError("CP2K internal input preprocessor "
+                    "not supported in AiiDA")
+        if key in self._KEYWORDS_BLACKLIST:
+            raise InputValidationError("Manually specifying {} for CP2K "
+                    "not supported in AiiDA".format(key))
+    # Whatever the user wrote, the project  name is set by aiida,
+    # otherwise file retrieving will not work
+    parameters_dict['GLOBAL']['PROJECT'] = self._PROJECT_NAME
+    parameters_dict['GLOBAL']['PRINT_LEVEL'] = 'MEDIUM'
+
+    # Take the structure data and append it to the parameter dictionary.
+    # Makes sure everything has the same output...
+    # TODO: potentials, basis sets?
+
+    subsysdict = {}
+
+    basis_set_file_name = tempfolder.get_abs_path(self._BASIS_SET_FILE_NAME)
+    potential_file_name = tempfolder.get_abs_path(self._PSEUDO_FILE_NAME) 
+    ########## PATCH #################
+
+    #parameters_dict['FORCE_EVAL']['DFT']['BASIS_SET_FILE_NAME'] = self._BASIS_SET_FILE_NAME
+    #parameters_dict['FORCE_EVAL']['DFT']['POTENTIAL_FILE_NAME'] = self._PSEUDO_FILE_NAME
+    #for at_kind, basisset in basis_set_dict.items():
+    #    basisset.print_cp2k(basis_set_file_name)
+    #for at_kind, pseudo in potentials_dict.items():
+    #    pseudo.write_cp2k_gpp_to_file(potential_file_name, mode='a')
+
+    # Generate dictionary for KIND based on the AiiDA 'structure.kinds' data
+    #subsysdict['KIND'] = [{'_': kind.name,
+    #                        'ELEMENT':kind.name,
+    #                        'BASIS_SET': "-".join(basis_set_dict[kind.name].tags),
+    #                        'POTENTIAL': potentials_dict[kind.name].get_full_type(),
+    #                        'MASS': kind.mass,
+    #                        } 
+    #                        for kind in structure.kinds]
+
+    # Deal with the cell:
+    subsysdict['CELL'] = {cell_direction:'{:<15} {:<15} {:<15}'.format(*structure.cell[index])
+                    for index, cell_direction in enumerate(['A', 'B', 'C'])}
+
+    # Export the structure as XYZ file and make CP2K use that one
+    # TODO: CP2K recommends PDB, but AiiDA does not have a PDB exporter yet
+    subsysdict['TOPOLOGY'] = {
+            'COORD_FILE_NAME': self._COORDS_FILE_NAME,
+            'COORD_FILE_FORMAT': "xyz",
+            }
+    # Here I am appending to the parameter - dictionary
+    parameters_dict['FORCE_EVAL']['SUBSYS'] = subsysdict

@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "name": "aiida_cp2k",
+    "url": "https://github.com/cp2k/aiida-cp2k",
+    "license": "MIT License",
+    "author": "Aliaksandr Yakutovich, Ole Schütt",
+    "author_email": "aliaksandr.yakutovich@empa.ch, ole.schuett@empa.ch",
+    "description": "A plugin to run CP2K calculations and workflows",
+    "classifiers": [
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 2.7",
+        "Development Status :: 3 - Alpha"
+    ],
+    "install_requires": [
+        "aiida[ssh]"
+    ],
+    "entry_points": {
+        "aiida.calculations": [
+            "quantumespresso.pw = aiida_cp2k.calculations.cp2k:Cp2kCalculation",
+        ],
+        "aiida.parsers": [
+            "quantumespresso.basicpw = aiida_quantumespresso.parsers.basicpw:BasicpwParser",
+            "quantumespresso.cp = aiida_quantumespresso.parsers.cp:CpParser",
+            "quantumespresso.cp2k = aiida_quantumespresso.parsers.pw:PwParser"
+        ],
+    }
+}

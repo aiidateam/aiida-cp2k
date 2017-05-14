@@ -13,8 +13,7 @@ from aiida.common.utils import classproperty
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.remote import RemoteData
-from aiida.common.datastructures import CalcInfo
-from aiida.common.datastructures import CodeInfo
+from aiida.common.datastructures import CalcInfo, CodeInfo
 from aiida.common.exceptions import InputValidationError
 
 class Cp2kCalculation(JobCalculation):
@@ -36,6 +35,8 @@ class Cp2kCalculation(JobCalculation):
         self._DEFAULT_OUTPUT_FILE = self._OUTPUT_FILE_NAME
         #self._DEFAULT_ERROR_FILE
         self._COORDS_FILE_NAME = 'aiida.coords.xyz'
+        self._PROJECT_NAME = 'AIIDA-PROJECT'
+        self._TRAJ_FILE_NAME = self._PROJECT_NAME+'-pos-1.xyz'
         self._default_parser = 'cp2k.Cp2kParser'
 
     #---------------------------------------------------------------------------
@@ -95,6 +96,7 @@ class Cp2kCalculation(JobCalculation):
             inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/'+a, val)
         inp.add_keyword("FORCE_EVAL/SUBSYS/TOPOLOGY/COORD_FILE_NAME", self._COORDS_FILE_NAME)
         inp.add_keyword("FORCE_EVAL/SUBSYS/TOPOLOGY/COORD_FILE_FORMAT", "xyz")
+        inp.add_keyword("GLOBAL/PROJECT", self._PROJECT_NAME)
         inp_fn = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
         with open(inp_fn, "w") as f:
             f.write(inp.render())
@@ -124,8 +126,8 @@ class Cp2kCalculation(JobCalculation):
         calcinfo.remote_symlink_list = []
         calcinfo.local_copy_list = []
         calcinfo.remote_copy_list = []
-        add_retrieve_list = settings.pop('additional_retrieve_list', [])
-        calcinfo.retrieve_list = [self._OUTPUT_FILE_NAME] + add_retrieve_list
+        calcinfo.retrieve_list = [self._OUTPUT_FILE_NAME, self._TRAJ_FILE_NAME]
+        calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
         # check for left over settings
         if settings:

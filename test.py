@@ -9,41 +9,128 @@
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
 
+import os
+import sys
+import time
+import subprocess
+import ase.build
+import numpy as np
+
 from aiida import load_dbenv, is_dbenv_loaded
 from aiida.backends import settings
 if not is_dbenv_loaded():
     load_dbenv(profile=settings.AIIDADB_PROFILE)
 
-import sys
-import os
-import time
-import subprocess
-import ase.build
-
 from aiida.common.example_helpers import test_and_get_code
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.parameter import ParameterData
 
-timeout_secs = 5*60.
-codename = 'cp2k@torquessh'
-
-#-------------------------------------------------------------------------------
+#===============================================================================
 def main():
-    # calc object
+    codename = 'cp2k@torquessh'
     code = test_and_get_code(codename, expected_code_type='cp2k')
+    test_energy(code)
+    test_geo_opt(code)
+    print("All tests passed :-)")
+    sys.exit(0)
+
+#===============================================================================
+def test_energy(code):
+    print("Testing CP2K ENERGY ...")
+
+    # calc object
     calc = code.new_calc()
-    calc.label = "Test CP2K. Water molecule"
-    calc.description = "Test calculation with the CP2K code. Water molecule"
+    calc.label = "Test CP2K ENERGY on H2O"
 
     # structure
-    ase_struct = ase.build.molecule('H2O')
-    ase_struct.center(vacuum=2.0)
-    structure = StructureData(ase=ase_struct)
+    atoms = ase.build.molecule('H2O')
+    atoms.center(vacuum=2.0)
+    structure = StructureData(ase=atoms)
+    calc.use_structure(structure)
+
+    # parameters
+    parameters = ParameterData(dict={'force_eval':get_force_eval()})
+    calc.use_parameters(parameters)
+
+    # resources
+    calc.set_max_wallclock_seconds(3*60) # 3 min
+    calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 2})
+
+    # store and submit
+    calc.store_all()
+    calc.submit()
+    print "submitted calculation: UUID=%s, pk=%s"%(calc.uuid,calc.dbnode.pk)
+
+    wait_for_calc(calc)
+
+    # check results
+    expected_energy = -17.1566361119
+    if abs(calc.res.energy - expected_energy) < 1e-10:
+        print "OK, energy has the expected value"
+    else:
+        print "ERROR!"
+        print "Expected energy value: {}".format(expected_energy)
+        print "Actual energy value: {}".format(calc.res.energy)
+        sys.exit(3)
+
+#===============================================================================
+def test_geo_opt(code):
+    print("Testing CP2K GEO_OPT ...")
+
+    # calc object
+    calc = code.new_calc()
+    calc.label = "Test CP2K GEO_OPT on H2"
+
+    # structure
+    atoms = ase.build.molecule('H2')
+    atoms.center(vacuum=2.0)
+    vec = atoms.positions[0,:] - atoms.positions[1,:]
+    structure = StructureData(ase=atoms)
     calc.use_structure(structure)
 
     # parameters
     parameters = ParameterData(dict={
-        'force_eval': {
+        'global': {
+            'run_type': 'GEO_OPT',
+        },
+        'force_eval': get_force_eval()
+    })
+    calc.use_parameters(parameters)
+
+    # resources
+    calc.set_max_wallclock_seconds(3*60) # 3 min
+    calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 2})
+
+    # store and submit
+    calc.store_all()
+    calc.submit()
+    print "submitted calculation: UUID=%s, pk=%s"%(calc.uuid,calc.dbnode.pk)
+
+    wait_for_calc(calc)
+
+    # check results
+    expected_energy = -1.14009973178
+    if abs(calc.res.energy - expected_energy) < 1e-10:
+        print "OK, energy has the expected value"
+    else:
+        print "ERROR!"
+        print "Expected energy value: {}".format(expected_energy)
+        print "Actual energy value: {}".format(calc.res.energy)
+        sys.exit(3)
+
+    expected_dist = 0.7361038798
+    dist = calc.out.output_structure.get_ase().get_distance(0, 1)
+    if abs(dist - expected_dist) < 1e-7:
+        print "OK, H-H distance has the expected value"
+    else:
+        print "ERROR!"
+        print "Expected dist value: {}".format(expected_dist)
+        print "Actual dist value: {}".format(dist)
+        sys.exit(3)
+
+#===============================================================================
+def get_force_eval():
+    return {
             'method': 'Quickstep',
             'dft': {
                 'basis_set_file_name': 'BASIS_MOLOPT',
@@ -74,22 +161,9 @@ def main():
                 ],
             },
         }
-    })
-    calc.use_parameters(parameters)
 
-    # resources
-    calc.set_max_wallclock_seconds(3*60) # 3 min
-    calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 2})
-
-    # store and submit
-    calc.store_all()
-    print "created calculation; calc=Calculation(uuid='{}') # ID={}".format(
-        calc.uuid,calc.dbnode.pk)
-    calc.submit()
-    print "submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(
-        calc.uuid,calc.dbnode.pk)
-
-    # wait
+#===============================================================================
+def wait_for_calc(calc, timeout_secs=5*60.0):
     print "Wating for end of execution..."
     start_time = time.time()
     exited_with_timeout = True
@@ -102,7 +176,8 @@ def main():
         print "#"*78
         print "Output of 'verdi calculation list':"
         try:
-            print subprocess.check_output(["verdi", "calculation", "list"], stderr=subprocess.STDOUT)
+            cmd = ["verdi", "calculation", "list"]
+            print subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             print "Note: the command failed, message: {}".format(e.message)
         if calc.has_finished():
@@ -111,20 +186,13 @@ def main():
             break
 
     # check results
-    expected_energy = -17.1566361119
     if exited_with_timeout:
         print "Timeout!! Calculation did not complete after {} seconds".format(
             timeout_secs)
         sys.exit(2)
-    else:
-        if abs(calc.res.energy - expected_energy) < 1e-10:
-            print "OK, energy has the expected value"
-            sys.exit(0)
-        else:
-            print "ERROR!"
-            print "Expected free energy value: {}".format(expected_energy)
-            print "Actual free energy value: {}".format(calc.res.energy)
-            sys.exit(3)
 
-main()
+#===============================================================================
+if __name__ == "__main__":
+    main()
+
 #EOF

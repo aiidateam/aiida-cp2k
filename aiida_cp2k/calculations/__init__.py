@@ -33,7 +33,6 @@ class Cp2kCalculation(JobCalculation):
         self._OUTPUT_FILE_NAME = 'aiida.out'
         self._DEFAULT_INPUT_FILE  = self._INPUT_FILE_NAME
         self._DEFAULT_OUTPUT_FILE = self._OUTPUT_FILE_NAME
-        #self._DEFAULT_ERROR_FILE
         self._COORDS_FILE_NAME = 'aiida.coords.xyz'
         self._PROJECT_NAME = 'AIIDA-PROJECT'
         self._TRAJ_FILE_NAME = self._PROJECT_NAME+'-pos-1.xyz'

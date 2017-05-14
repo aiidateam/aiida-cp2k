@@ -31,7 +31,7 @@ class Cp2kCalculation(JobCalculation):
         super(Cp2kCalculation, self)._init_internal_params()
         self._INPUT_FILE_NAME  = 'aiida.inp'
         self._OUTPUT_FILE_NAME = 'aiida.out'
-        self.DEFAULT_INPUT_FILE  = self._INPUT_FILE_NAME
+        self._DEFAULT_INPUT_FILE  = self._INPUT_FILE_NAME
         self._DEFAULT_OUTPUT_FILE = self._OUTPUT_FILE_NAME
         #self._DEFAULT_ERROR_FILE
         self._COORDS_FILE_NAME = 'aiida.coords.xyz'

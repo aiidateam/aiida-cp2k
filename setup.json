@@ -12,7 +12,8 @@
         "Development Status :: 3 - Alpha"
     ],
     "install_requires": [
-        "aiida[ssh]"
+        "aiida[ssh]",
+        "ase"
     ],
     "entry_points": {
         "aiida.calculations": [

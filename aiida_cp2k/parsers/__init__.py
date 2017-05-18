@@ -58,6 +58,7 @@ class Cp2kParser(Parser):
             for line in f.readlines():
                 if line.startswith(' ENERGY| '):
                     result_dict['energy'] = float(line.split()[8])
+                    result_dict['energy_units'] = "a.u."
 
         if 'energy' not in result_dict.keys():
             raise OutputParsingError("Cp2k output file without final energy")

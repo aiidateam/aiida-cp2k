@@ -15,6 +15,7 @@ import time
 import subprocess
 import ase.build
 import numpy as np
+from os import path
 
 from aiida import load_dbenv, is_dbenv_loaded
 from aiida.backends import settings
@@ -24,23 +25,124 @@ if not is_dbenv_loaded():
 from aiida.common.example_helpers import test_and_get_code
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.parameter import ParameterData
+from aiida.orm.data.singlefile import SinglefileData
 
 #===============================================================================
 def main():
     codename = 'cp2k@torquessh'
     code = test_and_get_code(codename, expected_code_type='cp2k')
-    test_energy(code)
-    test_geo_opt(code)
+    test_energy_mm(code)
+    test_energy_dft(code)
+    test_geo_opt_dft(code)
     print("All tests passed :-)")
     sys.exit(0)
 
 #===============================================================================
-def test_energy(code):
-    print("Testing CP2K ENERGY ...")
+def test_energy_mm(code):
+    print("Testing CP2K ENERGY (MM) ...")
 
     # calc object
     calc = code.new_calc()
-    calc.label = "Test CP2K ENERGY on H2O"
+    calc.label = "Test CP2K ENERGY on H2O (MM)"
+
+    # parameters
+    # based on cp2k/tests/Fist/regtest-1-1/water_1.inp
+    parameters = ParameterData(dict={
+            'force_eval':{
+                'method': 'fist',
+                'mm': {
+                    'forcefield': {
+                        'parm_file_name': 'water.pot',
+                        'parmtype': 'CHM',
+                        'charge':[
+                            {'atom':'O', 'charge': -0.8476},
+                            {'atom':'H', 'charge': 0.4238},]
+                    },
+                    'poisson': {'ewald':{
+                        'ewald_type':'spme',
+                        'alpha': 0.44,
+                        'gmax': 24,
+                        'o_spline': 6
+                    }}
+                }
+            },
+            'global': {
+                'callgraph': 'master',
+                'callgraph_file_name': 'runtime'
+            }
+    })
+    calc.use_parameters(parameters)
+
+    # force field
+    with open("water.pot", "w") as f:
+        f.write("""BONDS
+H    H       0.000     1.5139
+O    H     450.000     0.9572
+
+ANGLES
+H    O    H      55.000   104.5200
+
+DIHEDRALS
+
+IMPROPER
+
+NONBONDED
+H      0.000000  -0.046000     0.224500
+O      0.000000  -0.152100     1.768200
+
+HBOND CUTHB 0.5
+
+END""")
+    water_pot = SinglefileData(file=path.abspath("water.pot"))
+    calc.use_file(water_pot, linkname="water_pot")
+
+    # structure
+    atoms = ase.build.molecule('H2O')
+    atoms.center(vacuum=10.0)
+    structure = StructureData(ase=atoms)
+    calc.use_structure(structure)
+
+    # resources
+    calc.set_max_wallclock_seconds(3*60) # 3 min
+    calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 2})
+
+    settings = ParameterData(dict={'additional_retrieve_list':["runtime.callgraph"]})
+    calc.use_settings(settings)
+    #calc.submit_test()
+    #return
+
+    # store and submit
+    calc.store_all()
+    calc.submit()
+    print "submitted calculation: UUID=%s, pk=%s"%(calc.uuid,calc.dbnode.pk)
+
+    wait_for_calc(calc)
+
+    # check energy results
+    expected_energy = 0.146927412614e-3
+    if abs(calc.res.energy - expected_energy) < 1e-10:
+        print "OK, energy has the expected value"
+    else:
+        print "ERROR!"
+        print "Expected energy value: {}".format(expected_energy)
+        print "Actual energy value: {}".format(calc.res.energy)
+        sys.exit(3)
+
+    # check if callgraph is there
+    if "runtime.callgraph" in calc.get_retrieved_node().get_folder_list():
+        print "OK, callgraph file was retrived"
+    else:
+        print "ERROR!"
+        print "Callgraph file was not retrieved."
+        sys.exit(3)
+
+#===============================================================================
+def test_energy_dft(code):
+    print("Testing CP2K ENERGY (DFT)...")
+
+    # calc object
+    calc = code.new_calc()
+    calc.label = "Test CP2K ENERGY on H2O (DFT)"
 
     # structure
     atoms = ase.build.molecule('H2O')
@@ -64,7 +166,7 @@ def test_energy(code):
     wait_for_calc(calc)
 
     # check results
-    expected_energy = -17.1566361119
+    expected_energy = -17.1566368539
     if abs(calc.res.energy - expected_energy) < 1e-10:
         print "OK, energy has the expected value"
     else:
@@ -74,12 +176,12 @@ def test_energy(code):
         sys.exit(3)
 
 #===============================================================================
-def test_geo_opt(code):
-    print("Testing CP2K GEO_OPT ...")
+def test_geo_opt_dft(code):
+    print("Testing CP2K GEO_OPT (DFT)...")
 
     # calc object
     calc = code.new_calc()
-    calc.label = "Test CP2K GEO_OPT on H2"
+    calc.label = "Test CP2K GEO_OPT on H2 (DFT)"
 
     # structure
     atoms = ase.build.molecule('H2')
@@ -109,7 +211,7 @@ def test_geo_opt(code):
     wait_for_calc(calc)
 
     # check results
-    expected_energy = -1.14009973178
+    expected_energy = -1.14009973333
     if abs(calc.res.energy - expected_energy) < 1e-10:
         print "OK, energy has the expected value"
     else:
@@ -118,7 +220,7 @@ def test_geo_opt(code):
         print "Actual energy value: {}".format(calc.res.energy)
         sys.exit(3)
 
-    expected_dist = 0.7361038798
+    expected_dist = 0.736125211
     dist = calc.out.output_structure.get_ase().get_distance(0, 1)
     if abs(dist - expected_dist) < 1e-7:
         print "OK, H-H distance has the expected value"

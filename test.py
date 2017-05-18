@@ -104,7 +104,7 @@ END""")
 
     # resources
     calc.set_max_wallclock_seconds(3*60) # 3 min
-    calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 2})
+    calc.set_resources({"num_machines": 1})
 
     settings = ParameterData(dict={'additional_retrieve_list':["runtime.callgraph"]})
     calc.use_settings(settings)
@@ -156,7 +156,7 @@ def test_energy_dft(code):
 
     # resources
     calc.set_max_wallclock_seconds(3*60) # 3 min
-    calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 2})
+    calc.set_resources({"num_machines": 1})
 
     # store and submit
     calc.store_all()
@@ -201,7 +201,7 @@ def test_geo_opt_dft(code):
 
     # resources
     calc.set_max_wallclock_seconds(3*60) # 3 min
-    calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 2})
+    calc.set_resources({"num_machines": 1})
 
     # store and submit
     calc.store_all()
@@ -258,8 +258,8 @@ def get_force_eval():
             },
             'subsys': {
                 'kind': [
-                    {'_':'O', 'basis_set':'DZVP-MOLOPT-SR-GTH',  'potential': 'GTH-LDA' },
-                    {'_':'H', 'basis_set':'DZVP-MOLOPT-SR-GTH',  'potential': 'GTH-LDA' },
+                    {'_':'O', 'basis_set':'DZVP-MOLOPT-SR-GTH',  'potential': 'GTH-LDA-q6' },
+                    {'_':'H', 'basis_set':'DZVP-MOLOPT-SR-GTH',  'potential': 'GTH-LDA-q1' },
                 ],
             },
         }

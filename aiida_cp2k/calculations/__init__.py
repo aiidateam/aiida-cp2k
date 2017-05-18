@@ -12,9 +12,11 @@ from aiida.orm.calculation.job import JobCalculation
 from aiida.common.utils import classproperty
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.parameter import ParameterData
+from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.data.remote import RemoteData
 from aiida.common.datastructures import CalcInfo, CodeInfo
 from aiida.common.exceptions import InputValidationError
+import os
 
 class Cp2kCalculation(JobCalculation):
     """
@@ -33,8 +35,8 @@ class Cp2kCalculation(JobCalculation):
         self._OUTPUT_FILE_NAME = 'aiida.out'
         self._DEFAULT_INPUT_FILE  = self._INPUT_FILE_NAME
         self._DEFAULT_OUTPUT_FILE = self._OUTPUT_FILE_NAME
-        self._COORDS_FILE_NAME = 'aiida.coords.xyz'
-        self._PROJECT_NAME = 'AIIDA-PROJECT'
+        self._COORDS_FILE_NAME = 'aiida.coords.pdb'
+        self._PROJECT_NAME = 'AIIDA'
         self._TRAJ_FILE_NAME = self._PROJECT_NAME+'-pos-1.xyz'
         self._default_parser = 'cp2k.Cp2kParser'
 
@@ -65,14 +67,25 @@ class Cp2kCalculation(JobCalculation):
                'linkname': 'parameters',
                'docstring': "Use a node that specifies the input parameters for the namelists",
                },
-               "parent_folder": {
+            "parent_folder": {
                'valid_types': RemoteData,
                'additional_parameter': None,
                'linkname': 'parent_calc_folder',
                'docstring': "Use a remote folder as parent folder (for restarts and similar)",
                },
+            "file": {
+               'valid_types': SinglefileData,
+               'additional_parameter': "linkname",
+               'linkname': cls._get_linkname_file,
+               'docstring': "Use files to provide additional parameters",
+               },
             })
         return retdict
+
+    #---------------------------------------------------------------------------
+    @classmethod
+    def _get_linkname_file(cls, linkname):
+        return(linkname)
 
     #---------------------------------------------------------------------------
     def _prepare_for_submission(self, tempfolder, inputdict):
@@ -86,7 +99,7 @@ class Cp2kCalculation(JobCalculation):
                 be returned by get_inputdata_dict (without the Code!)
         """
 
-        params, structure, code, settings = self._verify_inlinks(inputdict)
+        params, structure, code, settings, local_copy_list = self._verify_inlinks(inputdict)
 
         # write cp2k input file
         inp = Cp2kInput(params)
@@ -94,7 +107,7 @@ class Cp2kCalculation(JobCalculation):
             val = '{:<15} {:<15} {:<15}'.format(*structure.cell[i])
             inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/'+a, val)
         inp.add_keyword("FORCE_EVAL/SUBSYS/TOPOLOGY/COORD_FILE_NAME", self._COORDS_FILE_NAME)
-        inp.add_keyword("FORCE_EVAL/SUBSYS/TOPOLOGY/COORD_FILE_FORMAT", "xyz")
+        inp.add_keyword("FORCE_EVAL/SUBSYS/TOPOLOGY/COORD_FILE_FORMAT", "pdb")
         inp.add_keyword("GLOBAL/PROJECT", self._PROJECT_NAME)
         inp_fn = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
         with open(inp_fn, "w") as f:
@@ -102,7 +115,7 @@ class Cp2kCalculation(JobCalculation):
 
         # write structure file
         struct_fn = tempfolder.get_abs_path(self._COORDS_FILE_NAME)
-        structure.export(struct_fn, 'xyz')
+        structure.get_ase().write(struct_fn, format="proteindatabank")
 
         # create code info
         codeinfo = CodeInfo()
@@ -123,7 +136,7 @@ class Cp2kCalculation(JobCalculation):
 
         # file lists
         calcinfo.remote_symlink_list = []
-        calcinfo.local_copy_list = []
+        calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = []
         calcinfo.retrieve_list = [self._OUTPUT_FILE_NAME, self._TRAJ_FILE_NAME]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
@@ -160,7 +173,6 @@ class Cp2kCalculation(JobCalculation):
             code = inputdict.pop(self.get_linkname('code'))
         except KeyError:
             raise InputValidationError("No code specified for this calculation")
-        #TODO: check type of code
 
         # settings
         # ... if not provided fall back to empty dict
@@ -175,13 +187,18 @@ class Cp2kCalculation(JobCalculation):
             if not isinstance(parent_calc_folder, RemoteData):
                 raise InputValidationError("parent_calc_folder, if specified, must be of type RemoteData")
 
-        #TODO: handle additional parameter files
+        # handle additional parameter files
+        local_copy_list = []
+        for k, v in inputdict.items():
+            if isinstance(v, SinglefileData):
+                inputdict.pop(k)
+                local_copy_list.append( (v.get_file_abs_path(), v.filename) )
 
         if inputdict:
             msg = "The following input data nodes are unrecognized: {}".format(inputdict.keys())
             raise InputValidationError(msg)
 
-        return(params, structure, code, settings)
+        return(params, structure, code, settings, local_copy_list)
 
 
 #===============================================================================
@@ -222,7 +239,6 @@ class Cp2kInput(object):
     def render(self):
         output = ["!!! Generated by AiiDA !!!"]
         self._render_section(output, self.params)
-        print("\n".join(output))
         return "\n".join(output)
 
     #---------------------------------------------------------------------------
@@ -256,7 +272,7 @@ class Cp2kInput(object):
                   &END KIND
         """
 
-        for key, val in params.items():
+        for key, val in sorted(params.items()):
             if key.startswith('@') or key.startswith('$'):
                 raise InputValidationError("CP2K internal input preprocessor not supported in AiiDA")
             if isinstance(val, dict):

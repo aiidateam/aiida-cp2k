@@ -120,9 +120,10 @@ class Cp2kCalculation(JobCalculation):
         # create code info
         codeinfo = CodeInfo()
         cmdline = settings.pop('cmdline', [])
-        cmdline += ["-i", self._INPUT_FILE_NAME, "-o", self._OUTPUT_FILE_NAME]
+        cmdline += ["-i", self._INPUT_FILE_NAME]
         codeinfo.cmdline_params = cmdline
         codeinfo.stdout_name = self._OUTPUT_FILE_NAME
+        codeinfo.join_files = True
         codeinfo.code_uuid = code.uuid
 
         # create calc info

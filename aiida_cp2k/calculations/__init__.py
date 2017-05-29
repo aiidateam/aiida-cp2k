@@ -205,21 +205,7 @@ class Cp2kCalculation(JobCalculation):
 #===============================================================================
 class Cp2kInput(object):
     def __init__(self, params):
-        self.params = self._normalize(params)
-
-    #---------------------------------------------------------------------------
-    def _normalize(self, nested):
-        """
-        This method recursively converts all dict keys to uppercase.
-        """
-        if isinstance(nested, dict):
-            for key in nested.keys():
-                nested[key.upper()] = self._normalize(nested.pop(key))
-            return nested
-        elif isinstance(nested, list):
-            return list([self._normalize(i) for i in nested])
-        else:
-            return nested
+        self.params = params
 
     #---------------------------------------------------------------------------
     def add_keyword(self, kwpath, value, params=None):
@@ -274,6 +260,8 @@ class Cp2kInput(object):
         """
 
         for key, val in sorted(params.items()):
+            if key.upper() != key:
+                raise InputValidationError("CP2K keywords have to be upper case.")
             if key.startswith('@') or key.startswith('$'):
                 raise InputValidationError("CP2K internal input preprocessor not supported in AiiDA")
             if isinstance(val, dict):

@@ -1,0 +1,13 @@
+sudo: required
+
+language: python
+
+install:
+  - ./install_travis_env.sh
+
+script:
+  # can't rely on "/usr/bin/env python" for some reason
+  - /usr/bin/python ./test.py cp2k@localhost
+
+git:
+  depth: 3

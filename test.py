@@ -13,9 +13,10 @@ import os
 import sys
 import time
 import subprocess
-import ase.build
 import numpy as np
 from os import path
+
+import ase.build
 
 from aiida import load_dbenv, is_dbenv_loaded
 from aiida.backends import settings
@@ -29,7 +30,11 @@ from aiida.orm.data.singlefile import SinglefileData
 
 #===============================================================================
 def main():
-    codename = 'cp2k@torquessh'
+    if len(sys.argv) != 2:
+        print("Usage: test.py <code_name>")
+        sys.exit(1)
+
+    codename = sys.argv[1]
     code = test_and_get_code(codename, expected_code_type='cp2k')
     test_energy_mm(code)
     test_energy_dft(code)
@@ -48,27 +53,27 @@ def test_energy_mm(code):
     # parameters
     # based on cp2k/tests/Fist/regtest-1-1/water_1.inp
     parameters = ParameterData(dict={
-            'force_eval':{
-                'method': 'fist',
-                'mm': {
-                    'forcefield': {
-                        'parm_file_name': 'water.pot',
-                        'parmtype': 'CHM',
-                        'charge':[
-                            {'atom':'O', 'charge': -0.8476},
-                            {'atom':'H', 'charge': 0.4238},]
+            'FORCE_EVAL':{
+                'METHOD': 'fist',
+                'MM': {
+                    'FORCEFIELD': {
+                        'PARM_FILE_NAME': 'water.pot',
+                        'PARMTYPE': 'CHM',
+                        'CHARGE':[
+                            {'ATOM':'O', 'CHARGE': -0.8476},
+                            {'ATOM':'H', 'CHARGE': 0.4238},]
                     },
-                    'poisson': {'ewald':{
-                        'ewald_type':'spme',
-                        'alpha': 0.44,
-                        'gmax': 24,
-                        'o_spline': 6
+                    'POISSON': {'EWALD':{
+                        'EWALD_TYPE':'spme',
+                        'ALPHA': 0.44,
+                        'GMAX': 24,
+                        'O_SPLINE': 6
                     }}
                 }
             },
-            'global': {
-                'callgraph': 'master',
-                'callgraph_file_name': 'runtime'
+            'GLOBAL': {
+                'CALLGRAPH': 'master',
+                'CALLGRAPH_FILE_NAME': 'runtime'
             }
     })
     calc.use_parameters(parameters)
@@ -151,7 +156,7 @@ def test_energy_dft(code):
     calc.use_structure(structure)
 
     # parameters
-    parameters = ParameterData(dict={'force_eval':get_force_eval()})
+    parameters = ParameterData(dict={'FORCE_EVAL':get_force_eval()})
     calc.use_parameters(parameters)
 
     # resources
@@ -192,10 +197,10 @@ def test_geo_opt_dft(code):
 
     # parameters
     parameters = ParameterData(dict={
-        'global': {
-            'run_type': 'GEO_OPT',
+        'GLOBAL': {
+            'RUN_TYPE': 'GEO_OPT',
         },
-        'force_eval': get_force_eval()
+        'FORCE_EVAL': get_force_eval()
     })
     calc.use_parameters(parameters)
 
@@ -233,33 +238,33 @@ def test_geo_opt_dft(code):
 #===============================================================================
 def get_force_eval():
     return {
-            'method': 'Quickstep',
-            'dft': {
-                'basis_set_file_name': 'BASIS_MOLOPT',
-                'qs': {
-                    'eps_default': 1.0e-12,
-                    'wf_interpolation': 'ps',
-                    'extrapolation_order': 3,
+            'METHOD': 'Quickstep',
+            'DFT': {
+                'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+                'QS': {
+                    'EPS_DEFAULT': 1.0e-12,
+                    'WF_INTERPOLATION': 'ps',
+                    'EXTRAPOLATION_ORDER': 3,
                 },
-                'mgrid': {
-                    'ngrids': 4,
-                    'cutoff':280,
-                    'rel_cutoff': 30,
+                'MGRID': {
+                    'NGRIDS': 4,
+                    'CUTOFF': 280,
+                    'REL_CUTOFF': 30,
                 },
-                'xc': {
-                    'xc_functional': {
+                'XC': {
+                    'XC_FUNCTIONAL': {
                         '_': 'LDA',
                     },
                 },
-                'poisson': {
-                    'periodic': 'none',
-                    'psolver': 'MT',
+                'POISSON': {
+                    'PERIODIC': 'none',
+                    'PSOLVER': 'MT',
                 },
             },
-            'subsys': {
-                'kind': [
-                    {'_':'O', 'basis_set':'DZVP-MOLOPT-SR-GTH',  'potential': 'GTH-LDA-q6' },
-                    {'_':'H', 'basis_set':'DZVP-MOLOPT-SR-GTH',  'potential': 'GTH-LDA-q1' },
+            'SUBSYS': {
+                'KIND': [
+                    {'_': 'O', 'BASIS_SET': 'DZVP-MOLOPT-SR-GTH', 'POTENTIAL': 'GTH-LDA-q6' },
+                    {'_': 'H', 'BASIS_SET': 'DZVP-MOLOPT-SR-GTH', 'POTENTIAL': 'GTH-LDA-q1' },
                 ],
             },
         }

@@ -261,7 +261,7 @@ class Cp2kInput(object):
 
         for key, val in sorted(params.items()):
             if key.upper() != key:
-                raise InputValidationError("CP2K keywords have to be upper case.")
+                raise InputValidationError("CP2K keyword '%s' is not upper cased"%key)
             if key.startswith('@') or key.startswith('$'):
                 raise InputValidationError("CP2K internal input preprocessor not supported in AiiDA")
             if isinstance(val, dict):

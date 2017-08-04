@@ -1,9 +1,9 @@
 {
-    "version": "0.2.0",
+    "version": "0.2.2",
     "name": "aiida_cp2k",
     "url": "https://github.com/cp2k/aiida-cp2k",
     "license": "MIT License",
-    "author": "Leonid Kahle, Aliaksandr Yakutovich, Tiziano Müller, Andreas Gloess, Patrick Seewald, Ole Schütt",
+    "author": "Ole Schütt, Aliaksandr Yakutovich, Patrick Seewald, Tiziano Müller, Andreas Glöss, Leonid Kahle",
     "author_email": "ole.schuett@empa.ch",
     "description": "A plugin to run CP2K calculations and workflows",
     "classifiers": [
@@ -12,7 +12,7 @@
         "Development Status :: 3 - Alpha"
     ],
     "install_requires": [
-        "aiida[ssh]",
+        "aiida",
         "ase"
     ],
     "entry_points": {
@@ -22,5 +22,8 @@
         "aiida.parsers": [
             "cp2k = aiida_cp2k.parsers:Cp2kParser"
         ]
-    }
+    },
+    "data_files": [
+        [".", ["setup.json"]]
+    ]
 }

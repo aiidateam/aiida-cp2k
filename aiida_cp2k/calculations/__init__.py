@@ -38,7 +38,7 @@ class Cp2kCalculation(JobCalculation):
         self._COORDS_FILE_NAME = 'aiida.coords.pdb'
         self._PROJECT_NAME = 'AIIDA'
         self._TRAJ_FILE_NAME = self._PROJECT_NAME+'-pos-1.xyz'
-        self._default_parser = 'cp2k.Cp2kParser'
+        self._default_parser = 'cp2k'
 
     #---------------------------------------------------------------------------
     @classproperty

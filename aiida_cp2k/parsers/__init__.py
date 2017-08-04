@@ -14,7 +14,7 @@ from aiida.parsers.parser import Parser
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.parsers.exceptions import OutputParsingError
-from aiida.orm.calculation.job.cp2k import Cp2kCalculation
+from aiida_cp2k.calculations import Cp2kCalculation
 
 class Cp2kParser(Parser):
     """

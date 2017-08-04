@@ -11,13 +11,11 @@ wget -O POTENTIAL https://sourceforge.net/p/cp2k/code/HEAD/tree/branches/cp2k-4_
 sudo mkdir -p ${CP2K_DATA_DIR}
 sudo mv BASIS_MOLOPT POTENTIAL ${CP2K_DATA_DIR}
 
-# install AiiDA
-sudo pip install aiida
+# install CP2K plugin (installs AiiDA as dependency)
+sudo pip install .
 
-# ready the cp2k plugin
-sudo pip install ase
-sudo ln -s ${PWD}/aiida_cp2k/calculations /usr/local/lib/python2.7/dist-packages/aiida/orm/calculation/job/cp2k
-sudo ln -s ${PWD}/aiida_cp2k/parsers      /usr/local/lib/python2.7/dist-packages/aiida/parsers/plugins/cp2k
+# update reentry cache
+sudo reentry scan
 
 # setup aiida user
 verdi quicksetup --email some.body@xyz.com --first-name Some --last-name Body --institution XYZ

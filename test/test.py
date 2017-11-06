@@ -36,6 +36,7 @@ def main():
 
     codename = sys.argv[1]
     code = test_and_get_code(codename, expected_code_type='cp2k')
+    test_no_structure_data(code)
     test_energy_mm(code)
     test_energy_dft(code)
     test_geo_opt_dft(code)
@@ -44,11 +45,10 @@ def main():
 
 #===============================================================================
 def test_energy_mm(code):
-    print("Testing CP2K ENERGY (MM) ...")
+    print("Testing CP2K ENERGY on H2O (MM) ...")
 
     # calc object
     calc = code.new_calc()
-    calc.label = "Test CP2K ENERGY on H2O (MM)"
 
     # parameters
     # based on cp2k/tests/Fist/regtest-1-1/water_1.inp
@@ -143,11 +143,10 @@ END""")
 
 #===============================================================================
 def test_energy_dft(code):
-    print("Testing CP2K ENERGY (DFT)...")
+    print("Testing CP2K ENERGY on H2O (DFT)...")
 
     # calc object
     calc = code.new_calc()
-    calc.label = "Test CP2K ENERGY on H2O (DFT)"
 
     # structure
     atoms = ase.build.molecule('H2O')
@@ -182,11 +181,10 @@ def test_energy_dft(code):
 
 #===============================================================================
 def test_geo_opt_dft(code):
-    print("Testing CP2K GEO_OPT (DFT)...")
+    print("Testing CP2K GEO_OPT on H2 (DFT)...")
 
     # calc object
     calc = code.new_calc()
-    calc.label = "Test CP2K GEO_OPT on H2 (DFT)"
 
     # structure
     atoms = ase.build.molecule('H2')
@@ -233,6 +231,44 @@ def test_geo_opt_dft(code):
         print "ERROR!"
         print "Expected dist value: {}".format(expected_dist)
         print "Actual dist value: {}".format(dist)
+        sys.exit(3)
+
+#===============================================================================
+def test_no_structure_data(code):
+    print("Testing CP2K ENERGY on H2 (DFT) without StructureData...")
+
+    # calc object
+    calc = code.new_calc()
+
+    # structure directly included in parameters
+    force_eval = get_force_eval()
+    force_eval['SUBSYS']['CELL'] = {'ABC': '4.0   4.0   4.75'}
+    force_eval['SUBSYS']['COORD'] = {' ': ['H    2.0   2.0   2.737166',
+                                           'H    2.0   2.0   2.000000']}
+
+    # parameters
+    parameters = ParameterData(dict={'FORCE_EVAL':force_eval})
+    calc.use_parameters(parameters)
+
+    # resources
+    calc.set_max_wallclock_seconds(3*60) # 3 min
+    calc.set_resources({"num_machines": 1})
+
+    # store and submit
+    calc.store_all()
+    calc.submit()
+    print "submitted calculation: UUID=%s, pk=%s"%(calc.uuid,calc.dbnode.pk)
+
+    wait_for_calc(calc)
+
+    # check results
+    expected_energy = -1.14005678487
+    if abs(calc.res.energy - expected_energy) < 1e-10:
+        print "OK, energy has the expected value"
+    else:
+        print "ERROR!"
+        print "Expected energy value: {}".format(expected_energy)
+        print "Actual energy value: {}".format(calc.res.energy)
         sys.exit(3)
 
 #===============================================================================

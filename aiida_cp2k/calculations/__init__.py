@@ -103,19 +103,18 @@ class Cp2kCalculation(JobCalculation):
 
         # write cp2k input file
         inp = Cp2kInput(params)
-        for i, a in enumerate('ABC'):
-            val = '{:<15} {:<15} {:<15}'.format(*structure.cell[i])
-            inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/'+a, val)
-        inp.add_keyword("FORCE_EVAL/SUBSYS/TOPOLOGY/COORD_FILE_NAME", self._COORDS_FILE_NAME)
-        inp.add_keyword("FORCE_EVAL/SUBSYS/TOPOLOGY/COORD_FILE_FORMAT", "pdb")
+        if structure is not None:
+            struct_fn = tempfolder.get_abs_path(self._COORDS_FILE_NAME)
+            structure.get_ase().write(struct_fn, format="proteindatabank")
+            for i, a in enumerate('ABC'):
+                val = '{:<15} {:<15} {:<15}'.format(*structure.cell[i])
+                inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/'+a, val)
+            inp.add_keyword("FORCE_EVAL/SUBSYS/TOPOLOGY/COORD_FILE_NAME", self._COORDS_FILE_NAME)
+            inp.add_keyword("FORCE_EVAL/SUBSYS/TOPOLOGY/COORD_FILE_FORMAT", "pdb")
         inp.add_keyword("GLOBAL/PROJECT", self._PROJECT_NAME)
         inp_fn = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
         with open(inp_fn, "w") as f:
             f.write(inp.render())
-
-        # write structure file
-        struct_fn = tempfolder.get_abs_path(self._COORDS_FILE_NAME)
-        structure.get_ase().write(struct_fn, format="proteindatabank")
 
         # create code info
         codeinfo = CodeInfo()
@@ -162,12 +161,10 @@ class Cp2kCalculation(JobCalculation):
         params = params_node.get_dict()
 
         # structure
-        try:
-            structure = inputdict.pop(self.get_linkname('structure'))
-        except KeyError:
-            raise InputValidationError("No structure specified for this calculation")
-        if not isinstance(structure, StructureData):
-            raise InputValidationError("structure is not of type StructureData")
+        structure = inputdict.pop(self.get_linkname('structure'), None)
+        if structure is not None:
+            if not isinstance(structure, StructureData):
+                raise InputValidationError("structure is not of type StructureData")
 
         # code
         try:

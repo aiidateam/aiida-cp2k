@@ -107,14 +107,13 @@ END""")
     structure = StructureData(ase=atoms)
     calc.use_structure(structure)
 
+    # settings
+    settings = ParameterData(dict={'additional_retrieve_list':["runtime.callgraph"]})
+    calc.use_settings(settings)
+
     # resources
     calc.set_max_wallclock_seconds(3*60) # 3 min
     calc.set_resources({"num_machines": 1})
-
-    settings = ParameterData(dict={'additional_retrieve_list':["runtime.callgraph"]})
-    calc.use_settings(settings)
-    #calc.submit_test()
-    #return
 
     # store and submit
     calc.store_all()
@@ -123,7 +122,7 @@ END""")
 
     wait_for_calc(calc)
 
-    # check energy results
+    # check energy
     expected_energy = 0.146927412614e-3
     if abs(calc.res.energy - expected_energy) < 1e-10:
         print "OK, energy has the expected value"
@@ -134,7 +133,7 @@ END""")
         sys.exit(3)
 
     # check if callgraph is there
-    if "runtime.callgraph" in calc.get_retrieved_node().get_folder_list():
+    if "runtime.callgraph" in calc.out.retrieved.get_folder_list():
         print "OK, callgraph file was retrived"
     else:
         print "ERROR!"
@@ -169,7 +168,7 @@ def test_energy_dft(code):
 
     wait_for_calc(calc)
 
-    # check results
+    # check energy
     expected_energy = -17.1566368539
     if abs(calc.res.energy - expected_energy) < 1e-10:
         print "OK, energy has the expected value"
@@ -202,6 +201,10 @@ def test_geo_opt_dft(code):
     })
     calc.use_parameters(parameters)
 
+    # settings
+    settings = ParameterData(dict={'additional_retrieve_list':['*.xyz']})
+    calc.use_settings(settings)
+
     # resources
     calc.set_max_wallclock_seconds(3*60) # 3 min
     calc.set_resources({"num_machines": 1})
@@ -213,7 +216,7 @@ def test_geo_opt_dft(code):
 
     wait_for_calc(calc)
 
-    # check results
+    # check energy
     expected_energy = -1.14009973333
     if abs(calc.res.energy - expected_energy) < 1e-10:
         print "OK, energy has the expected value"
@@ -223,8 +226,10 @@ def test_geo_opt_dft(code):
         print "Actual energy value: {}".format(calc.res.energy)
         sys.exit(3)
 
+    # check geometry
     expected_dist = 0.736125211
-    dist = calc.out.output_structure.get_ase().get_distance(0, 1)
+    traj_fn = calc.out.retrieved.get_abs_path('PROJECT-pos-1.xyz')
+    dist = ase.io.read(traj_fn, index='-1').get_distance(0, 1)
     if abs(dist - expected_dist) < 1e-7:
         print "OK, H-H distance has the expected value"
     else:
@@ -261,7 +266,7 @@ def test_no_structure_data(code):
 
     wait_for_calc(calc)
 
-    # check results
+    # check energy
     expected_energy = -1.14005678487
     if abs(calc.res.energy - expected_energy) < 1e-10:
         print "OK, energy has the expected value"
@@ -328,7 +333,7 @@ def wait_for_calc(calc, timeout_secs=5*60.0):
             exited_with_timeout = False
             break
 
-    # check results
+    # check exit status
     if exited_with_timeout:
         print "Timeout!! Calculation did not complete after {} seconds".format(
             timeout_secs)

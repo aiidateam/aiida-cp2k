@@ -36,8 +36,6 @@ class Cp2kCalculation(JobCalculation):
         self._DEFAULT_INPUT_FILE  = self._INPUT_FILE_NAME
         self._DEFAULT_OUTPUT_FILE = self._OUTPUT_FILE_NAME
         self._COORDS_FILE_NAME = 'aiida.coords.pdb'
-        self._PROJECT_NAME = 'AIIDA'
-        self._TRAJ_FILE_NAME = self._PROJECT_NAME+'-pos-1.xyz'
         self._default_parser = 'cp2k'
 
     #---------------------------------------------------------------------------
@@ -111,7 +109,6 @@ class Cp2kCalculation(JobCalculation):
                 inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/'+a, val)
             inp.add_keyword("FORCE_EVAL/SUBSYS/TOPOLOGY/COORD_FILE_NAME", self._COORDS_FILE_NAME)
             inp.add_keyword("FORCE_EVAL/SUBSYS/TOPOLOGY/COORD_FILE_FORMAT", "pdb")
-        inp.add_keyword("GLOBAL/PROJECT", self._PROJECT_NAME)
         inp_fn = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
         with open(inp_fn, "w") as f:
             f.write(inp.render())
@@ -138,7 +135,7 @@ class Cp2kCalculation(JobCalculation):
         calcinfo.remote_symlink_list = []
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = []
-        calcinfo.retrieve_list = [self._OUTPUT_FILE_NAME, self._TRAJ_FILE_NAME]
+        calcinfo.retrieve_list = [self._OUTPUT_FILE_NAME]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
         # check for left over settings

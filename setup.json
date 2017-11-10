@@ -1,5 +1,5 @@
 {
-    "version": "0.4",
+    "version": "0.5",
     "name": "aiida_cp2k",
     "url": "https://github.com/cp2k/aiida-cp2k",
     "license": "MIT License",

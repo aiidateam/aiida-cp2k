@@ -36,10 +36,10 @@ def main():
 
     codename = sys.argv[1]
     code = test_and_get_code(codename, expected_code_type='cp2k')
-    test_no_structure_data(code)
     test_energy_mm(code)
     test_energy_dft(code)
     test_geo_opt_dft(code)
+    test_no_structure_data(code)
     print("All tests passed :-)")
     sys.exit(0)
 
@@ -122,6 +122,9 @@ END""")
 
     wait_for_calc(calc)
 
+    # check warnings
+    assert calc.res.nwarnings == 0
+
     # check energy
     expected_energy = 0.146927412614e-3
     if abs(calc.res.energy - expected_energy) < 1e-10:
@@ -201,10 +204,6 @@ def test_geo_opt_dft(code):
     })
     calc.use_parameters(parameters)
 
-    # settings
-    settings = ParameterData(dict={'additional_retrieve_list':['*.xyz']})
-    calc.use_settings(settings)
-
     # resources
     calc.set_max_wallclock_seconds(3*60) # 3 min
     calc.set_resources({"num_machines": 1})
@@ -227,9 +226,8 @@ def test_geo_opt_dft(code):
         sys.exit(3)
 
     # check geometry
-    expected_dist = 0.736125211
-    traj_fn = calc.out.retrieved.get_abs_path('PROJECT-pos-1.xyz')
-    dist = ase.io.read(traj_fn, index='-1').get_distance(0, 1)
+    expected_dist = 0.737 # pdb format has only three digits
+    dist = calc.out.output_structure.get_ase().get_distance(0, 1)
     if abs(dist - expected_dist) < 1e-7:
         print "OK, H-H distance has the expected value"
     else:
@@ -329,14 +327,20 @@ def wait_for_calc(calc, timeout_secs=5*60.0):
         except subprocess.CalledProcessError as e:
             print "Note: the command failed, message: {}".format(e.message)
         if calc.has_finished():
-            print "Calculation terminated its execution"
+            print "Calculation terminated its execution."
             exited_with_timeout = False
             break
 
-    # check exit status
+    # check for timeout
     if exited_with_timeout:
-        print "Timeout!! Calculation did not complete after {} seconds".format(
-            timeout_secs)
+        print "Timeout!! Calculation did not complete after %i seconds" % timeout_secs
+        os.system("cat ~/.aiida/daemon/log/aiida_daemon.log")
+        sys.exit(2)
+
+    # check calculation status
+    if calc.has_failed():
+        print "Calculation failed with state: " + calc.get_state()
+        os.system("cat ~/.aiida/daemon/log/aiida_daemon.log")
         sys.exit(2)
 
 #===============================================================================

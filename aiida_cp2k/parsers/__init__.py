@@ -8,10 +8,13 @@
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
 
+import re
 import ase.io
+from StringIO import StringIO
 
 from aiida.parsers.parser import Parser
 from aiida.orm.data.parameter import ParameterData
+from aiida.orm.data.structure import StructureData
 from aiida.parsers.exceptions import OutputParsingError
 from aiida_cp2k.calculations import Cp2kCalculation
 
@@ -41,6 +44,7 @@ class Cp2kParser(Parser):
 
         new_nodes_list = []
         self._parse_stdout(out_folder, new_nodes_list)
+        self._parse_trajectory(out_folder, new_nodes_list)
 
         return True, new_nodes_list
 
@@ -57,8 +61,31 @@ class Cp2kParser(Parser):
                 if line.startswith(' ENERGY| '):
                     result_dict['energy'] = float(line.split()[8])
                     result_dict['energy_units'] = "a.u."
+                if line.startswith(' The number of warnings for this run is :'):
+                    result_dict['nwarnings'] = int(line.split()[-1])
 
         pair = (self.get_linkname_outparams(), ParameterData(dict=result_dict))
         new_nodes_list.append(pair)
+
+    #---------------------------------------------------------------------------
+    def _parse_trajectory(self, out_folder, new_nodes_list):
+        fn = self._calc._TRAJ_FILE_NAME
+        if fn not in out_folder.get_folder_list():
+            return  # not every run type produces a trajectory
+
+        abs_fn = out_folder.get_abs_path(fn)
+        content = open(abs_fn).read()
+        frames = re.findall(r"\n(REMARK.*?\nEND)", content, re.DOTALL)
+        atoms = ase.io.read(StringIO(frames[-1]), format='proteindatabank')
+        pair = (self.get_linkname_outstructure(), StructureData(ase=atoms))
+        new_nodes_list.append(pair)
+
+    #---------------------------------------------------------------------------
+    def get_linkname_outstructure(self):
+        """
+        Returns the name of the link to the output_structure
+        """
+        return 'output_structure'
+
 
 #EOF

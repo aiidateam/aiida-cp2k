@@ -35,6 +35,8 @@ class Cp2kCalculation(JobCalculation):
         self._OUTPUT_FILE_NAME = 'aiida.out'
         self._DEFAULT_INPUT_FILE  = self._INPUT_FILE_NAME
         self._DEFAULT_OUTPUT_FILE = self._OUTPUT_FILE_NAME
+        self._PROJECT_NAME = 'aiida'
+        self._TRAJ_FILE_NAME = self._PROJECT_NAME + '-pos-1.pdb'
         self._COORDS_FILE_NAME = 'aiida.coords.pdb'
         self._default_parser = 'cp2k'
 
@@ -101,6 +103,8 @@ class Cp2kCalculation(JobCalculation):
 
         # write cp2k input file
         inp = Cp2kInput(params)
+        inp.add_keyword("GLOBAL/PROJECT", self._PROJECT_NAME)
+        inp.add_keyword("MOTION/PRINT/TRAJECTORY/FORMAT", "PDB")
         if structure is not None:
             struct_fn = tempfolder.get_abs_path(self._COORDS_FILE_NAME)
             structure.get_ase().write(struct_fn, format="proteindatabank")
@@ -135,7 +139,7 @@ class Cp2kCalculation(JobCalculation):
         calcinfo.remote_symlink_list = []
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = []
-        calcinfo.retrieve_list = [self._OUTPUT_FILE_NAME]
+        calcinfo.retrieve_list = [self._OUTPUT_FILE_NAME, self._TRAJ_FILE_NAME]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
         # check for left over settings

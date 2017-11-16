@@ -23,7 +23,7 @@ class Cp2kParser(Parser):
     Parser for the output of CP2K.
     """
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def __init__(self, calc):
         """
         Initialize the instance of Cp2kParser
@@ -34,7 +34,7 @@ class Cp2kParser(Parser):
         if not isinstance(calc, Cp2kCalculation):
             raise OutputParsingError("Input calc must be a Cp2kCalculation")
 
-    #---------------------------------------------------------------------------  
+    # ---------------------------------------------------------------------------
     def parse_with_retrieved(self, retrieved):
         """
         Receives in input a dictionary of retrieved nodes.
@@ -48,7 +48,7 @@ class Cp2kParser(Parser):
 
         return True, new_nodes_list
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _parse_stdout(self, out_folder, new_nodes_list):
         fn = self._calc._OUTPUT_FILE_NAME
         if fn not in out_folder.get_folder_list():
@@ -63,11 +63,13 @@ class Cp2kParser(Parser):
                     result_dict['energy_units'] = "a.u."
                 if line.startswith(' The number of warnings for this run is :'):
                     result_dict['nwarnings'] = int(line.split()[-1])
+                if line.find('exceeded requested execution time') > 0:
+                    result_dict['exceeded_walltime'] = True
 
         pair = (self.get_linkname_outparams(), ParameterData(dict=result_dict))
         new_nodes_list.append(pair)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _parse_trajectory(self, out_folder, new_nodes_list):
         fn = self._calc._TRAJ_FILE_NAME
         if fn not in out_folder.get_folder_list():
@@ -80,7 +82,7 @@ class Cp2kParser(Parser):
         pair = (self.get_linkname_outstructure(), StructureData(ase=atoms))
         new_nodes_list.append(pair)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def get_linkname_outstructure(self):
         """
         Returns the name of the link to the output_structure
@@ -88,4 +90,4 @@ class Cp2kParser(Parser):
         return 'output_structure'
 
 
-#EOF
+# EOF

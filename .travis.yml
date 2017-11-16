@@ -6,8 +6,13 @@ install:
   - ./test/install_travis_env.sh
 
 script:
-  # can't rely on "/usr/bin/env python" for some reason
-  - /usr/bin/python ./test/test.py cp2k@localhost
+  - flake8 .
+  # can't rely on "/usr/bin/env python2" for some reason
+  - /usr/bin/python ./test/test_mm.py        cp2k@localhost
+  - /usr/bin/python ./test/test_dft.py       cp2k@localhost
+  - /usr/bin/python ./test/test_geopt.py     cp2k@localhost
+  - /usr/bin/python ./test/test_walltime.py  cp2k@localhost
+  - /usr/bin/python ./test/test_no_struct.py cp2k@localhost
 
 git:
   depth: 3

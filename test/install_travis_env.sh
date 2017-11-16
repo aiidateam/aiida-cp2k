@@ -11,6 +11,9 @@ wget -O POTENTIAL https://sourceforge.net/p/cp2k/code/HEAD/tree/branches/cp2k-4_
 sudo mkdir -p ${CP2K_DATA_DIR}
 sudo mv BASIS_MOLOPT POTENTIAL ${CP2K_DATA_DIR}
 
+# install convention checker
+sudo pip install flake8
+
 # install CP2K plugin (installs AiiDA as dependency)
 sudo pip install .
 

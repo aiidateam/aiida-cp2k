@@ -11,6 +11,4 @@ The new plugin system will ensure that the entry points are automatically regist
 
 # Tests / Examples
 
-You can run the tests via:
-
-	python ./test/test.py
+The [test folder](./test) contains example scripts that demonstrate most features.

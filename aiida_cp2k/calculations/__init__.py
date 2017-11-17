@@ -37,6 +37,7 @@ class Cp2kCalculation(JobCalculation):
         self._DEFAULT_OUTPUT_FILE = self._OUTPUT_FILE_NAME
         self._PROJECT_NAME = 'aiida'
         self._TRAJ_FILE_NAME = self._PROJECT_NAME + '-pos-1.pdb'
+        self._RESTART_FILE_NAME = self._PROJECT_NAME + '-1.restart'
         self._COORDS_FILE_NAME = 'aiida.coords.pdb'
         self._default_parser = 'cp2k'
 
@@ -143,7 +144,7 @@ class Cp2kCalculation(JobCalculation):
         calcinfo.remote_symlink_list = []
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = []
-        calcinfo.retrieve_list = [self._OUTPUT_FILE_NAME, self._TRAJ_FILE_NAME]
+        calcinfo.retrieve_list = [self._OUTPUT_FILE_NAME, self._RESTART_FILE_NAME]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
         # check for left over settings

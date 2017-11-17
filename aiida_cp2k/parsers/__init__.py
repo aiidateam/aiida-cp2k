@@ -8,9 +8,7 @@
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
 
-import re
-import ase.io
-from StringIO import StringIO
+from ase import Atom, Atoms
 
 from aiida.parsers.parser import Parser
 from aiida.orm.data.parameter import ParameterData
@@ -77,9 +75,31 @@ class Cp2kParser(Parser):
             return  # not every run type produces a trajectory
 
         abs_fn = out_folder.get_abs_path(fn)
-        content = open(abs_fn).read()
-        frames = re.findall(r"\n(REMARK.*?\nEND)", content, re.DOTALL)
-        atoms = ase.io.read(StringIO(frames[-1]), format='proteindatabank')
+        with open(abs_fn) as f:
+            cell = []
+            cell_i = 0
+            atoms = Atoms()
+            atoms_i = 0
+            for line in f.readlines():
+                # append cell coords
+                if cell_i > 0 and len(cell) < 3:
+                    cell.append(line.split()[1:])
+                    cell_i -= 1
+                # stop appending atoms
+                if line.find('&END COORD')>0:
+                    atoms_i = 0
+                # append atoms
+                if atoms_i > 0:
+                    s = line.split()
+                    atoms += Atom(s[0], (s[1:]))
+                # start appending cell coords
+                if line.find('&CELL')>0:
+                    cell_i = 3
+                # start appending atoms
+                if line.find('&COORD')>0:
+                    atoms_i = 1
+
+            atoms.set_cell(cell)
         pair = ('output_structure', StructureData(ase=atoms))
         new_nodes_list.append(pair)
 

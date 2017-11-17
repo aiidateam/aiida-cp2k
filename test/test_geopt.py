@@ -110,7 +110,7 @@ else:
     sys.exit(3)
 
 # check geometry
-expected_dist = 0.737  # pdb format has only three digits
+expected_dist = 0.736125210983
 dist = calc.out.output_structure.get_ase().get_distance(0, 1)
 if abs(dist - expected_dist) < 1e-7:
     print("OK, H-H distance has the expected value")

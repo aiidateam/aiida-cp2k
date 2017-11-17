@@ -86,17 +86,17 @@ class Cp2kParser(Parser):
                     cell.append(line.split()[1:])
                     cell_i -= 1
                 # stop appending atoms
-                if line.find('&END COORD')>0:
+                if line.find('&END COORD') > 0:
                     atoms_i = 0
                 # append atoms
                 if atoms_i > 0:
                     s = line.split()
                     atoms += Atom(s[0], (s[1:]))
                 # start appending cell coords
-                if line.find('&CELL')>0:
+                if line.find('&CELL') > 0:
                     cell_i = 3
                 # start appending atoms
-                if line.find('&COORD')>0:
+                if line.find('&COORD') > 0:
                     atoms_i = 1
 
             atoms.set_cell(cell)

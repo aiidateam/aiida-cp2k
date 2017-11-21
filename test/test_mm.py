@@ -12,7 +12,6 @@ from __future__ import print_function
 
 import sys
 import ase.build
-from os import path
 from utils import wait_for_calc
 
 from aiida import load_dbenv, is_dbenv_loaded
@@ -68,7 +67,7 @@ parameters = ParameterData(dict={
 calc.use_parameters(parameters)
 
 # force field
-with open("water.pot", "w") as f:
+with open("/tmp/water.pot", "w") as f:
     f.write("""BONDS
 H    H       0.000     1.5139
 O    H     450.000     0.9572
@@ -87,7 +86,7 @@ O      0.000000  -0.152100     1.768200
 HBOND CUTHB 0.5
 
 END""")
-water_pot = SinglefileData(file=path.abspath("water.pot"))
+water_pot = SinglefileData(file="/tmp/water.pot")
 calc.use_file(water_pot, linkname="water_pot")
 
 # structure

@@ -23,7 +23,8 @@ def wait_for_calc(calc, timeout_secs=5*60.0):
     start_time = time.time()
     exited_with_timeout = True
     while time.time() - start_time < timeout_secs:
-        time.sleep(15)  # Wait a few seconds
+        sys.stdout.flush()
+        time.sleep(10)  # Wait a few seconds
         # print some debug info, both for debugging reasons and to avoid
         # that the test machine is shut down because there is no output
         print("#"*78)

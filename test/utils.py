@@ -19,7 +19,7 @@ import subprocess
 
 # ==============================================================================
 def wait_for_calc(calc, timeout_secs=5*60.0):
-    print("Wating for end of execution...")
+    print("Waiting for end of execution...")
     start_time = time.time()
     exited_with_timeout = True
     while time.time() - start_time < timeout_secs:

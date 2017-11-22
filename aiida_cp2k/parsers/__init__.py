@@ -66,6 +66,9 @@ class Cp2kParser(Parser):
                 if 'exceeded requested execution time' in line:
                     result_dict['exceeded_walltime'] = True
 
+        if 'nwarnings' not in result_dict:
+            raise OutputParsingError("CP2K did not finish properly.")
+
         pair = ('output_parameters', ParameterData(dict=result_dict))
         new_nodes_list.append(pair)
 

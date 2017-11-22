@@ -65,6 +65,8 @@ EndOfMessage
 
 cat /tmp/setup_code.txt | verdi code setup
 
+echo 'eval "$(verdi completioncommand)"' >> ~/.bashrc
+
 # stop postgreSQL properly
 sudo service postgresql stop
 

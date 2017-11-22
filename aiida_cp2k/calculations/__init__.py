@@ -8,7 +8,6 @@
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
 
-import os
 from aiida.orm.calculation.job import JobCalculation
 from aiida.common.utils import classproperty
 from aiida.orm.data.structure import StructureData
@@ -152,11 +151,10 @@ class Cp2kCalculation(JobCalculation):
 
         # symlinks
         if parent_calc_folder is not None:
-            calcinfo.remote_symlink_list.append(
-                (parent_calc_folder.get_computer().uuid,
-                 parent_calc_folder.get_remote_path(),
-                 self._PARENT_CALC_FOLDER_NAME)
-                )
+            comp_uuid = parent_calc_folder.get_computer().uuid
+            remote_path = parent_calc_folder.get_remote_path()
+            symlink = (comp_uuid, remote_path, self._PARENT_CALC_FOLDER_NAME)
+            calcinfo.remote_symlink_list.append(symlink)
 
         # check for left over settings
         if settings:
@@ -195,7 +193,7 @@ class Cp2kCalculation(JobCalculation):
             raise InputValidationError("settings type not ParameterData")
         settings = settings_node.get_dict()
 
-        # parent calc folder (not yet used)
+        # parent calc folder
         parent_calc_folder = inputdict.pop('parent_calc_folder', None)
         if parent_calc_folder is not None:
             if not isinstance(parent_calc_folder, RemoteData):
@@ -215,52 +213,6 @@ class Cp2kCalculation(JobCalculation):
 
         return(params, structure, code, settings, local_copy_list,
                parent_calc_folder)
-
-    def create_restart(self):
-        """
-        Function to restart a calculation (not a FAILED one).
-        Returns c2. Submit it by:
-        c2.store_all()
-        c2.submit()
-        """
-        from aiida.common.datastructures import calc_states
-        if self.get_state() != calc_states.FINISHED:
-            raise InputValidationError("Calculation is not FINISHED, but"
-                                       " {}".format(self.get_state()))
-
-        inp = self.get_inputs_dict()
-        code = inp['code']
-        restart_file = os.path.join(self._PARENT_CALC_FOLDER_NAME,
-                                    self._PROJECT_NAME+'-1.restart')
-        old_inp_dict = inp['parameters'].get_dict()
-        old_inp_dict['EXT_RESTART'] = {
-             'RESTART_FILE_NAME': '{}'.format(restart_file)
-         }
-
-        inp_dict = ParameterData(dict=old_inp_dict)
-
-        remote_workdirs = self.get_outputs(type=RemoteData)
-        if len(remote_workdirs) != 1:
-            raise InputValidationError("More than one output RemoteData found"
-                                       "in calculation {}.".format(self.pk))
-        remote_workdir = remote_workdirs[0]
-
-        c2 = self.copy()
-        c2.label = 'Restart of {}'.format(self.pk)
-        c2.use_code(code)
-        c2.use_parameters(inp_dict)
-
-        try:
-            old_settings_dict = inp['settings'].get_dict()
-        except KeyError:
-            old_settings_dict = dict()
-
-        if old_settings_dict:  # not empty
-            c2.use_settings(ParameterData(dict=old_settings_dict))
-
-        c2.use_parent_folder(remote_workdir)
-
-        return c2
 
 
 # ==============================================================================

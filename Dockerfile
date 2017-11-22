@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python-pip            \
     python-dev            \
     postgresql            \
+    less                  \
+    nano                  \
     sudo                  \
     ssh                   \
     cp2k                  \
@@ -21,10 +23,8 @@ COPY . /opt/aiida-cp2k
 WORKDIR /opt/aiida-cp2k/
 RUN pip install .
 
-# create ubuntu user
-RUN mkdir /home/ubuntu                                        && \
-    useradd ubuntu                                            && \
-    chown -R ubuntu:ubuntu /home/ubuntu                       && \
+# create ubuntu user with sudo powers
+RUN adduser --disabled-password --gecos "" ubuntu               && \
     echo "ubuntu ALL=(ALL) NOPASSWD: ALL" >>  /etc/sudoers
 
 # configure aiida

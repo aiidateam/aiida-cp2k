@@ -134,7 +134,6 @@ calc2 = code.new_calc()
 calc2.use_structure(structure2)  # breaks simulation unless overwritten ...
 calc2.use_parameters(ParameterData(dict=params2))  # ... by EXT_RESTART
 calc2.use_parent_folder(calc1.out.remote_folder)
-
 calc2.set_max_wallclock_seconds(2*60)
 calc2.set_resources({"num_machines": 1})
 calc2.store_all()

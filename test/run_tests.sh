@@ -2,6 +2,7 @@
 
 set -x
 flake8 ../
+./test_version.py
 
 # start the daemon
 sudo service postgresql start

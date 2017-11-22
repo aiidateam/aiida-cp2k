@@ -13,5 +13,6 @@ verdi daemon start
 ./test_geopt.py     cp2k@localhost
 ./test_walltime.py  cp2k@localhost
 ./test_no_struct.py cp2k@localhost
+./test_restart.py   cp2k@localhost
 
 #EOF

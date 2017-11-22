@@ -8,6 +8,7 @@
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
 
+import os
 from aiida.orm.calculation.job import JobCalculation
 from aiida.common.utils import classproperty
 from aiida.orm.data.structure import StructureData
@@ -37,6 +38,7 @@ class Cp2kCalculation(JobCalculation):
         self._DEFAULT_OUTPUT_FILE = self._OUTPUT_FILE_NAME
         self._PROJECT_NAME = 'aiida'
         self._RESTART_FILE_NAME = self._PROJECT_NAME + '-1.restart'
+        self._PARENT_CALC_FOLDER_NAME = 'parent_calc/'
         self._COORDS_FILE_NAME = 'aiida.coords.pdb'
         self._default_parser = 'cp2k'
 
@@ -102,7 +104,8 @@ class Cp2kCalculation(JobCalculation):
         """
 
         in_nodes = self._verify_inlinks(inputdict)
-        params, structure, code, settings, local_copy_list = in_nodes
+        params, structure, code, settings, local_copy_list, \
+            parent_calc_folder = in_nodes
 
         # write cp2k input file
         inp = Cp2kInput(params)
@@ -147,10 +150,18 @@ class Cp2kCalculation(JobCalculation):
                                   self._RESTART_FILE_NAME]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
+        # symlinks
+        if parent_calc_folder is not None:
+            calcinfo.remote_symlink_list.append(
+                (parent_calc_folder.get_computer().uuid,
+                 parent_calc_folder.get_remote_path(),
+                 self._PARENT_CALC_FOLDER_NAME)
+                )
+
         # check for left over settings
         if settings:
             msg = "The following keys have been found "
-            msg += "in the settings input node, "
+            msg += "in the settings input node {}, ".format(self.pk)
             msg += "but were not understood: " + ",".join(settings.keys())
             raise InputValidationError(msg)
 
@@ -202,7 +213,54 @@ class Cp2kCalculation(JobCalculation):
             msg = "unrecognized input nodes: " + str(inputdict.keys())
             raise InputValidationError(msg)
 
-        return(params, structure, code, settings, local_copy_list)
+        return(params, structure, code, settings, local_copy_list,
+               parent_calc_folder)
+
+    def create_restart(self):
+        """
+        Function to restart a calculation (not a FAILED one).
+        Returns c2. Submit it by:
+        c2.store_all()
+        c2.submit()
+        """
+        from aiida.common.datastructures import calc_states
+        if self.get_state() != calc_states.FINISHED:
+            raise InputValidationError("Calculation is not FINISHED, but"
+                                       " {}".format(self.get_state()))
+
+        inp = self.get_inputs_dict()
+        code = inp['code']
+        restart_file = os.path.join(self._PARENT_CALC_FOLDER_NAME,
+                                    self._PROJECT_NAME+'-1.restart')
+        old_inp_dict = inp['parameters'].get_dict()
+        old_inp_dict['EXT_RESTART'] = {
+             'RESTART_FILE_NAME': '{}'.format(restart_file)
+         }
+
+        inp_dict = ParameterData(dict=old_inp_dict)
+
+        remote_workdirs = self.get_outputs(type=RemoteData)
+        if len(remote_workdirs) != 1:
+            raise InputValidationError("More than one output RemoteData found"
+                                       "in calculation {}.".format(self.pk))
+        remote_workdir = remote_workdirs[0]
+
+        c2 = self.copy()
+        c2.label = 'Restart of {}'.format(self.pk)
+        c2.use_code(code)
+        c2.use_parameters(inp_dict)
+
+        try:
+            old_settings_dict = inp['settings'].get_dict()
+        except KeyError:
+            old_settings_dict = dict()
+
+        if old_settings_dict:  # not empty
+            c2.use_settings(ParameterData(dict=old_settings_dict))
+
+        c2.use_parent_folder(remote_workdir)
+
+        return c2
 
 
 # ==============================================================================

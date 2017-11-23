@@ -18,7 +18,7 @@ import subprocess
 
 
 # ==============================================================================
-def wait_for_calc(calc, timeout_secs=5*60.0):
+def wait_for_calc(calc, timeout_secs=5*60.0, ensure_finished_ok=True):
     print("Waiting for end of execution...")
     start_time = time.time()
     exited_with_timeout = True
@@ -47,9 +47,11 @@ def wait_for_calc(calc, timeout_secs=5*60.0):
         os.system("cat ~/.aiida/daemon/log/aiida_daemon.log")
         sys.exit(2)
 
+    print("Calculation finished with state: " + calc.get_state())
+
     # check calculation status
-    if calc.has_failed():
-        print("Calculation failed with state: " + calc.get_state())
+    if ensure_finished_ok and not calc.has_finished_ok():
+        print("Calculation failed.")
         os.system("cat ~/.aiida/daemon/log/aiida_daemon.log")
         sys.exit(2)
 

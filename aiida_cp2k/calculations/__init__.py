@@ -38,7 +38,7 @@ class Cp2kCalculation(JobCalculation):
         self._PROJECT_NAME = 'aiida'
         self._RESTART_FILE_NAME = self._PROJECT_NAME + '-1.restart'
         self._PARENT_CALC_FOLDER_NAME = 'parent_calc/'
-        self._COORDS_FILE_NAME = 'aiida.coords.pdb'
+        self._COORDS_FILE_NAME = 'aiida.coords.xyz'
         self._default_parser = 'cp2k'
 
     # --------------------------------------------------------------------------
@@ -109,16 +109,15 @@ class Cp2kCalculation(JobCalculation):
         # write cp2k input file
         inp = Cp2kInput(params)
         inp.add_keyword("GLOBAL/PROJECT", self._PROJECT_NAME)
-        inp.add_keyword("MOTION/PRINT/TRAJECTORY/FORMAT", "PDB")
         if structure is not None:
             struct_fn = tempfolder.get_abs_path(self._COORDS_FILE_NAME)
-            structure.get_ase().write(struct_fn, format="proteindatabank")
+            structure.export(struct_fn, fileformat="xyz")
             for i, a in enumerate('ABC'):
                 val = '{:<15} {:<15} {:<15}'.format(*structure.cell[i])
                 inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/'+a, val)
             topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
             inp.add_keyword(topo + "/COORD_FILE_NAME", self._COORDS_FILE_NAME)
-            inp.add_keyword(topo + "/COORD_FILE_FORMAT", "pdb")
+            inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ")
         inp_fn = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
         with open(inp_fn, "w") as f:
             f.write(inp.render())

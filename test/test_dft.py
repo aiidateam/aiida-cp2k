@@ -95,7 +95,7 @@ print("submitted calculation: PK=%s" % calc.pk)
 wait_for_calc(calc)
 
 # check energy
-expected_energy = -17.1566368539
+expected_energy = -17.1566361119
 if abs(calc.res.energy - expected_energy) < 1e-10:
     print("OK, energy has the expected value")
 else:

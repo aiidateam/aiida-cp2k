@@ -15,6 +15,7 @@ verdi daemon start
 ./test_no_struct.py cp2k@localhost
 ./test_restart.py   cp2k@localhost
 ./test_failure.py   cp2k@localhost
+./test_precision.py cp2k@localhost
 
 echo "All tests have passed :-)"
 #EOF

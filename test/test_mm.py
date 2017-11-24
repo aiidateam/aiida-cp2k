@@ -38,34 +38,6 @@ print("Testing CP2K ENERGY on H2O (MM) ...")
 # calc object
 calc = code.new_calc()
 
-# parameters
-# based on cp2k/tests/Fist/regtest-1-1/water_1.inp
-parameters = ParameterData(dict={
-        'FORCE_EVAL': {
-            'METHOD': 'fist',
-            'MM': {
-                'FORCEFIELD': {
-                    'PARM_FILE_NAME': 'water.pot',
-                    'PARMTYPE': 'CHM',
-                    'CHARGE': [
-                        {'ATOM': 'O', 'CHARGE': -0.8476},
-                        {'ATOM': 'H', 'CHARGE': 0.4238}]
-                },
-                'POISSON': {'EWALD': {
-                    'EWALD_TYPE': 'spme',
-                    'ALPHA': 0.44,
-                    'GMAX': 24,
-                    'O_SPLINE': 6
-                }}
-            }
-        },
-        'GLOBAL': {
-            'CALLGRAPH': 'master',
-            'CALLGRAPH_FILE_NAME': 'runtime'
-        }
-})
-calc.use_parameters(parameters)
-
 # force field
 with open("/tmp/water.pot", "w") as f:
     f.write("""BONDS
@@ -89,11 +61,50 @@ END""")
 water_pot = SinglefileData(file="/tmp/water.pot")
 calc.use_file(water_pot, linkname="water_pot")
 
-# structure
+# structure using pdb format, because it also carries topology information
 atoms = ase.build.molecule('H2O')
 atoms.center(vacuum=10.0)
-structure = StructureData(ase=atoms)
-calc.use_structure(structure)
+atoms.write("/tmp/coords.pdb", format="proteindatabank")
+cell = atoms.cell
+coords_pdb = SinglefileData(file="/tmp/coords.pdb")
+calc.use_file(coords_pdb, linkname="coords_pdb")
+
+# parameters
+# based on cp2k/tests/Fist/regtest-1-1/water_1.inp
+parameters = ParameterData(dict={
+        'FORCE_EVAL': {
+            'METHOD': 'fist',
+            'MM': {
+                'FORCEFIELD': {
+                    'PARM_FILE_NAME': 'water.pot',
+                    'PARMTYPE': 'CHM',
+                    'CHARGE': [
+                        {'ATOM': 'O', 'CHARGE': -0.8476},
+                        {'ATOM': 'H', 'CHARGE': 0.4238}]
+                },
+                'POISSON': {'EWALD': {
+                    'EWALD_TYPE': 'spme',
+                    'ALPHA': 0.44,
+                    'GMAX': 24,
+                    'O_SPLINE': 6
+                }}
+            },
+            'SUBSYS': {
+                'CELL': {
+                    'ABC': '%f  %f  %f' % tuple(atoms.cell.diagonal()),
+                },
+                'TOPOLOGY': {
+                    'COORD_FILE_NAME': 'coords.pdb',
+                    'COORD_FILE_FORMAT': 'PDB',
+                },
+            },
+        },
+        'GLOBAL': {
+            'CALLGRAPH': 'master',
+            'CALLGRAPH_FILE_NAME': 'runtime'
+        }
+})
+calc.use_parameters(parameters)
 
 # settings
 settings_dict = {'additional_retrieve_list': ["runtime.callgraph"]}

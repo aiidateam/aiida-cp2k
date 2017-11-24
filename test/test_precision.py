@@ -12,6 +12,7 @@ from __future__ import print_function
 
 import sys
 import ase.build
+import numpy as np
 from utils import wait_for_calc
 
 from aiida import load_dbenv, is_dbenv_loaded
@@ -27,61 +28,57 @@ from aiida.orm.data.singlefile import SinglefileData  # noqa
 
 # ==============================================================================
 if len(sys.argv) != 2:
-    print("Usage: test_geopt.py <code_name>")
+    print("Usage: test_precision.py <code_name>")
     sys.exit(1)
 
 codename = sys.argv[1]
 code = test_and_get_code(codename, expected_code_type='cp2k')
 
-print("Testing CP2K GEO_OPT on H2 (DFT)...")
+print("Testing structure roundtrip precision ase->aiida->cp2k->aiida->ase...")
 
 # calc object
 calc = code.new_calc()
 
 # structure
-atoms = ase.build.molecule('H2')
-atoms.center(vacuum=2.0)
+epsilon = 1e-10  # expected precision in Angstrom
+dist = 0.74 + epsilon
+atoms = ase.Atoms('H2', positions=[(0, 0, 0), (0, 0, dist)], cell=[4, 4, 4])
 structure = StructureData(ase=atoms)
 calc.use_structure(structure)
+
 
 # parameters
 parameters = ParameterData(dict={
     'GLOBAL': {
-        'RUN_TYPE': 'GEO_OPT',
+        'RUN_TYPE': 'MD',
+    },
+    'MOTION': {
+        'MD': {
+            'TIMESTEP': 0.0,  # do not move atoms
+            'STEPS': 1,
+        },
     },
     'FORCE_EVAL': {
         'METHOD': 'Quickstep',
         'DFT': {
             'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-            'QS': {
-                'EPS_DEFAULT': 1.0e-12,
-                'WF_INTERPOLATION': 'ps',
-                'EXTRAPOLATION_ORDER': 3,
-            },
-            'MGRID': {
-                'NGRIDS': 4,
-                'CUTOFF': 280,
-                'REL_CUTOFF': 30,
+            'SCF': {
+                 'MAX_SCF': 1,
             },
             'XC': {
                 'XC_FUNCTIONAL': {
                     '_': 'LDA',
                 },
             },
-            'POISSON': {
-                'PERIODIC': 'none',
-                'PSOLVER': 'MT',
-            },
         },
         'SUBSYS': {
-            'KIND': [
-                {'_': 'O', 'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                    'POTENTIAL': 'GTH-LDA-q6'},
-                {'_': 'H', 'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                    'POTENTIAL': 'GTH-LDA-q1'},
-            ],
+            'KIND': {
+                '_': 'DEFAULT',
+                'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
+                'POTENTIAL': 'GTH-LDA',
+            },
         },
-    }
+    },
 })
 calc.use_parameters(parameters)
 
@@ -96,28 +93,24 @@ print("submitted calculation: PK=%s" % calc.pk)
 
 wait_for_calc(calc)
 
-# check walltime not exceeded
-assert calc.res.exceeded_walltime is False
+# check structure preservation
+atoms2 = calc.out.output_structure.get_ase()
 
-# check energy
-expected_energy = -1.14009973178
-if abs(calc.res.energy - expected_energy) < 1e-10:
-    print("OK, energy has the expected value")
+# zeros should be preserved exactly
+if np.all(atoms2.positions[0] == 0.0):
+    print("OK, zeros in structure were preserved exactly")
 else:
     print("ERROR!")
-    print("Expected energy value: {}".format(expected_energy))
-    print("Actual energy value: {}".format(calc.res.energy))
+    print("Zeros in structure changed: ", atoms2.positions[0])
     sys.exit(3)
 
-# check geometry
-expected_dist = 0.736103879818
-dist = calc.out.output_structure.get_ase().get_distance(0, 1)
-if abs(dist - expected_dist) < 1e-7:
-    print("OK, H-H distance has the expected value")
+# other values should be preserved with epsilon precision
+dist2 = atoms2.get_distance(0, 1)
+if abs(dist2 - dist) < epsilon:
+    print("OK, structure preserved with %.1e Angstrom precision" % epsilon)
 else:
     print("ERROR!")
-    print("Expected dist value: {}".format(expected_dist))
-    print("Actual dist value: {}".format(dist))
+    print("Structure changed by %e Angstrom" % abs(dist - dist2))
     sys.exit(3)
 
 sys.exit(0)

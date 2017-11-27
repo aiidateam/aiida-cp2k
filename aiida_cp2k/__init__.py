@@ -8,6 +8,6 @@
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
 
-__version__ = "0.6"
+__version__ = "0.7"
 
 # EOF

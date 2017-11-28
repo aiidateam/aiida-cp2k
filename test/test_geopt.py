@@ -109,6 +109,15 @@ else:
     print("Actual energy value: {}".format(calc.res.energy))
     sys.exit(3)
 
+expected_start_energy = -1.14009902979
+if abs(calc.res.start_energy - expected_start_energy) < 1e-10:
+    print("OK, first energy has the expected value")
+else:
+    print("ERROR!")
+    print("Expected first energy value: {}".format(expected_start_energy))
+    print("Actual first energy value: {}".format(calc.res.start_energy))
+    sys.exit(3)
+
 # check geometry
 expected_dist = 0.736103879818
 dist = calc.out.output_structure.get_ase().get_distance(0, 1)

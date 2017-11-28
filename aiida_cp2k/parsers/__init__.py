@@ -57,14 +57,21 @@ class Cp2kParser(Parser):
         result_dict = {'exceeded_walltime': False}
         abs_fn = out_folder.get_abs_path(fn)
         with open(abs_fn, "r") as f:
-            for line in f.readlines():
-                if line.startswith(' ENERGY| '):
-                    result_dict['energy'] = float(line.split()[8])
-                    result_dict['energy_units'] = "a.u."
-                if 'The number of warnings for this run is' in line:
-                    result_dict['nwarnings'] = int(line.split()[-1])
-                if 'exceeded requested execution time' in line:
-                    result_dict['exceeded_walltime'] = True
+            content = f.read()
+
+            pattern_warnings = "The number of warnings for this run is : (\d+)"
+            m = re.findall(pattern_warnings, content)
+            result_dict['nwarnings'] = int(m[-1])
+
+            pattern_energy = " ENERGY\|[\s\w\.\(\)]+:\s+([\d\.\-]+)\n"
+            m = re.findall(pattern_energy, content)
+            result_dict['start_energy'] = float(m[0])
+            result_dict['energy'] = float(m[-1])
+            result_dict['energy_units'] = "a.u."
+
+            pattern_walltime = 'exceeded requested execution time'
+            if content.find(pattern_walltime) > 0:
+                result_dict['exceeded_walltime'] = True
 
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")

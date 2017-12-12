@@ -60,7 +60,7 @@ CP2K from Ubuntu
 False
 cp2k
 localhost
-/usr/bin/cp2k.popt
+/usr/bin/cp2k
 EndOfMessage
 
 cat /tmp/setup_code.txt | verdi code setup

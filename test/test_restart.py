@@ -47,7 +47,7 @@ structure1 = StructureData(ase=atoms1)
 params1 = {
     'GLOBAL': {
         'RUN_TYPE': 'GEO_OPT',
-        'WALLTIME': '00:00:03',  # too short
+        'WALLTIME': '00:00:10',  # too short
     },
     'MOTION': {
         'GEO_OPT': {

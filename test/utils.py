@@ -44,7 +44,7 @@ def wait_for_calc(calc, timeout_secs=5*60.0, ensure_finished_ok=True):
     # check for timeout
     if exited_with_timeout:
         print("Timeout - did not complete after %i seconds" % timeout_secs)
-        os.system("cat ~/.aiida/daemon/log/aiida_daemon.log")
+        os.system("cat ~/.aiida/daemon/log/celery.log")
         sys.exit(2)
 
     print("Calculation finished with state: " + calc.get_state())
@@ -52,7 +52,7 @@ def wait_for_calc(calc, timeout_secs=5*60.0, ensure_finished_ok=True):
     # check calculation status
     if ensure_finished_ok and not calc.has_finished_ok():
         print("Calculation failed.")
-        os.system("cat ~/.aiida/daemon/log/aiida_daemon.log")
+        os.system("cat ~/.aiida/daemon/log/celery.log")
         sys.exit(2)
 
 # EOF

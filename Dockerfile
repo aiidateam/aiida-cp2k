@@ -1,4 +1,4 @@
-FROM ubuntu:zesty
+FROM ubuntu:rolling
 USER root
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -22,6 +22,9 @@ RUN pip install flake8 aiida ase
 COPY . /opt/aiida-cp2k
 WORKDIR /opt/aiida-cp2k/
 RUN pip install .
+
+# workaround for https://github.com/aiidateam/aiida_core/issues/1261
+RUN pip install --upgrade psycopg2
 
 # create ubuntu user with sudo powers
 RUN adduser --disabled-password --gecos "" ubuntu               && \

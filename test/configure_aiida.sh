@@ -43,8 +43,9 @@ The local computer
 True
 local
 direct
+#!/bin/bash
 /home/ubuntu/aiida_run
-
+mpirun -np {tot_num_mpiprocs}
 1
 EndOfMessage
 

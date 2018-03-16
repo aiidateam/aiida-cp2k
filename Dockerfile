@@ -23,9 +23,6 @@ COPY . /opt/aiida-cp2k
 WORKDIR /opt/aiida-cp2k/
 RUN pip install .
 
-# workaround for https://github.com/aiidateam/aiida_core/issues/1261
-RUN pip install --upgrade psycopg2
-
 # create ubuntu user with sudo powers
 RUN adduser --disabled-password --gecos "" ubuntu               && \
     echo "ubuntu ALL=(ALL) NOPASSWD: ALL" >>  /etc/sudoers

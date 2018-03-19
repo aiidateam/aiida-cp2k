@@ -44,7 +44,10 @@ class Cp2kParser(Parser):
 
         new_nodes_list = []
         self._parse_stdout(out_folder, new_nodes_list)
-        self._parse_trajectory(out_folder, new_nodes_list)
+        try:
+            self._parse_trajectory(out_folder, new_nodes_list)
+        except KeyError:
+            pass
 
         return True, new_nodes_list
 
@@ -97,5 +100,3 @@ class Cp2kParser(Parser):
         atoms.set_cell(cell)
         pair = ('output_structure', StructureData(ase=atoms))
         new_nodes_list.append(pair)
-
-# EOF

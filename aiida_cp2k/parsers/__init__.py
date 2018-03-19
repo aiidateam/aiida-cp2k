@@ -80,22 +80,25 @@ class Cp2kParser(Parser):
 
         abs_fn = out_folder.get_abs_path(fn)
         content = open(abs_fn).read()
-        # A 1 2 3\\ B 1 2 3\\ C 1 2 3
-        m_cpattern = '\s+A\s+([\d\.E+\s]+)B\s+([\d\.E+\s]+)C\s+([\d\.E+\s]+)'
-        m_cell = re.findall(m_cpattern, content)
-        cell = [x.split() for x in m_cell[0]]
+        try:
+            # A 1 2 3\\ B 1 2 3\\ C 1 2 3
+            m_cpattern = '\s+A\s+([\d\.E+\s]+)B\s+([\d\.E+\s]+)C\s+([\d\.E+\s]+)'
+            m_cell = re.findall(m_cpattern, content)
+            cell = [x.split() for x in m_cell[0]]
 
-        # H 1 2 3\\...
-        m_coord = content.find('&COORD')
-        m_endcoord = content.find('&END COORD')
-        m_apattern = '(\w+)\s+([\d\.+-E]+)\s+([\d\.+-E]+)\s+([\d\.+-E]+)'
-        m_atoms = re.findall(m_apattern, content[m_coord+6:m_endcoord])
-        atoms = Atoms()
-        for a in m_atoms:
-            atoms += Atom(a[0], (a[1:]))
+            # H 1 2 3\\...
+            m_coord = content.find('&COORD')
+            m_endcoord = content.find('&END COORD')
+            m_apattern = '(\w+)\s+([\d\.+-E]+)\s+([\d\.+-E]+)\s+([\d\.+-E]+)'
+            m_atoms = re.findall(m_apattern, content[m_coord+6:m_endcoord])
+            atoms = Atoms()
+            for a in m_atoms:
+                atoms += Atom(a[0], (a[1:]))
 
-        atoms.set_cell(cell)
-        pair = ('output_structure', StructureData(ase=atoms))
-        new_nodes_list.append(pair)
+            atoms.set_cell(cell)
+            pair = ('output_structure', StructureData(ase=atoms))
+            new_nodes_list.append(pair)
+        except KeyError:
+            return
 
 # EOF

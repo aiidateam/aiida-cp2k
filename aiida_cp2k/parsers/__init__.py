@@ -44,7 +44,10 @@ class Cp2kParser(Parser):
 
         new_nodes_list = []
         self._parse_stdout(out_folder, new_nodes_list)
-        self._parse_trajectory(out_folder, new_nodes_list)
+        try:
+            self._parse_trajectory(out_folder, new_nodes_list)
+        except Exception:
+            pass
 
         return True, new_nodes_list
 

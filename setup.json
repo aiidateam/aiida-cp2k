@@ -4,7 +4,7 @@
     "url": "https://github.com/cp2k/aiida-cp2k",
     "license": "MIT License",
     "author": "Ole Schütt, Edward Ditler, Aliaksandr Yakutovich, Patrick Seewald, Tiziano Müller, Andreas Glöss, Leonid Kahle",
-    "author_email": "ole.schuett@empa.ch",
+    "author_email": "ole.schuett@cp2k.org",
     "description": "The CP2K plugin for the AiiDA workflow and provenance engine.",
     "classifiers": [
         "License :: OSI Approved :: MIT License",

@@ -43,8 +43,9 @@ The local computer
 True
 local
 direct
+#!/bin/bash
 /home/ubuntu/aiida_run
-
+mpirun -np {tot_num_mpiprocs}
 1
 EndOfMessage
 
@@ -60,7 +61,7 @@ CP2K from Ubuntu
 False
 cp2k
 localhost
-/usr/bin/cp2k.popt
+/usr/bin/cp2k
 EndOfMessage
 
 cat /tmp/setup_code.txt | verdi code setup

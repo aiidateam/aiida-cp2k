@@ -10,17 +10,19 @@
 ###########################################################################
 from __future__ import print_function
 
+import os
 import sys
 import json
-import aiida_cp2k
 
+a = os.getenv("TRAVIS_TAG")
+b = "v" + json.load(open("setup.json"))['version']
 
-a = json.load(open("../setup.json"))['version']
-b = aiida_cp2k.__version__
+if not a:
+    print("TRAVIS_TAG not set")
 
-if a != b:
+elif a != b:
     print("ERROR!")
-    print("Versions are not consistent: '%s' vs '%s'" % (a, b))
+    print("TRAVIS_TAG and version are not consistend: '%s' vs '%s'" % (a, b))
     sys.exit(3)
 
 sys.exit(0)

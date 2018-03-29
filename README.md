@@ -60,13 +60,13 @@ coord_section = {' ': ['H    2.0   2.0   2.737166',
 calc2.use_parent_folder(calc1.out.remote_folder)
 ```
 
-- By default only the output and restart file (if existent) are retrieved. Additional files are retrieved upon request ([example](test/test_mm.py)):
+- By default only the output and restart file (if present) are retrieved. Additional files are retrieved upon request ([example](test/test_mm.py)):
 ```
 settings = {'additional_retrieve_list': ["*.cube"]}
 calc.use_settings(ParameterData(dict=settings))
 ```
 
-- The final geometry is extracted from the restart file (if existent) and stored in AiiDA ([example](./test/test_geopt.py)):
+- The final geometry is extracted from the restart file (if present) and stored in AiiDA ([example](./test/test_geopt.py)):
 ```
 print(calc.out.output_structure)
 ```

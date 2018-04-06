@@ -84,7 +84,7 @@ class Cp2kParser(Parser):
         abs_fn = out_folder.get_abs_path(fn)
         content = open(abs_fn).read()
         # A 1 2 3\\ B 1 2 3\\ C 1 2 3
-        m_cpattern = '\s+A\s+([\d\.E+\s]+)B\s+([\d\.E+\s]+)C\s+([\d\.E+\s]+)'
+        m_cpattern = '\s+A\s+([\d\.E+\-\s]+)B\s+([\d\.E+\-\s]+)C\s+([\d\.E+\-\s]+)'
         m_cell = re.findall(m_cpattern, content)
         cell = [x.split() for x in m_cell[0]]
 

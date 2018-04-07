@@ -1,13 +1,12 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-###########################################################################
-# Copyright (c), The AiiDA team. All rights reserved.                     #
-# This file is part of the AiiDA code.                                    #
-#                                                                         #
-# The code is hosted on GitHub at https://github.com/cp2k/aiida-cp2k      #
-# For further information on the license, see the LICENSE.txt file        #
-# For further information please visit http://www.aiida.net               #
-###########################################################################
+###############################################################################
+# Copyright (c), The AiiDA-CP2K authors.                                      #
+# SPDX-License-Identifier: MIT                                                #
+# AiiDA-CP2K is hosted on GitHub at https://github.com/cp2k/aiida-cp2k        #
+# For further information on the license, see the LICENSE.txt file.           #
+###############################################################################
+
 from __future__ import print_function
 
 import sys
@@ -42,7 +41,9 @@ calc = code.new_calc()
 # structure
 epsilon = 1e-10  # expected precision in Angstrom
 dist = 0.74 + epsilon
-atoms = ase.Atoms('H2', positions=[(0, 0, 0), (0, 0, dist)], cell=[4, 4, 4])
+positions = [(0, 0, 0), (0, 0, dist)]
+cell = np.diag([4, -4, 4 + epsilon])
+atoms = ase.Atoms('H2', positions=positions, cell=cell)
 structure = StructureData(ase=atoms)
 calc.use_structure(structure)
 
@@ -111,6 +112,15 @@ if abs(dist2 - dist) < epsilon:
 else:
     print("ERROR!")
     print("Structure changed by %e Angstrom" % abs(dist - dist2))
+    sys.exit(3)
+
+# check cell preservation
+cell_diff = np.amax(np.abs(atoms2.cell - cell))
+if cell_diff < epsilon:
+    print("OK, cell preserved with %.1e Angstrom precision" % epsilon)
+else:
+    print("ERROR!")
+    print("Cell changed by %e Angstrom" % cell_diff)
     sys.exit(3)
 
 sys.exit(0)

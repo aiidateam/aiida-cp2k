@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-###########################################################################
-# Copyright (c), The AiiDA team. All rights reserved.                     #
-# This file is part of the AiiDA code.                                    #
-#                                                                         #
-# The code is hosted on GitHub at https://github.com/cp2k/aiida-cp2k      #
-# For further information on the license, see the LICENSE.txt file        #
-# For further information please visit http://www.aiida.net               #
-###########################################################################
+###############################################################################
+# Copyright (c), The AiiDA-CP2K authors.                                      #
+# SPDX-License-Identifier: MIT                                                #
+# AiiDA-CP2K is hosted on GitHub at https://github.com/cp2k/aiida-cp2k        #
+# For further information on the license, see the LICENSE.txt file.           #
+###############################################################################
 
 import re
-from ase import Atom, Atoms
+import ase
+import numpy as np
+from re import DOTALL
 
 from aiida.parsers.parser import Parser
 from aiida.orm.data.parameter import ParameterData
@@ -81,23 +81,25 @@ class Cp2kParser(Parser):
         if fn not in out_folder.get_folder_list():
             return  # not every run type produces a trajectory
 
+        # read restart file
         abs_fn = out_folder.get_abs_path(fn)
         content = open(abs_fn).read()
-        # A 1 2 3\\ B 1 2 3\\ C 1 2 3
-        m_cpattern = '\s+A\s+([\d\.E+\-\s]+)B\s+([\d\.E+\-\s]+)C\s+([\d\.E+\-\s]+)'
-        m_cell = re.findall(m_cpattern, content)
-        cell = [x.split() for x in m_cell[0]]
 
-        # H 1 2 3\\...
-        m_coord = content.find('&COORD')
-        m_endcoord = content.find('&END COORD')
-        m_apattern = '(\w+)\s+([\d\.+-E]+)\s+([\d\.+-E]+)\s+([\d\.+-E]+)'
-        m_atoms = re.findall(m_apattern, content[m_coord+6:m_endcoord])
-        atoms = Atoms()
-        for a in m_atoms:
-            atoms += Atom(a[0], (a[1:]))
+        # parse coordinate section
+        m = re.search('\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, DOTALL)
+        coord_lines = [line.strip().split() for line in m.group(1).split("\n")]
+        symbols = [line[0] for line in coord_lines]
+        positions_str = [line[1:] for line in coord_lines]
+        positions = np.array(positions_str, np.float64)
 
-        atoms.set_cell(cell)
+        # parse cell section
+        m = re.search('\n\s*&CELL\n(.*?)\n\s*&END CELL\n', content, re.DOTALL)
+        cell_lines = [line.strip().split() for line in m.group(1).split("\n")]
+        cell_str = [line[1:] for line in cell_lines if line[0] in 'ABC']
+        cell = np.array(cell_str, np.float64)
+
+        # create StructureData
+        atoms = ase.Atoms(symbols=symbols, positions=positions, cell=cell)
         pair = ('output_structure', StructureData(ase=atoms))
         new_nodes_list.append(pair)
 

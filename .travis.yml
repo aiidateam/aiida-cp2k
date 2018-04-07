@@ -13,10 +13,11 @@ script:
 git:
   depth: 3
 
-deploy:
-  provider: pypi
-  user: "oschuett"
-  password:
-    secure: "O7tSCotn8NXF5JQppD+6hDFSsFd8SkHN9GT3lDIfsuKQ1gJiFQ1NW9mowH71l0qnAFO62Uf3oHC/dkrqH9/zYPlSZzx+InTPHMQiE/utHjj1xJGUW3iDTbV/mSOLLy2x0Vum7A3yrz3xjX0KzUEIfnU1LZ7fsUCpaYJQ0M70DQiDnEicNsm9VXRJNhLrrcbhE4Q8+ufOgjo+Yzy7Hmk6ezPr+K5rZEPqtwGsmxZgufN/JZwaSrzSldo0zRQtxFHtMSOgwQXRyzM+mb2ZixTt0YfbtpxHNhazrszZTUCnoHGmXn9HJFFVYD27iyqnqz8jfKKw9dcoi3EZhJZT1hg0GntYDgrrk9ZGP2Ea9zT7F+dsknDV2jjLalo0NIeesWp1BH2N+uxSjRIgJtVzwMqLWmvkaoHnF8bOGBIQa+O90NMSWmLDa8letDyK76lnnSJIvCY16DwFNk7xAnE5fZ6OWOu7jO4gMs+bUVt90sIk8gzzS83T6Ni/UGp4VhU/nyRWJWBraWTqZUI7UJZdM6G9BnfTzWlKMbmgECibAtZIvJI/ofUzYzgjB/HOb1DCBC3vboMgNyjJeQLIQvJ7HjGW9s6oUUmkIRJXjUyIjTviKNY99HOXtOgxnDCKgK3+Z2yv2muEZ9sAfJ2bSCpfSRrVR2Wvmuf56R9eg8shFNDO5yY="
-  on:
-    tags: true
+# deploy:
+#   provider: pypi
+#   user: "oschuett"
+#   password:
+#     secure: "O7tSCotn8NXF5JQppD+6hDFSsFd8SkHN9GT3lDIfsuKQ1gJiFQ1NW9mowH71l0qnAFO62Uf3oHC/dkrqH9/zYPlSZzx+InTPHMQiE/utHjj1xJGUW3iDTbV/mSOLLy2x0Vum7A3yrz3xjX0KzUEIfnU1LZ7fsUCpaYJQ0M70DQiDnEicNsm9VXRJNhLrrcbhE4Q8+ufOgjo+Yzy7Hmk6ezPr+K5rZEPqtwGsmxZgufN/JZwaSrzSldo0zRQtxFHtMSOgwQXRyzM+mb2ZixTt0YfbtpxHNhazrszZTUCnoHGmXn9HJFFVYD27iyqnqz8jfKKw9dcoi3EZhJZT1hg0GntYDgrrk9ZGP2Ea9zT7F+dsknDV2jjLalo0NIeesWp1BH2N+uxSjRIgJtVzwMqLWmvkaoHnF8bOGBIQa+O90NMSWmLDa8letDyK76lnnSJIvCY16DwFNk7xAnE5fZ6OWOu7jO4gMs+bUVt90sIk8gzzS83T6Ni/UGp4VhU/nyRWJWBraWTqZUI7UJZdM6G9BnfTzWlKMbmgECibAtZIvJI/ofUzYzgjB/HOb1DCBC3vboMgNyjJeQLIQvJ7HjGW9s6oUUmkIRJXjUyIjTviKNY99HOXtOgxnDCKgK3+Z2yv2muEZ9sAfJ2bSCpfSRrVR2Wvmuf56R9eg8shFNDO5yY="
+#   on:
+#     tags: true
+# 

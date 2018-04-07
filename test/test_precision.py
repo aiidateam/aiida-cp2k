@@ -42,7 +42,9 @@ calc = code.new_calc()
 # structure
 epsilon = 1e-10  # expected precision in Angstrom
 dist = 0.74 + epsilon
-atoms = ase.Atoms('H2', positions=[(0, 0, 0), (0, 0, dist)], cell=[4, 4, 4])
+positions = [(0, 0, 0), (0, 0, dist)]
+cell = np.diag([4, -4, 4 + epsilon])
+atoms = ase.Atoms('H2', positions=positions, cell=cell)
 structure = StructureData(ase=atoms)
 calc.use_structure(structure)
 
@@ -111,6 +113,15 @@ if abs(dist2 - dist) < epsilon:
 else:
     print("ERROR!")
     print("Structure changed by %e Angstrom" % abs(dist - dist2))
+    sys.exit(3)
+
+# check cell preservation
+cell_diff = np.amax(np.abs(atoms2.cell - cell))
+if cell_diff < epsilon:
+    print("OK, cell preserved with %.1e Angstrom precision" % epsilon)
+else:
+    print("ERROR!")
+    print("Cell changed by %e Angstrom" % cell_diff)
     sys.exit(3)
 
 sys.exit(0)

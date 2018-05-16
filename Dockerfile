@@ -8,7 +8,11 @@
 FROM ubuntu:rolling
 USER root
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# silence tzdata's setup dialog
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBCONF_NONINTERACTIVE_SEEN=true
+
+RUN apt-get update && apt-get install -yq --no-install-recommends \
     build-essential       \
     python-setuptools     \
     python-wheel          \

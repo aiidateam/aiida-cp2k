@@ -9,7 +9,12 @@
 set -x
 
 #update reentry cache
-sudo reentry scan
+reentry scan
+
+#TODO: remove workaround
+#      reentry stores files at ~/.config/reentry/data/<python-bin-path>
+#      see also: https://github.com/DropD/reentry/issues/25
+ln -s usr.bin.python ~/.config/reentry/data/usr.bin.python2
 
 # configure postgreSQL
 sudo service postgresql start

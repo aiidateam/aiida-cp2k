@@ -21,6 +21,9 @@
         ],
         "aiida.parsers": [
             "cp2k = aiida_cp2k.parsers:Cp2kParser"
+        ],
+        "aiida.workflows": [
+            "cp2k.converge = aiida_cp2k.workflows:Cp2kDftBaseWorkChain"
         ]
     },
     "data_files": [

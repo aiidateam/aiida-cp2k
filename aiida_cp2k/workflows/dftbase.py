@@ -9,7 +9,7 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.utils import CalculationFactory
 from aiida.work.workchain import ToContext, if_, while_
 
-from ./atomic_convention-1 import spin, basis_set, pseudo
+from .atomic_convention1 import spin, basis_set, pseudo
 
 Cp2kCalculation = CalculationFactory('cp2k')
 
@@ -18,8 +18,10 @@ cp2k_default_parameters = {
         'METHOD': 'Quickstep',
         'DFT': {
             'CHARGE': 0,
-            'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-            'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT_UCL',
+            'BASIS_SET_FILE_NAME': [
+               'BASIS_MOLOPT',
+               'BASIS_MOLOPT_UCL',
+            ],
             'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
             'RESTART_FILE_NAME'  : './parent_calc/aiida-RESTART.wfn',
             'QS': {
@@ -56,12 +58,12 @@ cp2k_default_parameters = {
                    'PAIR_POTENTIAL': {
                       'PARAMETER_FILE_NAME': 'dftd3.dat',
                       'TYPE': 'DFTD3(BJ)',
-                      'REFERENCE_FUNCTIONAL': 'PBE',         
+                      'REFERENCE_FUNCTIONAL': 'PBE',
                    },
                 },
             },
             'PRINT': {
-                'MO_CUBES': {   
+                'MO_CUBES': {
                     '_': 'ON', # this is to print the band gap
                     'WRITE_CUBE': 'F',
                     'STRIDE': '1 1 1',
@@ -127,7 +129,7 @@ def scf_converged(fpath):
 
 def scf_was_diverging(fpath):
     """A function that detects diverging SCF: always diverging!"""
-    return True 
+    return True
 #    content = last_scf_loop(fpath)
 #    for line in content:
 #        if "Minimizer" in line and "CG" in line:
@@ -137,7 +139,7 @@ def scf_was_diverging(fpath):
 #        elif "Minimizer" in line and "DIIS" in line:
 #            grep_string = "OT DIIS"
 #            break
-#    
+#
 #    n_change = 7
 #    difference = []
 #    n_positive = 0
@@ -195,7 +197,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
                 default=None, required=False)
         spec.input('_guess_multiplisity', valid_type=bool,
                 default=False)
-        
+
         spec.outline(
             cls.setup,
             while_(cls.should_run_calculation)(
@@ -220,7 +222,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
             self.ctx.restart_calc = None
         self.ctx.parameters = cp2k_default_parameters
         user_params = self.inputs.parameters.get_dict()
-        
+
         # As it should be possible to redefine the default atom kinds by user I
         # put the default values prior to merging self.ctx.parameters with
         # user_params
@@ -266,9 +268,9 @@ class Cp2kDftBaseWorkChain(WorkChain):
         p.store()
         self.ctx.inputs['parameters'] = p
 
-    def run_calculation(self): 
+    def run_calculation(self):
         """Run cp2k calculation."""
-        
+
         # Create the calculation process and launch it
         process = Cp2kCalculation.process()
         future  = submit(process, **self.ctx.inputs)
@@ -276,7 +278,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
                 " cp2k".format(future.pid))
         self.ctx.nruns += 1
         return ToContext(calculation=Outputs(future))
-    
+
     def inspect_calculation(self):
         """
         Analyse the results of CP2K calculation and decide weather there is a
@@ -312,7 +314,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
         if not converged_scf and scf_was_diverging(outfile):
             # If, however, scf was even diverging I should go for more robust
             # minimizer.
-            self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['OT']['MINIMIZER'] = 'CG' 
+            self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['OT']['MINIMIZER'] = 'CG'
             self.report("Going for more robust (but slow) SCF minimizer")
             # Also, to avoid being trapped in the wrong minimum I restart
             # from atomic wavefunctions.
@@ -326,7 +328,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
             # strong force may cause convergence problems, needs to be
             # implemented
             # UPDATE: from now forces are be printed by default
-                
+
 
        # Third check:
        # TODO: check for the geometry convergence/divergence problems
@@ -338,7 +340,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
             self.report("Calculation converged, terminating the workflow")
             self.ctx.done = True
 
-        
+
 
     def return_results(self):
         self.out('output_structure', self.ctx.structure)

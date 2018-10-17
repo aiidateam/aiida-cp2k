@@ -9,38 +9,9 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.utils import CalculationFactory
 from aiida.work.workchain import ToContext, if_, while_
 
-Cp2kCalculation = CalculationFactory('cp2k')
+from ./atomic_convention-1 import spin, basis_set, pseudo
 
-spin = {
-        "H"  : 0.0,
-        "Li" : 0.0,
-        "Be" : 0.0,
-        "B"  : 0.0,
-        "C"  : 0.0,
-        "N"  : 0.0,
-        "O"  : 0.0,
-        "F"  : 0.0,
-        "Na" : 0.0,
-        "Mg" : 0.0,
-        "Al" : 0.0,
-        "Si" : 0.0,
-        "P"  : 0.0,
-        "S"  : 0.0,
-        "Cl" : 0.0,
-        "K"  : 0.0,
-        "Ca" : 0.0,
-        "Sc" : 1.0 / 2.0,
-        "Ti" : 2.0 / 2.0,
-        "V"  : 3.0 / 2.0,
-        "Cr" : 4.0 / 2.0,
-        "Mn" : 5.0 / 2.0,
-        "Fe" : 4.0 / 2.0,
-        "Co" : 3.0 / 2.0,
-        "Ni" : 2.0 / 2.0,
-        "Cu" : 1.0 / 2.0,
-        "Zn" : 0.0,
-        "Zr" : 2.0 / 2.0,
-        }
+Cp2kCalculation = CalculationFactory('cp2k')
 
 cp2k_default_parameters = {
     'FORCE_EVAL': {
@@ -48,6 +19,7 @@ cp2k_default_parameters = {
         'DFT': {
             'CHARGE': 0,
             'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+            'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT_UCL',
             'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
             'RESTART_FILE_NAME'  : './parent_calc/aiida-RESTART.wfn',
             'QS': {
@@ -65,7 +37,7 @@ cp2k_default_parameters = {
                 'SCF_GUESS': 'ATOMIC',
                 'EPS_SCF': 1.0e-6,
                 'MAX_SCF': 50,
-                'MAX_ITER_LUMO': 10000,
+                'MAX_ITER_LUMO': 10000, #needed for the bandgap
                 'OT':{
                     'MINIMIZER': 'DIIS',
                     'PRECONDITIONER': 'FULL_ALL',
@@ -79,11 +51,20 @@ cp2k_default_parameters = {
                 'XC_FUNCTIONAL': {
                     '_': 'PBE',
                 },
+                'VDW_POTENTIAL': {
+                   'POTENTIAL_TYPE': 'PAIR_POTENTIAL',
+                   'PAIR_POTENTIAL': {
+                      'PARAMETER_FILE_NAME': 'dftd3.dat',
+                      'TYPE': 'DFTD3(BJ)',
+                      'REFERENCE_FUNCTIONAL': 'PBE',         
+                   },
+                },
             },
             'PRINT': {
-                'MO_CUBES': {   # this is to print the band gap
-                    'STRIDE': '1 1 1',
+                'MO_CUBES': {   
+                    '_': 'ON', # this is to print the band gap
                     'WRITE_CUBE': 'F',
+                    'STRIDE': '1 1 1',
                     'NLUMO': 1,
                     'NHOMO': 1,
                 },
@@ -145,30 +126,31 @@ def scf_converged(fpath):
     return False
 
 def scf_was_diverging(fpath):
-    """A function that detects diverging SCF"""
-    content = last_scf_loop(fpath)
-    for line in content:
-        if "Minimizer" in line and "CG" in line:
-            grep_string = "OT CG"
-            break
-
-        elif "Minimizer" in line and "DIIS" in line:
-            grep_string = "OT DIIS"
-            break
-    
-    n_change = 7
-    difference = []
-    n_positive = 0
-    for line in content:
-        if grep_string in line:
-            difference.append(line.split()[n_change])
-    for number in difference[-12:]:
-        if float(number) > 0:
-            n_positive +=1
-
-    if n_positive>5:
-        return True
-    return False
+    """A function that detects diverging SCF: always diverging!"""
+    return True 
+#    content = last_scf_loop(fpath)
+#    for line in content:
+#        if "Minimizer" in line and "CG" in line:
+#            grep_string = "OT CG"
+#            break
+#
+#        elif "Minimizer" in line and "DIIS" in line:
+#            grep_string = "OT DIIS"
+#            break
+#    
+#    n_change = 7
+#    difference = []
+#    n_positive = 0
+#    for line in content:
+#        if grep_string in line:
+#            difference.append(line.split()[n_change])
+#    for number in difference[-12:]:
+#        if float(number) > 0:
+#            n_positive +=1
+#
+#    if n_positive>5:
+#        return True
+#    return False
 
 
 def get_multiplicity(structure):
@@ -184,8 +166,8 @@ def get_atom_kinds(structure):
     for a in all_atoms:
         kinds.append({
             '_': a,
-            'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-            'POTENTIAL': 'GTH-PBE',
+            'BASIS_SET': basis_set[a],
+            'POTENTIAL': pseudo[a],
             'MAGNETIZATION': spin[a] * 2.0,
             })
     return kinds

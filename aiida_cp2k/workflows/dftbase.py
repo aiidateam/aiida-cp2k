@@ -6,7 +6,7 @@ from aiida.orm.data.base import Str
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.structure import StructureData
-from aiida.orm.utils import CalculationFactory
+from aiida.orm.utils import CalculationFactory, DataFactory
 from aiida.work.workchain import ToContext, if_, while_
 
 from .atomic_convention1 import spin, basis_set, pseudo
@@ -14,9 +14,15 @@ from .atomic_convention1 import spin, basis_set, pseudo
 Cp2kCalculation = CalculationFactory('cp2k')
 
 cp2k_default_parameters = {
+    'GLOBAL':{
+            'RUN_TYPE': 'ENERGY',
+            'PRINT_LEVEL': 'MEDIUM',
+            'EXTENDED_FFT_LENGTHS': True, # Needed for large systems
+    },
     'FORCE_EVAL': {
         'METHOD': 'Quickstep',
         'DFT': {
+            'UKS': False,
             'CHARGE': 0,
             'BASIS_SET_FILE_NAME': [
                'BASIS_MOLOPT',
@@ -74,6 +80,10 @@ cp2k_default_parameters = {
                 },
             },
             'PRINT': {
+                'E_DENSITY_CUBE': {
+                    '_': 'OFF',
+                    'STRIDE': '1 1 1',
+                },
                 'MO_CUBES': {
                     '_': 'ON', # this is to print the band gap
                     'WRITE_CUBE': 'F',
@@ -81,6 +91,16 @@ cp2k_default_parameters = {
                     'NLUMO': 1,
                     'NHOMO': 1,
                 },
+                'MULLIKEN': {
+                    '_': 'ON',  #default: ON
+                },
+                'LOWDIN': {
+                    '_': 'OFF',  #default: OFF
+                },
+                'HIRSHFELD': {
+                    '_': 'OFF',  #default: OFF
+                },
+
             },
         },
         'SUBSYS': {
@@ -89,14 +109,9 @@ cp2k_default_parameters = {
             #detection)
             'FORCES':{
                 '_': 'ON',
-                }
             },
+        },
     },
-    'GLOBAL':{
-            'RUN_TYPE': 'ENERGY',
-            'PRINT_LEVEL': 'MEDIUM',
-            'EXTENDED_FFT_LENGTHS': True, # Needed for large systems
-            }
 }
 
 
@@ -253,8 +268,8 @@ class Cp2kDftBaseWorkChain(WorkChain):
             self.ctx.parameters['FORCE_EVAL']['DFT']['MULTIPLICITY'] = multiplicity
             self.report("Obtained multiplicity: {}".format(multiplicity))
             if multiplicity != 1:
-                self.ctx.parameters['FORCE_EVAL']['DFT']['LSD'] = True
-                self.report("Switching to LSD calculation")
+                self.ctx.parameters['FORCE_EVAL']['DFT']['UKS'] = True
+                self.report("Switching to UKS calculation")
         # Otherwise take the default
 
     def should_run_calculation(self):

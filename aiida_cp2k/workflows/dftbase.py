@@ -48,6 +48,17 @@ cp2k_default_parameters = {
                     'EPS_SCF': 1.0e-6,
                     'MAX_SCF': 10,
                     },
+                'PRINT':{
+                    'RESTART':{
+                        'BACKUP_COPIES': 0,
+                        'EACH' :{
+                            'QS_SCF': 20,
+                        },
+                    },
+                    'RESTART_HISTORY':{
+                        '_': 'OFF'
+                    },
+                },
             },
             'XC': {
                 'XC_FUNCTIONAL': {
@@ -82,7 +93,9 @@ cp2k_default_parameters = {
             },
     },
     'GLOBAL':{
-            "EXTENDED_FFT_LENGTHS": True, # Needed for large systems
+            'RUN_TYPE': 'ENERGY',
+            'PRINT_LEVEL': 'MEDIUM',
+            'EXTENDED_FFT_LENGTHS': True, # Needed for large systems
             }
 }
 

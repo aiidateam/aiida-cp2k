@@ -6,7 +6,54 @@ from aiida.work.run import run
 
 from cp2k import Cp2kDftBaseWorkChain
 
+#TODO:
+# change GLOBAL/RUN_TYPE to GEO_OPT
+# SET FORCE_EVAL/DFT/PRINT/MO_CUBES OFF
 
+cp2k_motion={
+            'GEO_OPT': {
+                'TYPE': 'MINIMIZATION',
+                'OPTIMIZER': 'BFGS',
+                'MAX_ITER': 50,
+                'MAX_DR': '[bohr] 0.0030',
+                'RMS_DR': '[bohr] 0.0015',
+                'MAX_FORCE': '[bohr^-1*hartree] 0.00045',
+                'RMS_FORCE': '[bohr^-1*hartree] 0.00030',
+                'BFGS' : {
+                    'TRUST_RADIUS': '[angstrom] 0.25',
+                },
+            'PRINT': {
+                'TRAJECTORY': {
+                    'FORMAT': 'DCD_ALIGNED_CELL',
+                    'EACH': {
+                        'GEO_OPT': 1,
+                    },
+                },
+                'RESTART':{
+                    'BACKUP_COPIES': 0,
+                    'EACH': {
+                        'GEO_OPT': 1,
+                    }
+                }
+                'RESTART_HISTORY':{
+                    'EACH': {
+                        'GEO_OPT': 100,
+                    }
+                }
+                'CELL': {
+                    '_': 'OFF',
+                }
+                'VELOCITIES': {
+                    '_': 'OFF',
+                },
+                'FORCES': {
+                    '_': 'OFF',
+                },
+                'STRESS': {
+                    '_': 'OFF',
+                },
+            }
+        }
 
 class Cp2kGeoOptWorkChain(Cp2kDftBaseWorkChain):
     """
@@ -15,6 +62,17 @@ class Cp2kGeoOptWorkChain(Cp2kDftBaseWorkChain):
     @classmethod
     def define(cls, spec):
         super(Cp2kScfWorkChain, cls).define(spec)
+        spec.input('code', valid_type=Code)
+        spec.input('structure', valid_type=StructureData)
+        spec.input("parameters", valid_type=ParameterData,
+                default=ParameterData(dict=cp2k_motion))
+        spec.input("options", valid_type=ParameterData,
+                default=ParameterData(dict=default_options))
+        spec.input('parent_folder', valid_type=RemoteData,
+                default=None, required=False)
+
+
+        spec.output('output_structure', valid_type=StructureData)
 
         spec.outline(
             cls.setup,
@@ -53,12 +111,12 @@ class Cp2kGeoOptWorkChain(Cp2kDftBaseWorkChain):
             'code'       : self.inputs.code,
             'structure'  : self.inputs.structure,
             'parameters' : self.inputs.parameters,
-            '_options'   : options,
+            'options'   : options,
             '_label'     : "SCFwithCP2k",
         }
 
         # Create the calculation process and launch it
-        future  = submit(Cp2kCalculation, **inputs)
+        future  = submit(Cp2kDftBaseWorkChain, **inputs)
         self.report("pk: {} | Running cp2k to compute the charge-density")
         return ToContext(cp2k=Outputs(future))
 

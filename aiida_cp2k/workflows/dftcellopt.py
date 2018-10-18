@@ -29,34 +29,38 @@ def dict_merge(dct, merge_dct):
 from aiida_cp2k.workflows import Cp2kDftBaseWorkChain
 cp2k_motion ={
     'MOTION': {
-        'GEO_OPT': {
-            'TYPE': 'MINIMIZATION',                     #default: MINIMIZATION
-            'OPTIMIZER': 'BFGS',                        #default: BFGS
-            'MAX_ITER': 50,                             #default: 200
-            'MAX_DR':    '[bohr] 0.0030',               #default: [bohr] 0.0030
-            'RMS_DR':    '[bohr] 0.0015',               #default: [bohr] 0.0015
-            'MAX_FORCE': '[bohr^-1*hartree] 0.00045',   #default: [bohr^-1*hartree] 0.00045
-            'RMS_FORCE': '[bohr^-1*hartree] 0.00030',   #default: [bohr^-1*hartree] 0.00030
+        'CELL_OPT': {
+            'TYPE': 'DIRECT_CELL_OPT',                 #default: DIRECT_CELL_OPT
+            'KEEP_ANGLES' : True,                      #default: structure
+            'KEEP_SYMMETRY': False,                    #default: False (works only if symm is specified in the &CELL)
+            'OPTIMIZER': 'BFGS',                       #default: BFGS
+            'MAX_ITER': 50,                           #default: 200
+            'EXTERNAL_PRESSURE': '[bar] 0.0',            #default 100 0 0 0 100 0 0 0 100
+            'PRESSURE_TOLERANCE': '[bar] 100',          #default
+            'MAX_DR':    '[bohr] 0.1',                 #default: [bohr] 0.0030
+            'RMS_DR':    '[bohr] 0.1',                 #default: [bohr] 0.0015
+            'MAX_FORCE': '[bohr^-1*hartree] 0.002',    #default: [bohr^-1*hartree] 0.00045
+            'RMS_FORCE': '[bohr^-1*hartree] 0.001',    #default: [bohr^-1*hartree] 0.00030
             'BFGS' : {
-                'TRUST_RADIUS': '[angstrom] 0.25',      #default: [angstrom] 0.25
+                'TRUST_RADIUS': '[angstrom] 0.25',     #default: [angstrom] 0.25
             },
         },
         'PRINT': {
             'TRAJECTORY': {
                 'FORMAT': 'DCD_ALIGNED_CELL',
                 'EACH': {
-                    'GEO_OPT': 1,
+                    'CELL_OPT': 1,
                 },
             },
             'RESTART':{
                 'BACKUP_COPIES': 0,
                 'EACH': {
-                    'GEO_OPT': 1,
+                    'CELL_OPT': 1,
                 },
             },
             'RESTART_HISTORY':{
                 'EACH': {
-                    'GEO_OPT': 100,
+                    'CELL_OPT': 100,
                 },
             },
             'CELL': {
@@ -84,13 +88,13 @@ default_options = {
     "max_wallclock_seconds": 3 * 60 * 60,
 }
 
-class Cp2kGeoOptWorkChain(WorkChain):
+class Cp2kCellOptWorkChain(WorkChain):
     """
     Workchain to run SCF calculation wich CP2K
     """
     @classmethod
     def define(cls, spec):
-        super(Cp2kGeoOptWorkChain, cls).define(spec)
+        super(Cp2kCellOptWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
         spec.input("parameters", valid_type=ParameterData,
@@ -117,7 +121,7 @@ class Cp2kGeoOptWorkChain(WorkChain):
         self.ctx.structure = self.inputs.structure
         self.ctx.converged = False
         self.ctx.parameters = cp2k_motion
-        dict_merge(self.ctx.parameters, {'GLOBAL':{'RUN_TYPE':'GEO_OPT'}})
+        dict_merge(self.ctx.parameters, {'GLOBAL':{'RUN_TYPE':'CELL_OPT'}})
         dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'MO_CUBES':{'_': 'OFF'}}}}})
         dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'MULLIKEN':{'_': 'OFF'}}}}})
         dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'LOWDIN':{'_': 'OFF'}}}}})
@@ -147,7 +151,7 @@ class Cp2kGeoOptWorkChain(WorkChain):
         """Run scf calculation."""
         # Create the calculation process and launch it
         future  = submit(Cp2kDftBaseWorkChain, **self.ctx.inputs)
-        self.report("pk: {} | Running cp2k GEO_OPT")
+        self.report("pk: {} | Running cp2k CELL_OPT")
         return ToContext(cp2k=Outputs(future))
 
     def inspect_calculation(self):

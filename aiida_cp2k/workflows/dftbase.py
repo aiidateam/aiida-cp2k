@@ -17,10 +17,11 @@ cp2k_default_parameters = {
     'GLOBAL':{
             'RUN_TYPE': 'ENERGY',
             'PRINT_LEVEL': 'MEDIUM',
-            'EXTENDED_FFT_LENGTHS': True, # Needed for large systems
+            'EXTENDED_FFT_LENGTHS': True,   # Needed for large systems
     },
     'FORCE_EVAL': {
-        'METHOD': 'Quickstep',
+        'METHOD': 'QUICKSTEP',              #default: QS
+        'STRESS_TENSOR': 'ANALYTICAL' ,     #default: NONE
         'DFT': {
             'UKS': False,
             'CHARGE': 0,

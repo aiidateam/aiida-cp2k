@@ -6,48 +6,30 @@ from aiida.orm.data.base import Str
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.structure import StructureData
-from aiida.orm.utils import CalculationFactory
+from aiida.orm.utils import CalculationFactory, DataFactory
 from aiida.work.workchain import ToContext, if_, while_
+
+from .dftutilities import dict_merge, get_multiplicity, get_atom_kinds, default_options_dict
 
 Cp2kCalculation = CalculationFactory('cp2k')
 
-spin = {
-        "H"  : 0.0,
-        "Li" : 0.0,
-        "Be" : 0.0,
-        "B"  : 0.0,
-        "C"  : 0.0,
-        "N"  : 0.0,
-        "O"  : 0.0,
-        "F"  : 0.0,
-        "Na" : 0.0,
-        "Mg" : 0.0,
-        "Al" : 0.0,
-        "Si" : 0.0,
-        "P"  : 0.0,
-        "S"  : 0.0,
-        "Cl" : 0.0,
-        "K"  : 0.0,
-        "Ca" : 0.0,
-        "Sc" : 1.0 / 2.0,
-        "Ti" : 2.0 / 2.0,
-        "V"  : 3.0 / 2.0,
-        "Cr" : 4.0 / 2.0,
-        "Mn" : 5.0 / 2.0,
-        "Fe" : 4.0 / 2.0,
-        "Co" : 3.0 / 2.0,
-        "Ni" : 2.0 / 2.0,
-        "Cu" : 1.0 / 2.0,
-        "Zn" : 0.0,
-        "Zr" : 2.0 / 2.0,
-        }
-
 cp2k_default_parameters = {
+    'GLOBAL':{
+            'RUN_TYPE': 'ENERGY',
+            'PRINT_LEVEL': 'MEDIUM',
+            'EXTENDED_FFT_LENGTHS': True,   # Needed for large systems
+    },
     'FORCE_EVAL': {
-        'METHOD': 'Quickstep',
+        'METHOD': 'QUICKSTEP',              #default: QS
+        'STRESS_TENSOR': 'ANALYTICAL' ,     #default: NONE
         'DFT': {
+            'MULTIPLICITY': 1,
+            'UKS': False,
             'CHARGE': 0,
-            'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+            'BASIS_SET_FILE_NAME': [
+               'BASIS_MOLOPT',
+               'BASIS_MOLOPT_UCL',
+            ],
             'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
             'RESTART_FILE_NAME'  : './parent_calc/aiida-RESTART.wfn',
             'QS': {
@@ -65,7 +47,7 @@ cp2k_default_parameters = {
                 'SCF_GUESS': 'ATOMIC',
                 'EPS_SCF': 1.0e-6,
                 'MAX_SCF': 50,
-                'MAX_ITER_LUMO': 10000,
+                'MAX_ITER_LUMO': 10000, #needed for the bandgap
                 'OT':{
                     'MINIMIZER': 'DIIS',
                     'PRECONDITIONER': 'FULL_ALL',
@@ -74,54 +56,63 @@ cp2k_default_parameters = {
                     'EPS_SCF': 1.0e-6,
                     'MAX_SCF': 10,
                     },
+                'PRINT':{
+                    'RESTART':{
+                        'BACKUP_COPIES': 0,
+                        'EACH' :{
+                            'QS_SCF': 20,
+                        },
+                    },
+                    'RESTART_HISTORY':{
+                        '_': 'OFF'
+                    },
+                },
             },
             'XC': {
                 'XC_FUNCTIONAL': {
                     '_': 'PBE',
                 },
+                'VDW_POTENTIAL': {
+                   'POTENTIAL_TYPE': 'PAIR_POTENTIAL',
+                   'PAIR_POTENTIAL': {
+                      'PARAMETER_FILE_NAME': 'dftd3.dat',
+                      'TYPE': 'DFTD3(BJ)',
+                      'REFERENCE_FUNCTIONAL': 'PBE',
+                   },
+                },
             },
             'PRINT': {
-                'MO_CUBES': {   # this is to print the band gap
+                'E_DENSITY_CUBE': {
+                    '_': 'OFF',
                     'STRIDE': '1 1 1',
+                },
+                'MO_CUBES': {
+                    '_': 'ON', # this is to print the band gap
                     'WRITE_CUBE': 'F',
+                    'STRIDE': '1 1 1',
                     'NLUMO': 1,
                     'NHOMO': 1,
+                },
+                'MULLIKEN': {
+                    '_': 'ON',  #default: ON
+                },
+                'LOWDIN': {
+                    '_': 'OFF',  #default: OFF
+                },
+                'HIRSHFELD': {
+                    '_': 'OFF',  #default: OFF
                 },
             },
         },
         'SUBSYS': {
         },
-        'PRINT': { # this is to print forces (may be necessary for problems
-            #detection)
+        'PRINT': {
             'FORCES':{
-                '_': 'ON',
-                }
+                '_': 'OFF', #if you want: compute forces with RUN_TYPE ENERGY_FORCE and print them
             },
+        },
     },
-    'GLOBAL':{
-            "EXTENDED_FFT_LENGTHS": True, # Needed for large systems
-            }
 }
-
-
-def dict_merge(dct, merge_dct):
-    """ Taken from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
-    Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
-    updating only top-level keys, dict_merge recurses down into dicts nested
-    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
-    ``dct``.
-    :param dct: dict onto which the merge is executed
-    :param merge_dct: dct merged into dct
-    :return: None
-    """
-    import collections
-    for k, v in merge_dct.iteritems():
-        if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.Mapping)):
-            dict_merge(dct[k], merge_dct[k])
-        else:
-            dct[k] = merge_dct[k]
-
 
 def last_scf_loop(fpath):
     """
@@ -145,58 +136,36 @@ def scf_converged(fpath):
     return False
 
 def scf_was_diverging(fpath):
-    """A function that detects diverging SCF"""
-    content = last_scf_loop(fpath)
-    for line in content:
-        if "Minimizer" in line and "CG" in line:
-            grep_string = "OT CG"
-            break
+    """A function that detects diverging SCF: always diverging if not converged!"""
+    return True
+#    content = last_scf_loop(fpath)
+#    for line in content:
+#        if "Minimizer" in line and "CG" in line:
+#            grep_string = "OT CG"
+#            break
+#
+#        elif "Minimizer" in line and "DIIS" in line:
+#            grep_string = "OT DIIS"
+#            break
+#
+#    n_change = 7
+#    difference = []
+#    n_positive = 0
+#    for line in content:
+#        if grep_string in line:
+#            difference.append(line.split()[n_change])
+#    for number in difference[-12:]:
+#        if float(number) > 0:
+#            n_positive +=1
+#
+#    if n_positive>5:
+#        return True
+#    return False
 
-        elif "Minimizer" in line and "DIIS" in line:
-            grep_string = "OT DIIS"
-            break
-    
-    n_change = 7
-    difference = []
-    n_positive = 0
-    for line in content:
-        if grep_string in line:
-            difference.append(line.split()[n_change])
-    for number in difference[-12:]:
-        if float(number) > 0:
-            n_positive +=1
-
-    if n_positive>5:
-        return True
-    return False
-
-
-def get_multiplicity(structure):
-    multiplicity = 1
-    all_atoms = structure.get_ase().get_chemical_symbols()
-    for key, value in spin.iteritems():
-        multiplicity += all_atoms.count(key) * value * 2.0
-    return int(round(multiplicity))
-
-def get_atom_kinds(structure):
-    kinds = []
-    all_atoms = set(structure.get_ase().get_chemical_symbols())
-    for a in all_atoms:
-        kinds.append({
-            '_': a,
-            'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-            'POTENTIAL': 'GTH-PBE',
-            'MAGNETIZATION': spin[a] * 2.0,
-            })
-    return kinds
-
-default_options = {
-    "resources": {
-        "num_machines": 1,
-        "num_mpiprocs_per_machine": 2,
-    },
-    "max_wallclock_seconds": 3 * 60 * 60,
-    }
+def scf_getting_weird(fpath):
+    """A function that detects weird things are happening"""
+    #TODO: True for the moment so that it alwayys switch to CG
+    return True
 
 class Cp2kDftBaseWorkChain(WorkChain):
     """A base workchain to be used for DFT calculations with CP2K"""
@@ -205,15 +174,11 @@ class Cp2kDftBaseWorkChain(WorkChain):
         super(Cp2kDftBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input("parameters", valid_type=ParameterData,
-                default=ParameterData(dict={}))
-        spec.input("options", valid_type=ParameterData,
-                default=ParameterData(dict=default_options))
-        spec.input('parent_folder', valid_type=RemoteData,
-                default=None, required=False)
-        spec.input('_guess_multiplisity', valid_type=bool,
-                default=False)
-        
+        spec.input('parameters', valid_type=ParameterData, default=ParameterData(dict={}))
+        spec.input('options', valid_type=ParameterData, default=ParameterData(dict=default_options_dict))
+        spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
+        spec.input('_guess_multiplicity', valid_type=bool, default=False)
+
         spec.outline(
             cls.setup,
             while_(cls.should_run_calculation)(
@@ -238,7 +203,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
             self.ctx.restart_calc = None
         self.ctx.parameters = cp2k_default_parameters
         user_params = self.inputs.parameters.get_dict()
-        
+
         # As it should be possible to redefine the default atom kinds by user I
         # put the default values prior to merging self.ctx.parameters with
         # user_params
@@ -250,14 +215,14 @@ class Cp2kDftBaseWorkChain(WorkChain):
         self.ctx.options = self.inputs.options.get_dict()
 
         # Trying to guess the multiplicity of the system
-        if self.inputs._guess_multiplisity:
+        if self.inputs._guess_multiplicity:
             self.report("Guessing multiplicity")
             multiplicity = get_multiplicity(self.inputs.structure)
             self.ctx.parameters['FORCE_EVAL']['DFT']['MULTIPLICITY'] = multiplicity
             self.report("Obtained multiplicity: {}".format(multiplicity))
             if multiplicity != 1:
-                self.ctx.parameters['FORCE_EVAL']['DFT']['LSD'] = True
-                self.report("Switching to LSD calculation")
+                self.ctx.parameters['FORCE_EVAL']['DFT']['UKS'] = True
+                self.report("Switching to UKS calculation")
         # Otherwise take the default
 
     def should_run_calculation(self):
@@ -284,9 +249,9 @@ class Cp2kDftBaseWorkChain(WorkChain):
         p.store()
         self.ctx.inputs['parameters'] = p
 
-    def run_calculation(self): 
+    def run_calculation(self):
         """Run cp2k calculation."""
-        
+
         # Create the calculation process and launch it
         process = Cp2kCalculation.process()
         future  = submit(process, **self.ctx.inputs)
@@ -294,7 +259,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
                 " cp2k".format(future.pid))
         self.ctx.nruns += 1
         return ToContext(calculation=Outputs(future))
-    
+
     def inspect_calculation(self):
         """
         Analyse the results of CP2K calculation and decide weather there is a
@@ -325,12 +290,18 @@ class Cp2kDftBaseWorkChain(WorkChain):
         else:
             self.report("The time of the cp2k calculation has NOT been exceeded")
 
+        # return converged geometry
+        try:
+            self.ctx.structure = self.ctx.calculation['output_structure']
+        except:
+            self.report("Cp2k calculation did not provide any output structure")
+
         # Second check is whether the last SCF did converge
         converged_scf = scf_converged(outfile)
-        if not converged_scf and scf_was_diverging(outfile):
+        if not converged_scf and scf_getting_weird(outfile):
             # If, however, scf was even diverging I should go for more robust
             # minimizer.
-            self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['OT']['MINIMIZER'] = 'CG' 
+            self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['OT']['MINIMIZER'] = 'CG'
             self.report("Going for more robust (but slow) SCF minimizer")
             # Also, to avoid being trapped in the wrong minimum I restart
             # from atomic wavefunctions.
@@ -344,7 +315,6 @@ class Cp2kDftBaseWorkChain(WorkChain):
             # strong force may cause convergence problems, needs to be
             # implemented
             # UPDATE: from now forces are be printed by default
-                
 
        # Third check:
        # TODO: check for the geometry convergence/divergence problems
@@ -355,8 +325,6 @@ class Cp2kDftBaseWorkChain(WorkChain):
         if converged_geometry and converged_scf and not exceeded_time:
             self.report("Calculation converged, terminating the workflow")
             self.ctx.done = True
-
-        
 
     def return_results(self):
         self.out('output_structure', self.ctx.structure)

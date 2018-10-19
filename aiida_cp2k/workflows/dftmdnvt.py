@@ -11,34 +11,46 @@ RemoteData = DataFactory('remote')
 from aiida_cp2k.workflows import Cp2kDftBaseWorkChain
 cp2k_motion ={
     'MOTION': {
-        'GEO_OPT': {
-            'TYPE': 'MINIMIZATION',                     #default: MINIMIZATION
-            'OPTIMIZER': 'BFGS',                        #default: BFGS
-            'MAX_ITER': 50,                             #default: 200
-            'MAX_DR':    '[bohr] 0.0030',               #default: [bohr] 0.0030
-            'RMS_DR':    '[bohr] 0.0015',               #default: [bohr] 0.0015
-            'MAX_FORCE': '[bohr^-1*hartree] 0.00045',   #default: [bohr^-1*hartree] 0.00045
-            'RMS_FORCE': '[bohr^-1*hartree] 0.00030',   #default: [bohr^-1*hartree] 0.00030
-            'BFGS' : {
-                'TRUST_RADIUS': '[angstrom] 0.25',      #default: [angstrom] 0.25
+        'MD': {
+            'ENSEMBLE': 'NVT',                      #main options: NVT, NPT_F
+            'STEPS': 50,                            #default: 3
+            'TIMESTEP': '[fs] 0.5',                 #default: [fs] 0.5
+            'TEMPERATURE': '[K] 300',               #default: [K] 300
+            'DISPLACEMENT_TOL': '[angstrom] 1.0',   #default: [bohr] 100
+            'THERMOSTAT' : {
+                'REGION': 'GLOBAL',                 #default: GLOBAL
+                'TYPE': 'CSVR',
+                'CSVR': {
+                    'TIMECON': 0.1,                 #default: 1000, use: 0.1 for equilibration, 50~100 for production
+                },
+            },
+            'BAROSTAT': {                           #by default the barosthat uses the same thermo as the partricles
+                'PRESSURE': '[bar] 1.0',            #default: 0.0
+                'TIMECON': '[fs] 1000',             #default: 1000, good for crystals
+                'VIRIAL': 'XYZ',                    #default: XYZ
+            },
+            'PRINT': {
+                'ENERGY': {
+                    '_': 'OFF',                     #default: LOW (print .ener file)
+                },
             },
         },
         'PRINT': {
             'TRAJECTORY': {
                 'FORMAT': 'DCD_ALIGNED_CELL',
                 'EACH': {
-                    'GEO_OPT': 1,
+                    'MD': 1,
                 },
             },
             'RESTART':{
                 'BACKUP_COPIES': 0,
                 'EACH': {
-                    'GEO_OPT': 1,
+                    'MD': 1,
                 },
             },
             'RESTART_HISTORY':{
                 'EACH': {
-                    'GEO_OPT': 100,
+                    'MD': 100,
                 },
             },
             'CELL': {
@@ -57,13 +69,13 @@ cp2k_motion ={
     },
 }
 
-class Cp2kGeoOptWorkChain(WorkChain):
+class Cp2kMDNVTWorkChain(WorkChain):
     """
     Workchain to run SCF calculation wich CP2K
     """
     @classmethod
     def define(cls, spec):
-        super(Cp2kGeoOptWorkChain, cls).define(spec)
+        super(Cp2kMDNVTWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
         spec.input("parameters", valid_type=ParameterData, default=ParameterData(dict={}))
@@ -90,7 +102,7 @@ class Cp2kGeoOptWorkChain(WorkChain):
         self.ctx.structure = self.inputs.structure
         self.ctx.converged = False
         self.ctx.parameters = cp2k_motion
-        dict_merge(self.ctx.parameters, {'GLOBAL':{'RUN_TYPE':'GEO_OPT'}})
+        dict_merge(self.ctx.parameters, {'GLOBAL':{'RUN_TYPE':'MD'}})
         dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'MO_CUBES':{'_': 'OFF'}}}}})
         dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'MULLIKEN':{'_': 'OFF'}}}}})
         dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'LOWDIN':{'_': 'OFF'}}}}})
@@ -128,7 +140,7 @@ class Cp2kGeoOptWorkChain(WorkChain):
         """Run scf calculation."""
         # Create the calculation process and launch it
         future  = submit(Cp2kDftBaseWorkChain, **self.ctx.inputs)
-        self.report("pk: {} | Running cp2k GEO_OPT")
+        self.report("pk: {} | Running cp2k MD NVT")
         return ToContext(cp2k=Outputs(future))
 
     def inspect_calculation(self):

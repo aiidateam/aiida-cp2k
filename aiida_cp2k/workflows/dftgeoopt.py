@@ -2,29 +2,11 @@ from aiida.orm.code import Code
 from aiida.orm.utils import CalculationFactory, DataFactory
 from aiida.work.workchain import WorkChain, ToContext, Outputs, while_
 from aiida.work.run import submit
-
+from .dftutilities import dict_merge, default_options_dict
 # data objects
 StructureData = DataFactory('structure')
 ParameterData = DataFactory('parameter')
 RemoteData = DataFactory('remote')
-
-def dict_merge(dct, merge_dct):
-    """ Taken from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
-    Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
-    updating only top-level keys, dict_merge recurses down into dicts nested
-    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
-    ``dct``.
-    :param dct: dict onto which the merge is executed
-    :param merge_dct: dct merged into dct
-    :return: None
-    """
-    import collections
-    for k, v in merge_dct.iteritems():
-        if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.Mapping)):
-            dict_merge(dct[k], merge_dct[k])
-        else:
-            dct[k] = merge_dct[k]
 
 from aiida_cp2k.workflows import Cp2kDftBaseWorkChain
 cp2k_motion ={
@@ -75,15 +57,6 @@ cp2k_motion ={
     },
 }
 
-
-default_options = {
-    "resources": {
-        "num_machines": 4,
-        "num_mpiprocs_per_machine": 12,
-    },
-    "max_wallclock_seconds": 3 * 60 * 60,
-}
-
 class Cp2kGeoOptWorkChain(WorkChain):
     """
     Workchain to run SCF calculation wich CP2K
@@ -93,14 +66,10 @@ class Cp2kGeoOptWorkChain(WorkChain):
         super(Cp2kGeoOptWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input("parameters", valid_type=ParameterData,
-                default=ParameterData(dict={}))
-        spec.input("options", valid_type=ParameterData,
-                default=ParameterData(dict=default_options))
-        spec.input('parent_folder', valid_type=RemoteData,
-                default=None, required=False)
-
-        #spec.output('output_structure', valid_type=StructureData)
+        spec.input("parameters", valid_type=ParameterData, default=ParameterData(dict={}))
+        spec.input("options", valid_type=ParameterData, default=ParameterData(dict=default_options_dict))
+        spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
+        spec.input('_guess_multiplicity', valid_type=bool, default=False)
 
         spec.outline(
             cls.setup,
@@ -113,6 +82,10 @@ class Cp2kGeoOptWorkChain(WorkChain):
             cls.return_results,
         )
 
+        spec.output('output_structure', valid_type=StructureData)
+        spec.output('output_parameters', valid_type=ParameterData)
+        spec.output('remote_folder', valid_type=RemoteData)
+
     def setup(self):
         self.ctx.structure = self.inputs.structure
         self.ctx.converged = False
@@ -122,6 +95,11 @@ class Cp2kGeoOptWorkChain(WorkChain):
         dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'MULLIKEN':{'_': 'OFF'}}}}})
         dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'LOWDIN':{'_': 'OFF'}}}}})
         dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'HIRSHFELD':{'_': 'OFF'}}}}})
+        dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'PRINT':{'FORCES':{'_': 'OFF'}}}})
+        try:
+            self.ctx.restart_calc = self.inputs.parent_folder
+        except:
+            self.ctx.restart_calc = None
         user_params = self.inputs.parameters.get_dict()
         dict_merge(self.ctx.parameters, user_params)
 
@@ -136,8 +114,11 @@ class Cp2kGeoOptWorkChain(WorkChain):
         self.ctx.inputs = {
             'code'      : self.inputs.code,
             'structure' : self.ctx.structure,
-            '_options'  : self.inputs.options,
+            'options'   : self.inputs.options,
+            '_guess_multiplicity': self.inputs._guess_multiplicity,
             }
+        if self.ctx.restart_calc:
+            self.ctx.inputs['parent_folder'] = self.ctx.restart_calc
         # use the new parameters
         p = ParameterData(dict=self.ctx.parameters)
         p.store()
@@ -152,6 +133,11 @@ class Cp2kGeoOptWorkChain(WorkChain):
 
     def inspect_calculation(self):
         self.ctx.converged = True
+        self.ctx.structure = self.ctx.cp2k['output_structure'] #from DftBase
+        self.ctx.output_parameters = self.ctx.cp2k['output_parameters'] #from DftBase
+        self.ctx.restart_calc = self.ctx.cp2k['remote_folder']
 
     def return_results(self):
-        pass
+        self.out('output_structure', self.ctx.structure)
+        self.out('output_parameters', self.ctx.output_parameters)
+        self.out('remote_folder', self.ctx.restart_calc)

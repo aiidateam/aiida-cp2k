@@ -9,7 +9,7 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.utils import CalculationFactory, DataFactory
 from aiida.work.workchain import ToContext, if_, while_
 
-from .atomic_convention1 import spin, basis_set, pseudo
+from .dftutilities import dict_merge, get_multiplicity, get_atom_kinds, default_options_dict
 
 Cp2kCalculation = CalculationFactory('cp2k')
 
@@ -23,6 +23,7 @@ cp2k_default_parameters = {
         'METHOD': 'QUICKSTEP',              #default: QS
         'STRESS_TENSOR': 'ANALYTICAL' ,     #default: NONE
         'DFT': {
+            'MULTIPLICITY': 1,
             'UKS': False,
             'CHARGE': 0,
             'BASIS_SET_FILE_NAME': [
@@ -101,39 +102,17 @@ cp2k_default_parameters = {
                 'HIRSHFELD': {
                     '_': 'OFF',  #default: OFF
                 },
-
             },
         },
         'SUBSYS': {
         },
-        'PRINT': { # this is to print forces (may be necessary for problems
-            #detection)
+        'PRINT': {
             'FORCES':{
-                '_': 'ON',
+                '_': 'OFF', #if you want: compute forces with RUN_TYPE ENERGY_FORCE and print them
             },
         },
     },
 }
-
-
-def dict_merge(dct, merge_dct):
-    """ Taken from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
-    Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
-    updating only top-level keys, dict_merge recurses down into dicts nested
-    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
-    ``dct``.
-    :param dct: dict onto which the merge is executed
-    :param merge_dct: dct merged into dct
-    :return: None
-    """
-    import collections
-    for k, v in merge_dct.iteritems():
-        if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.Mapping)):
-            dict_merge(dct[k], merge_dct[k])
-        else:
-            dct[k] = merge_dct[k]
-
 
 def last_scf_loop(fpath):
     """
@@ -157,7 +136,7 @@ def scf_converged(fpath):
     return False
 
 def scf_was_diverging(fpath):
-    """A function that detects diverging SCF: always diverging!"""
+    """A function that detects diverging SCF: always diverging if not converged!"""
     return True
 #    content = last_scf_loop(fpath)
 #    for line in content:
@@ -183,33 +162,10 @@ def scf_was_diverging(fpath):
 #        return True
 #    return False
 
-
-def get_multiplicity(structure):
-    multiplicity = 1
-    all_atoms = structure.get_ase().get_chemical_symbols()
-    for key, value in spin.iteritems():
-        multiplicity += all_atoms.count(key) * value * 2.0
-    return int(round(multiplicity))
-
-def get_atom_kinds(structure):
-    kinds = []
-    all_atoms = set(structure.get_ase().get_chemical_symbols())
-    for a in all_atoms:
-        kinds.append({
-            '_': a,
-            'BASIS_SET': basis_set[a],
-            'POTENTIAL': pseudo[a],
-            'MAGNETIZATION': spin[a] * 2.0,
-            })
-    return kinds
-
-default_options = {
-    "resources": {
-        "num_machines": 1,
-        "num_mpiprocs_per_machine": 2,
-    },
-    "max_wallclock_seconds": 3 * 60 * 60,
-    }
+def scf_getting_weird(fpath):
+    """A function that detects weird things are happening"""
+    #TODO: True for the moment so that it alwayys switch to CG
+    return True
 
 class Cp2kDftBaseWorkChain(WorkChain):
     """A base workchain to be used for DFT calculations with CP2K"""
@@ -218,14 +174,10 @@ class Cp2kDftBaseWorkChain(WorkChain):
         super(Cp2kDftBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input("parameters", valid_type=ParameterData,
-                default=ParameterData(dict={}))
-        spec.input("options", valid_type=ParameterData,
-                default=ParameterData(dict=default_options))
-        spec.input('parent_folder', valid_type=RemoteData,
-                default=None, required=False)
-        spec.input('_guess_multiplisity', valid_type=bool,
-                default=False)
+        spec.input('parameters', valid_type=ParameterData, default=ParameterData(dict={}))
+        spec.input('options', valid_type=ParameterData, default=ParameterData(dict=default_options_dict))
+        spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
+        spec.input('_guess_multiplicity', valid_type=bool, default=False)
 
         spec.outline(
             cls.setup,
@@ -263,7 +215,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
         self.ctx.options = self.inputs.options.get_dict()
 
         # Trying to guess the multiplicity of the system
-        if self.inputs._guess_multiplisity:
+        if self.inputs._guess_multiplicity:
             self.report("Guessing multiplicity")
             multiplicity = get_multiplicity(self.inputs.structure)
             self.ctx.parameters['FORCE_EVAL']['DFT']['MULTIPLICITY'] = multiplicity
@@ -338,9 +290,15 @@ class Cp2kDftBaseWorkChain(WorkChain):
         else:
             self.report("The time of the cp2k calculation has NOT been exceeded")
 
+        # return converged geometry
+        try:
+            self.ctx.structure = self.ctx.calculation['output_structure']
+        except:
+            self.report("Cp2k calculation did not provide any output structure")
+
         # Second check is whether the last SCF did converge
         converged_scf = scf_converged(outfile)
-        if not converged_scf and scf_was_diverging(outfile):
+        if not converged_scf and scf_getting_weird(outfile):
             # If, however, scf was even diverging I should go for more robust
             # minimizer.
             self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['OT']['MINIMIZER'] = 'CG'
@@ -358,7 +316,6 @@ class Cp2kDftBaseWorkChain(WorkChain):
             # implemented
             # UPDATE: from now forces are be printed by default
 
-
        # Third check:
        # TODO: check for the geometry convergence/divergence problems
        # useful for geo/cell-opt restart
@@ -368,8 +325,6 @@ class Cp2kDftBaseWorkChain(WorkChain):
         if converged_geometry and converged_scf and not exceeded_time:
             self.report("Calculation converged, terminating the workflow")
             self.ctx.done = True
-
-
 
     def return_results(self):
         self.out('output_structure', self.ctx.structure)

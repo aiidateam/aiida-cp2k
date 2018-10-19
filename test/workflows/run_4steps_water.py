@@ -5,7 +5,7 @@ from aiida.orm.data.base import Str
 from aiida.work.run import submit
 
 import ase.build
-from aiida_cp2k.workflows import Cp2kDftBaseWorkChain
+from aiida_cp2k.workflows import Cp2k4StepsWorkChain
 
 atoms = ase.build.molecule('H2O')
 atoms.center(vacuum=2.0)
@@ -15,26 +15,32 @@ structure.store()
 options_dict = {
     "resources": {
         "num_machines": 1,
-        "num_mpiprocs_per_machine": 2,
+        "num_mpiprocs_per_machine": 4,
     },
     "max_wallclock_seconds": 3 * 60 * 60,
     }
 options = ParameterData(dict=options_dict)
 
 params_dict = {
-        'FORCE_EVAL':{
-            'DFT':{
-                'LSD': True,
+        'MOTION':{
+            'MD':{
+                'STEPS': 5,
                 },
+            'GEO_OPT': {
+                'MAX_ITER': 5,
             },
-        }
-
+            'CELL_OPT': {
+                'MAX_ITER': 5,
+            },
+        },
+}
 parameters = ParameterData(dict=params_dict)
 code = test_and_get_code('cp2k-5.1@localhost', expected_code_type='cp2k')
-submit(Cp2kDftBaseWorkChain,
+submit(Cp2k4StepsWorkChain,
         code=code,
         structure=structure,
         parameters=parameters,
         options=options,
         _label='MyFirstWokchain',
+        _guess_multiplicity=True,
         )

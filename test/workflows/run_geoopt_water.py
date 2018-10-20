@@ -30,7 +30,7 @@ params_dict = {
         }
 
 parameters = ParameterData(dict=params_dict)
-code = test_and_get_code('cp2k-5.1@localhost', expected_code_type='cp2k')
+code = test_and_get_code('cp2k@localhost', expected_code_type='cp2k')
 submit(Cp2kGeoOptWorkChain,
         code=code,
         structure=structure,

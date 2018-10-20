@@ -23,7 +23,11 @@
             "cp2k = aiida_cp2k.parsers:Cp2kParser"
         ],
         "aiida.workflows": [
-            "cp2k.converge = aiida_cp2k.workflows:Cp2kDftBaseWorkChain"
+            "cp2k.base = aiida_cp2k.workflows:Cp2kDftBaseWorkChain",
+            "cp2k.cell_opt = aiida_cp2k.workflows:Cp2kCellOptWorkChain",
+            "cp2k.geo_opt = aiida_cp2k.workflows:Cp2kGeoOptWorkChain",
+            "cp2k.cell_opt = aiida_cp2k.workflows:Cp2kCellOptWorkChain",
+            "cp2k.robust_geo_opt = aiida_cp2k.workflows:Cp2kRobustGeoOptWorkChain"
         ]
     },
     "data_files": [

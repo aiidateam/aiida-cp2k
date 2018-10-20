@@ -46,3 +46,24 @@ default_options_dict = {
     },
     "max_wallclock_seconds": 1 * 60 * 60,
     }
+
+disable_printing_charges_dict = {
+    'FORCE_EVAL': {
+        'DFT': {
+            'PRINT':{
+                'MO_CUBES': {
+                    '_': 'OFF',
+                    },
+                'MULLIKEN': {
+                    '_': 'OFF',
+                    },
+                'LOWDIN': {
+                    '_': 'OFF',
+                    },
+                'HIRSHFELD': {
+                    '_': 'OFF',
+                    },
+                },
+            },
+        },
+    }

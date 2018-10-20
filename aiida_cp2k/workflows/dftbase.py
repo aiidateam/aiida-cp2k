@@ -1,16 +1,15 @@
-from aiida.common.extendeddicts import AttributeDict
-from aiida.work.run import submit
-from aiida.work.workchain import WorkChain, Outputs
 from aiida.orm import Code
 from aiida.orm.data.base import Str
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.utils import CalculationFactory, DataFactory
-from aiida.work.workchain import ToContext, if_, while_
+from aiida.work.run import submit
+from aiida.work.workchain import WorkChain, Outputs, ToContext, if_, while_
 
 from .dftutilities import dict_merge, get_multiplicity, get_atom_kinds, default_options_dict
 
+# calculation objects
 Cp2kCalculation = CalculationFactory('cp2k')
 
 cp2k_default_parameters = {
@@ -115,12 +114,10 @@ cp2k_default_parameters = {
 }
 
 def last_scf_loop(fpath):
-    """
-    Simple function that extracts all the output starting from the last SCF
-    loop.
-    """
+    """Simple function that extracts the part of the output starting from the last SCF loop."""
     with open(fpath) as f:
         content = f.readlines()
+
     # find the last scf loop in the cp2k output file
     for n, line in enumerate(reversed(content)):
         if "SCF WAVEFUNCTION OPTIMIZATION" in line:
@@ -128,7 +125,7 @@ def last_scf_loop(fpath):
     return content[-n-1:]
 
 def scf_converged(fpath):
-    """Take last SCF cycle and check whether it converged or not"""
+    """Take the last SCF cycle and check whether it converged or not."""
     content = last_scf_loop(fpath)
     for line in content:
         if "SCF run converged in" in line:
@@ -163,15 +160,17 @@ def scf_was_diverging(fpath):
 #    return False
 
 def scf_getting_weird(fpath):
-    """A function that detects weird things are happening"""
-    #TODO: True for the moment so that it alwayys switch to CG
+    """A function that detects weird things are happening."""
+    #TODO: True for the moment so that it always switch to CG
     return True
 
 class Cp2kDftBaseWorkChain(WorkChain):
-    """A base workchain to be used for DFT calculations with CP2K"""
+    """A base workchain to be used for DFT calculations with CP2K."""
     @classmethod
     def define(cls, spec):
         super(Cp2kDftBaseWorkChain, cls).define(spec)
+
+        # specify the inputs of the workchain
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
         spec.input('parameters', valid_type=ParameterData, default=ParameterData(dict={}))
@@ -179,6 +178,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
         spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
         spec.input('_guess_multiplicity', valid_type=bool, default=False)
 
+        # specify the chain of calculations to be performed
         spec.outline(
             cls.setup,
             while_(cls.should_run_calculation)(
@@ -188,12 +188,14 @@ class Cp2kDftBaseWorkChain(WorkChain):
             ),
             cls.return_results,
         )
+        
+        # specify the outputs of the workchain
         spec.output('output_structure', valid_type=StructureData, required=False)
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
 
     def setup(self):
-        """Perform initial setup"""
+        """Perform initial setup."""
         self.ctx.done = False
         self.ctx.nruns = 0
         self.ctx.structure = self.inputs.structure
@@ -223,26 +225,30 @@ class Cp2kDftBaseWorkChain(WorkChain):
             if multiplicity != 1:
                 self.ctx.parameters['FORCE_EVAL']['DFT']['UKS'] = True
                 self.report("Switching to UKS calculation")
-        # Otherwise take the default
+            else:
+                self.report("As multiplicity is 1, I do NOT switch on UKS.")
+            # Otherwise take the default
 
     def should_run_calculation(self):
         return not self.ctx.done
 
     def prepare_calculation(self):
-        """Prepare all the neccessary input links to run the calculation"""
-        self.ctx.inputs = AttributeDict({
-            'code': self.inputs.code,
-            'structure'  : self.ctx.structure,
-            '_options'    : self.ctx.options,
-            })
+        """Prepare all the neccessary input links to run the calculation."""
+        self.ctx.inputs = {
+            'code'      : self.inputs.code,
+            'structure' : self.ctx.structure,
+            '_options'  : self.ctx.options,
+            }
 
-        # restart from the previous calculation only if the necessary data are
-        # provided
+        # restart from the previous calculation only if the necessary data are provided
+        # TODO: it should be inlinde or work function that creates a new AiiDA data object
         if self.ctx.restart_calc:
             self.ctx.inputs['parent_folder'] = self.ctx.restart_calc
             self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS'] = 'RESTART'
         else:
             self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS'] = 'ATOMIC'
+
+        # TODO: add geometry restart if it is possible to do so
 
         # use the new parameters
         p = ParameterData(dict=self.ctx.parameters)
@@ -251,22 +257,17 @@ class Cp2kDftBaseWorkChain(WorkChain):
 
     def run_calculation(self):
         """Run cp2k calculation."""
-
         # Create the calculation process and launch it
         process = Cp2kCalculation.process()
-        future  = submit(process, **self.ctx.inputs)
-        self.report("pk: {} | Running DFT calculation with"
-                " cp2k".format(future.pid))
+        running  = submit(process, **self.ctx.inputs)
+        self.report("pk: {} | Running DFT calculation with cp2k".format(running.pid))
         self.ctx.nruns += 1
-        return ToContext(calculation=Outputs(future))
+        return ToContext(calculation=Outputs(running))
 
     def inspect_calculation(self):
-        """
-        Analyse the results of CP2K calculation and decide weather there is a
-        need to restart it. If yes, then decide exactly how to restart the
-        calculation.
-        """
-        # TODO: check whether the CP2K did not stop the execution because of an
+        """Analyse the results of CP2K calculation and decide weather there is a need to restart it. If yes, then
+        decide exactly how to restart thea calculation."""
+        # TODO: check whether CP2K did not stop the execution because of an
         # error that it detected. In that case the calculation will most
         # probably be in the status "PARSINGFAILED"
 
@@ -278,6 +279,8 @@ class Cp2kDftBaseWorkChain(WorkChain):
 
         # File to analyze
         outfile = self.ctx.calculation['retrieved'].get_abs_path() + '/path/aiida.out'
+
+        # TODO: make a try here, can be that those outputs do not exist
         self.ctx.restart_calc = self.ctx.calculation['remote_folder']
         self.ctx.output_parameters = self.ctx.calculation['output_parameters']
 
@@ -322,6 +325,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
        # if aiida-1.restart in retrieved (folder):
        #    self.ctx.parameters['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
 
+        # if all is fine, we are done.
         if converged_geometry and converged_scf and not exceeded_time:
             self.report("Calculation converged, terminating the workflow")
             self.ctx.done = True

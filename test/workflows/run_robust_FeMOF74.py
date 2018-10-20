@@ -5,12 +5,13 @@ from aiida.orm.data.base import Str
 from aiida.work.run import submit
 
 from ase.io import read
-from aiida_cp2k.workflows import Cp2k4StepsWorkChain
+from aiida_cp2k.workflows import Cp2kRobustGeoOptWorkChain
 
 atoms = read('/home/daniele/Programs/aiida-database/frameworks/test/Cu-MOF-74_h211.cif')
 structure = StructureData(ase=atoms)
 structure.label='Cu-MOF-74'
 structure.store()
+
 options_dict = {
     "resources": {
         "num_machines": 2,
@@ -18,6 +19,7 @@ options_dict = {
     "max_wallclock_seconds": 1 * 60 * 60,
     'prepend_text': '#SBATCH --partition=debug',
     }
+
 options = ParameterData(dict=options_dict)
 
 params_dict = {
@@ -35,7 +37,7 @@ params_dict = {
 }
 parameters = ParameterData(dict=params_dict)
 code = test_and_get_code('cp2k-5.1@fidis', expected_code_type='cp2k')
-submit(Cp2k4StepsWorkChain,
+submit(Cp2kRobustGeoOptWorkChain,
         code=code,
         structure=structure,
         parameters=parameters,

@@ -2,7 +2,7 @@ from aiida.orm.code import Code
 from aiida.orm.utils import CalculationFactory, DataFactory
 from aiida.work.workchain import WorkChain, ToContext, Outputs, while_
 from aiida.work.run import submit
-from .dftutilities import default_options_dict
+from .dftutilities import default_options, empty_pd
 
 # data objects
 StructureData = DataFactory('structure')
@@ -25,8 +25,8 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
         # specify the inputs of the workchain
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input('parameters', valid_type=ParameterData, default=ParameterData(dict={}))
-        spec.input('options', valid_type=ParameterData, default=ParameterData(dict=default_options_dict))
+        spec.input('parameters', valid_type=ParameterData, default=empty_pd)
+        spec.input('_options', valid_type=dict, default=default_options.copy())
         spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
         spec.input('_guess_multiplicity', valid_type=bool, default=False)
 
@@ -74,8 +74,9 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
             'code'                : self.inputs.code,
             'structure'           : self.ctx.structure,
             'parameters'          : self.inputs.parameters,
-            'options'             : self.inputs.options,
+            '_options'            : self.inputs._options,
             '_guess_multiplicity' : self.inputs._guess_multiplicity,
+            '_label'              : 'Cp2kDftBaseWorkChain',
             }
 
         # restart wavefunctions if they are provided
@@ -90,11 +91,12 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
     def run_mdnvt(self):
         """Run MD NVT calculation."""
         inputs = {
-            'code'               : self.inputs.code,
-            'structure'          : self.ctx.structure,
-            'parameters'         : self.inputs.parameters,
-            'options'            : self.inputs.options,
-            '_guess_multiplicity': self.inputs._guess_multiplicity,
+            'code'                : self.inputs.code,
+            'structure'           : self.ctx.structure,
+            'parameters'          : self.inputs.parameters,
+            '_options'            : self.inputs._options,
+            '_guess_multiplicity' : self.inputs._guess_multiplicity,
+            '_label'              : 'Cp2kMdWorkChain',
             }
 
         # restart wavefunctions if they are provided
@@ -109,11 +111,12 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
     def run_geoopt(self):
         """Run GEO_OPT calculation."""
         inputs = {
-            'code'               : self.inputs.code,
-            'structure'          : self.ctx.structure,
-            'parameters'         : self.inputs.parameters,
-            'options'            : self.inputs.options,
-            '_guess_multiplicity': self.inputs._guess_multiplicity,
+            'code'                : self.inputs.code,
+            'structure'           : self.ctx.structure,
+            'parameters'          : self.inputs.parameters,
+            '_options'            : self.inputs._options,
+            '_guess_multiplicity' : self.inputs._guess_multiplicity,
+            '_label'              : 'Cp2kGeoOptWorkChain',
             }
 
         # restart wavefunctions if they are provided
@@ -128,11 +131,12 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
     def run_cellopt(self):
         """Run CELL_OPT calculation."""
         inputs = {
-            'code'               : self.inputs.code,
-            'structure'          : self.ctx.structure,
-            'parameters'         : self.inputs.parameters,
-            'options'            : self.inputs.options,
-            '_guess_multiplicity': self.inputs._guess_multiplicity,
+            'code'                : self.inputs.code,
+            'structure'           : self.ctx.structure,
+            'parameters'          : self.inputs.parameters,
+            '_options'            : self.inputs._options,
+            '_guess_multiplicity' : self.inputs._guess_multiplicity,
+            '_label'              : 'Cp2kCellOptWorkChain',
             }
 
         # restart wavefunctions if they are provided

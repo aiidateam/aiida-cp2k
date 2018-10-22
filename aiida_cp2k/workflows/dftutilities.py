@@ -1,4 +1,5 @@
 from .atomic_convention1 import spin, basis_set, pseudo
+from aiida.orm.data.parameter import ParameterData
 
 def dict_merge(dct, merge_dct):
     """ Taken from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
@@ -39,13 +40,15 @@ def get_atom_kinds(structure):
             })
     return kinds
 
-default_options_dict = {
+default_options = {
     "resources": {
         "num_machines": 1,
         "num_mpiprocs_per_machine": 1,
     },
     "max_wallclock_seconds": 1 * 60 * 60,
     }
+
+empty_pd = ParameterData(dict={}).store()
 
 disable_printing_charges_dict = {
     'FORCE_EVAL': {

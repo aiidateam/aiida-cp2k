@@ -2,7 +2,7 @@ from aiida.orm.code import Code
 from aiida.orm.utils import CalculationFactory, DataFactory
 from aiida.work.workchain import WorkChain, ToContext, Outputs, while_
 from aiida.work.run import submit
-from .dftutilities import dict_merge, default_options_dict, disable_printing_charges_dict
+from .dftutilities import dict_merge, default_options, disable_printing_charges_dict, empty_pd
 
 # data objects
 StructureData = DataFactory('structure')
@@ -81,8 +81,8 @@ class Cp2kMdWorkChain(WorkChain):
         # specify the inputs of the workchain
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input("parameters", valid_type=ParameterData, default=ParameterData(dict={}))
-        spec.input("options", valid_type=ParameterData, default=ParameterData(dict=default_options_dict))
+        spec.input("parameters", valid_type=ParameterData, default=empty_pd)
+        spec.input("_options", valid_type=dict, default=default_options.copy())
         spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
         spec.input('_guess_multiplicity', valid_type=bool, default=False)
 
@@ -107,11 +107,11 @@ class Cp2kMdWorkChain(WorkChain):
         """Setup initial values of all the parameters."""
         self.ctx.structure = self.inputs.structure
         self.ctx.converged = False
-        self.ctx.parameters = cp2k_motion
+        self.ctx.parameters = cp2k_motion.copy()
 
         # add things to the input parameters dictionary
         dict_merge(self.ctx.parameters, {'GLOBAL':{'RUN_TYPE':'MD'}})
-        dict_merge(self.ctx.parameters, disable_printing_charges_dict)
+        dict_merge(self.ctx.parameters, disable_printing_charges_dict.copy())
         dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'PRINT':{'FORCES':{'_': 'OFF'}}}})
         # take user-provided parameters and merge them with the ones specified above. User-provided parameters are
         # treated with higher priority
@@ -133,14 +133,14 @@ class Cp2kMdWorkChain(WorkChain):
 
     def prepare_calculation(self):
         """Prepare all the neccessary input links to run the calculation"""
-        p = ParameterData(dict=self.ctx.parameters)
-        p.store()
+        parameters = ParameterData(dict=self.ctx.parameters).store()
         self.ctx.inputs = {
             'code'                : self.inputs.code,
             'structure'           : self.ctx.structure,
-            'options'             : self.inputs.options,
-            'parameters'          : p,
+            'parameters'          : parameters,
+            '_options'            : self.inputs._options,
             '_guess_multiplicity' : self.inputs._guess_multiplicity,
+            '_label'              : 'Cp2kDftBaseWorkChain',
             }
 
         # Cp2kDftBaseWorkChain will take care of modifying the input file to restart from the previous calculation
@@ -151,15 +151,15 @@ class Cp2kMdWorkChain(WorkChain):
         """Run scf calculation."""
         # Create the calculation process and launch it
         running = submit(Cp2kDftBaseWorkChain, **self.ctx.inputs)
-        self.report("pk: {} | Running cp2k MD NVT")
+        self.report("pk: {} | Running cp2k MD NVT".format(running.pid))
         return ToContext(cp2k=Outputs(running))
 
     def inspect_calculation(self):
         # TODO: for the moment we do not perform any convergence checks, one should think wheter it makes sence to
         # put them here
         self.ctx.converged = True
-        self.ctx.structure = self.ctx.cp2k['output_structure'] #from DftBase
-        self.ctx.output_parameters = self.ctx.cp2k['output_parameters'] #from DftBase
+        self.ctx.structure = self.ctx.cp2k['output_structure']
+        self.ctx.output_parameters = self.ctx.cp2k['output_parameters']
         self.ctx.restart_calc = self.ctx.cp2k['remote_folder']
 
     def return_results(self):

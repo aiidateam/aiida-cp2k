@@ -3,6 +3,7 @@ from aiida.orm.utils import CalculationFactory, DataFactory
 from aiida.work.workchain import WorkChain, ToContext, Outputs, while_
 from aiida.work.run import submit
 from .dftutilities import default_options, empty_pd
+from copy import deepcopy
 
 # data objects
 StructureData = DataFactory('structure')
@@ -26,7 +27,7 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
         spec.input('parameters', valid_type=ParameterData, default=empty_pd)
-        spec.input('_options', valid_type=dict, default=default_options.copy())
+        spec.input('_options', valid_type=dict, default=deepcopy(default_options))
         spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
         spec.input('_guess_multiplicity', valid_type=bool, default=False)
 

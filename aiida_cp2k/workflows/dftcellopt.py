@@ -3,6 +3,7 @@ from aiida.orm.utils import CalculationFactory, DataFactory
 from aiida.work.workchain import WorkChain, ToContext, Outputs, while_
 from aiida.work.run import submit
 from .dftutilities import dict_merge, default_options, disable_printing_charges_dict, empty_pd
+from copy import deepcopy
 
 # data objects
 StructureData = DataFactory('structure')
@@ -74,7 +75,7 @@ class Cp2kCellOptWorkChain(WorkChain):
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
         spec.input("parameters", valid_type=ParameterData, default=empty_pd)
-        spec.input("_options", valid_type=dict, default=default_options.copy())
+        spec.input("_options", valid_type=dict, default=deepcopy(default_options))
         spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
         spec.input('_guess_multiplicity', valid_type=bool, default=False)
 
@@ -99,11 +100,11 @@ class Cp2kCellOptWorkChain(WorkChain):
         """Setup initial values of all the parameters."""
         self.ctx.structure = self.inputs.structure
         self.ctx.converged = False
-        self.ctx.parameters = cp2k_motion.copy()
+        self.ctx.parameters = deepcopy(cp2k_motion)
 
         # add things to the input parameters dictionary
         dict_merge(self.ctx.parameters, {'GLOBAL':{'RUN_TYPE':'CELL_OPT'}})
-        dict_merge(self.ctx.parameters, disable_printing_charges_dict.copy())
+        dict_merge(self.ctx.parameters, deepcopy(disable_printing_charges_dict))
         dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'PRINT':{'FORCES':{'_': 'OFF'}}}})
         # take user-provided parameters and merge them with the ones specified above. User-provided parameters are
         # treated with higher priority

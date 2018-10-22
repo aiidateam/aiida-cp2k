@@ -6,6 +6,7 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.utils import CalculationFactory, DataFactory
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, Outputs, ToContext, if_, while_
+from copy import deepcopy
 
 from .dftutilities import dict_merge, get_multiplicity, get_atom_kinds, default_options, empty_pd
 
@@ -173,8 +174,8 @@ class Cp2kDftBaseWorkChain(WorkChain):
         # specify the inputs of the workchain
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input('parameters', valid_type=ParameterData, default=empty_pd.copy())
-        spec.input('_options', valid_type=dict, default=default_options.copy())
+        spec.input('parameters', valid_type=ParameterData, default=empty_pd)
+        spec.input('_options', valid_type=dict, default=deepcopy(default_options))
         spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
         spec.input('_guess_multiplicity', valid_type=bool, default=False)
 
@@ -204,23 +205,23 @@ class Cp2kDftBaseWorkChain(WorkChain):
         except:
             self.ctx.restart_calc = None
 
-        # cp2k_default_parameters.copy() - should be copy, otherwise the source dictionary is changing as well, and if
+        # deepcopy(cp2k_default_parameters) - should be deepcopy, otherwise the source dictionary is changing as well, and if
         # subworkflow is called several times, the changed value remains in cp2k_default_parameters
-        self.ctx.parameters = cp2k_default_parameters.copy()
+        self.ctx.parameters = deepcopy(cp2k_default_parameters)
 
-        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters getting defaults:\n{}".format(str(self.ctx.parameters)))
+#        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters getting defaults:\n{}".format(str(self.ctx.parameters)))
         user_params = self.inputs.parameters.get_dict()
-        self.report("Cp2kDftBaseWorkchain, user_params:\n{}".format(str(user_params)))
+#        self.report("Cp2kDftBaseWorkchain, user_params:\n{}".format(str(user_params)))
 
         # As it should be possible to redefine the default atom kinds by user I
         # put the default values prior to merging self.ctx.parameters with
         # user_params
         kinds = get_atom_kinds(self.inputs.structure)
         self.ctx.parameters['FORCE_EVAL']['SUBSYS']['KIND'] = kinds
-        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters after adding kinds:\n{}".format(str(self.ctx.parameters)))
+#        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters after adding kinds:\n{}".format(str(self.ctx.parameters)))
 
         dict_merge(self.ctx.parameters, user_params)
-        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters after adding user_params:\n{}".format(str(self.ctx.parameters)))
+#        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters after adding user_params:\n{}".format(str(self.ctx.parameters)))
 
         self.ctx._options = self.inputs._options
 
@@ -237,7 +238,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
                 self.report("As multiplicity is 1, I do NOT switch on UKS.")
             # Otherwise take the default
 
-        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters, final:\n{}".format(str(self.ctx.parameters)))
+#        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters, final:\n{}".format(str(self.ctx.parameters)))
 
     def should_run_calculation(self):
         return not self.ctx.done

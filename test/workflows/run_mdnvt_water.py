@@ -5,7 +5,11 @@ from aiida.orm.data.base import Str
 from aiida.work.run import submit
 
 import ase.build
+<<<<<<< HEAD
 from aiida_cp2k.workflows import Cp2kMDNVTWorkChain
+=======
+from aiida_cp2k.workflows import Cp2kMdWorkChain
+>>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
 
 atoms = ase.build.molecule('H2O')
 atoms.center(vacuum=2.0)
@@ -30,8 +34,13 @@ params_dict = {
         }
 
 parameters = ParameterData(dict=params_dict)
+<<<<<<< HEAD
 code = test_and_get_code('cp2k-5.1@localhost', expected_code_type='cp2k')
 submit(Cp2kMDNVTWorkChain,
+=======
+code = test_and_get_code('cp2k@localhost', expected_code_type='cp2k')
+submit(Cp2kMdWorkChain,
+>>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
         code=code,
         structure=structure,
         parameters=parameters,

@@ -19,15 +19,6 @@ def dict_merge(dct, merge_dct):
         else:
             dct[k] = merge_dct[k]
 
-
-def get_multiplicity(structure):
-    multiplicity = 1
-    all_atoms = structure.get_ase().get_chemical_symbols()
-    for key, value in spin.iteritems():
-        multiplicity += all_atoms.count(key) * value * 2.0
-    return int(round(multiplicity))
-
-
 def get_atom_kinds(structure):
     kinds = []
     all_atoms = set(structure.get_ase().get_chemical_symbols())

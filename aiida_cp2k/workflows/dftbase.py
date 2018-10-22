@@ -8,7 +8,7 @@ from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, Outputs, ToContext, if_, while_
 from copy import deepcopy
 
-from .dftutilities import dict_merge, get_multiplicity, get_atom_kinds, default_options, empty_pd
+from .dftutilities import dict_merge, get_atom_kinds, default_options, empty_pd
 
 # calculation objects
 Cp2kCalculation = CalculationFactory('cp2k')
@@ -177,7 +177,6 @@ class Cp2kDftBaseWorkChain(WorkChain):
         spec.input('parameters', valid_type=ParameterData, default=empty_pd)
         spec.input('_options', valid_type=dict, default=deepcopy(default_options))
         spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
-        spec.input('_guess_multiplicity', valid_type=bool, default=False)
 
         # specify the chain of calculations to be performed
         spec.outline(
@@ -224,19 +223,6 @@ class Cp2kDftBaseWorkChain(WorkChain):
 #        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters after adding user_params:\n{}".format(str(self.ctx.parameters)))
 
         self.ctx._options = self.inputs._options
-
-        # Trying to guess the multiplicity of the system
-        if self.inputs._guess_multiplicity:
-            self.report("Guessing multiplicity")
-            multiplicity = get_multiplicity(self.inputs.structure)
-            self.ctx.parameters['FORCE_EVAL']['DFT']['MULTIPLICITY'] = multiplicity
-            self.report("Obtained multiplicity: {}".format(multiplicity))
-            if multiplicity != 1:
-                self.ctx.parameters['FORCE_EVAL']['DFT']['UKS'] = True
-                self.report("Switching to UKS calculation")
-            else:
-                self.report("As multiplicity is 1, I do NOT switch on UKS.")
-            # Otherwise take the default
 
 #        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters, final:\n{}".format(str(self.ctx.parameters)))
 

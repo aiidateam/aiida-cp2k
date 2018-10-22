@@ -29,7 +29,6 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
         spec.input('parameters', valid_type=ParameterData, default=empty_pd)
         spec.input('_options', valid_type=dict, default=deepcopy(default_options))
         spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
-        spec.input('_guess_multiplicity', valid_type=bool, default=False)
 
         # specify the chain of calculations
         spec.outline(
@@ -76,7 +75,6 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
             'structure'           : self.ctx.structure,
             'parameters'          : self.inputs.parameters,
             '_options'            : self.inputs._options,
-            '_guess_multiplicity' : self.inputs._guess_multiplicity,
             '_label'              : 'Cp2kDftBaseWorkChain',
             }
 
@@ -96,7 +94,6 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
             'structure'           : self.ctx.structure,
             'parameters'          : self.inputs.parameters,
             '_options'            : self.inputs._options,
-            '_guess_multiplicity' : self.inputs._guess_multiplicity,
             '_label'              : 'Cp2kMdWorkChain',
             }
 
@@ -116,7 +113,6 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
             'structure'           : self.ctx.structure,
             'parameters'          : self.inputs.parameters,
             '_options'            : self.inputs._options,
-            '_guess_multiplicity' : self.inputs._guess_multiplicity,
             '_label'              : 'Cp2kGeoOptWorkChain',
             }
 
@@ -136,7 +132,6 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
             'structure'           : self.ctx.structure,
             'parameters'          : self.inputs.parameters,
             '_options'            : self.inputs._options,
-            '_guess_multiplicity' : self.inputs._guess_multiplicity,
             '_label'              : 'Cp2kCellOptWorkChain',
             }
 

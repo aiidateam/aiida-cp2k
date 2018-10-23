@@ -12,8 +12,9 @@ from .dftutilities import dict_merge, get_multiplicity, get_atom_kinds, default_
 =======
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, Outputs, ToContext, if_, while_
+from copy import deepcopy
 
-from .dftutilities import dict_merge, get_multiplicity, get_atom_kinds, default_options_dict
+from .dftutilities import dict_merge, get_atom_kinds, default_options, empty_pd
 
 # calculation objects
 >>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
@@ -185,10 +186,9 @@ class Cp2kDftBaseWorkChain(WorkChain):
         # specify the inputs of the workchain
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input('parameters', valid_type=ParameterData, default=ParameterData(dict={}))
-        spec.input('options', valid_type=ParameterData, default=ParameterData(dict=default_options_dict))
+        spec.input('parameters', valid_type=ParameterData, default=empty_pd)
+        spec.input('_options', valid_type=dict, default=deepcopy(default_options))
         spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
-        spec.input('_guess_multiplicity', valid_type=bool, default=False)
 
 <<<<<<< HEAD
 =======
@@ -218,17 +218,28 @@ class Cp2kDftBaseWorkChain(WorkChain):
             self.ctx.restart_calc = self.inputs.parent_folder
         except:
             self.ctx.restart_calc = None
-        self.ctx.parameters = cp2k_default_parameters
+
+        # deepcopy(cp2k_default_parameters) - should be deepcopy, otherwise the source dictionary is changing as well, and if
+        # subworkflow is called several times, the changed value remains in cp2k_default_parameters
+        self.ctx.parameters = deepcopy(cp2k_default_parameters)
+
+#        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters getting defaults:\n{}".format(str(self.ctx.parameters)))
         user_params = self.inputs.parameters.get_dict()
+#        self.report("Cp2kDftBaseWorkchain, user_params:\n{}".format(str(user_params)))
 
         # As it should be possible to redefine the default atom kinds by user I
         # put the default values prior to merging self.ctx.parameters with
         # user_params
         kinds = get_atom_kinds(self.inputs.structure)
         self.ctx.parameters['FORCE_EVAL']['SUBSYS']['KIND'] = kinds
+#        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters after adding kinds:\n{}".format(str(self.ctx.parameters)))
 
         dict_merge(self.ctx.parameters, user_params)
+#        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters after adding user_params:\n{}".format(str(self.ctx.parameters)))
 
+        self.ctx._options = self.inputs._options
+
+<<<<<<< HEAD
         self.ctx.options = self.inputs.options.get_dict()
 
         # Trying to guess the multiplicity of the system
@@ -247,6 +258,9 @@ class Cp2kDftBaseWorkChain(WorkChain):
                 self.report("As multiplicity is 1, I do NOT switch on UKS.")
             # Otherwise take the default
 >>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
+=======
+#        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters, final:\n{}".format(str(self.ctx.parameters)))
+>>>>>>> 41763b2e9995b36b2c7267ebc536f2fee2a8a43b
 
     def should_run_calculation(self):
         return not self.ctx.done
@@ -256,7 +270,8 @@ class Cp2kDftBaseWorkChain(WorkChain):
         self.ctx.inputs = {
             'code'      : self.inputs.code,
             'structure' : self.ctx.structure,
-            '_options'  : self.ctx.options,
+            '_options'  : self.ctx._options,
+            '_label'    : 'Cp2kCalculation',
             }
 
         # restart from the previous calculation only if the necessary data are provided
@@ -270,9 +285,8 @@ class Cp2kDftBaseWorkChain(WorkChain):
         # TODO: add geometry restart if it is possible to do so
 
         # use the new parameters
-        p = ParameterData(dict=self.ctx.parameters)
-        p.store()
-        self.ctx.inputs['parameters'] = p
+        parameters = ParameterData(dict=self.ctx.parameters).store()
+        self.ctx.inputs['parameters'] = parameters
 
     def run_calculation(self):
         """Run cp2k calculation."""

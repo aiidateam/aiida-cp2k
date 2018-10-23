@@ -2,29 +2,17 @@ from aiida.orm.code import Code
 from aiida.orm.utils import CalculationFactory, DataFactory
 from aiida.work.workchain import WorkChain, ToContext, Outputs, while_
 from aiida.work.run import submit
-<<<<<<< HEAD
-<<<<<<< HEAD
-from .dftutilities import dict_merge, default_options_dict
-=======
-from .dftutilities import dict_merge, default_options_dict, disable_printing_charges_dict
-=======
 from .dftutilities import dict_merge, default_options, disable_printing_charges_dict, empty_pd
 from copy import deepcopy
->>>>>>> 41763b2e9995b36b2c7267ebc536f2fee2a8a43b
 
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
 # data objects
 StructureData = DataFactory('structure')
 ParameterData = DataFactory('parameter')
 RemoteData = DataFactory('remote')
 
-<<<<<<< HEAD
-from aiida_cp2k.workflows import Cp2kDftBaseWorkChain
-=======
 # workchains
 from aiida_cp2k.workflows import Cp2kDftBaseWorkChain
 
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
 cp2k_motion ={
     'MOTION': {
         'CELL_OPT': {
@@ -78,31 +66,19 @@ cp2k_motion ={
 }
 
 class Cp2kCellOptWorkChain(WorkChain):
-<<<<<<< HEAD
-    """
-    Workchain to run SCF calculation wich CP2K
-    """
-    @classmethod
-    def define(cls, spec):
-        super(Cp2kCellOptWorkChain, cls).define(spec)
-=======
     """Workchain to run DFT-based CELL_OPT calculation which CP2K."""
     @classmethod
     def define(cls, spec):
         super(Cp2kCellOptWorkChain, cls).define(spec)
 
         # specify the inputs of the workchain
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
         spec.input("parameters", valid_type=ParameterData, default=empty_pd)
         spec.input("_options", valid_type=dict, default=deepcopy(default_options))
         spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
 
-<<<<<<< HEAD
-=======
         # specify the chain of calculations
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -114,26 +90,12 @@ class Cp2kCellOptWorkChain(WorkChain):
             cls.return_results,
         )
 
-<<<<<<< HEAD
-=======
         # specify the outputs of the workchain
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
         spec.output('output_structure', valid_type=StructureData)
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
 
     def setup(self):
-<<<<<<< HEAD
-        self.ctx.structure = self.inputs.structure
-        self.ctx.converged = False
-        self.ctx.parameters = cp2k_motion
-        dict_merge(self.ctx.parameters, {'GLOBAL':{'RUN_TYPE':'CELL_OPT'}})
-        dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'MO_CUBES':{'_': 'OFF'}}}}})
-        dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'MULLIKEN':{'_': 'OFF'}}}}})
-        dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'LOWDIN':{'_': 'OFF'}}}}})
-        dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'DFT':{'PRINT':{'HIRSHFELD':{'_': 'OFF'}}}}})
-        dict_merge(self.ctx.parameters, {'FORCE_EVAL':{'PRINT':{'FORCES':{'_': 'OFF'}}}})
-=======
         """Setup initial values of all the parameters."""
         self.ctx.structure = self.inputs.structure
         self.ctx.converged = False
@@ -149,21 +111,13 @@ class Cp2kCellOptWorkChain(WorkChain):
         dict_merge(self.ctx.parameters, user_params)
 
         # try to restart if restart object is provided
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
         try:
             self.ctx.restart_calc = self.inputs.parent_folder
         except:
             self.ctx.restart_calc = None
-<<<<<<< HEAD
-        user_params = self.inputs.parameters.get_dict()
-        dict_merge(self.ctx.parameters, user_params)
-
-    def validate_inputs(self):
-=======
 
     def validate_inputs(self):
         # TODO: provide some validation steps
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
         pass
 
     def should_run_calculation(self):
@@ -171,26 +125,7 @@ class Cp2kCellOptWorkChain(WorkChain):
 
     def prepare_calculation(self):
         """Prepare all the neccessary input links to run the calculation"""
-<<<<<<< HEAD
-<<<<<<< HEAD
-        self.ctx.inputs = {
-            'code'      : self.inputs.code,
-            'structure' : self.ctx.structure,
-            'options'   : self.inputs.options,
-            '_guess_multiplicity': self.inputs._guess_multiplicity,
-            }
-        if self.ctx.restart_calc:
-            self.ctx.inputs['parent_folder'] = self.ctx.restart_calc
-        # use the new parameters
-        p = ParameterData(dict=self.ctx.parameters)
-        p.store()
-        self.ctx.inputs['parameters'] = p
-=======
-        p = ParameterData(dict=self.ctx.parameters)
-        p.store()
-=======
         parameters = ParameterData(dict=self.ctx.parameters).store()
->>>>>>> 41763b2e9995b36b2c7267ebc536f2fee2a8a43b
         self.ctx.inputs = {
             'code'                : self.inputs.code,
             'structure'           : self.ctx.structure,
@@ -202,18 +137,11 @@ class Cp2kCellOptWorkChain(WorkChain):
         # Cp2kDftBaseWorkChain will take care of modifying the input file to restart from the previous calculation
         if self.ctx.restart_calc:
             self.ctx.inputs['parent_folder'] = self.ctx.restart_calc
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
+
 
     def run_calculation(self):
         """Run scf calculation."""
         # Create the calculation process and launch it
-<<<<<<< HEAD
-        future  = submit(Cp2kDftBaseWorkChain, **self.ctx.inputs)
-        self.report("pk: {} | Running cp2k CELL_OPT")
-        return ToContext(cp2k=Outputs(future))
-
-    def inspect_calculation(self):
-=======
         running = submit(Cp2kDftBaseWorkChain, **self.ctx.inputs)
         self.report("pk: {} | Running cp2k CELL_OPT".format(running.pid))
         return ToContext(cp2k=Outputs(running))
@@ -221,7 +149,6 @@ class Cp2kCellOptWorkChain(WorkChain):
     def inspect_calculation(self):
         # TODO: for the moment we do not perform any convergence checks, one should think wheter it is appropriate to
         # put them here
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
         self.ctx.converged = True
         self.ctx.structure = self.ctx.cp2k['output_structure'] #from DftBase
         self.ctx.output_parameters = self.ctx.cp2k['output_parameters'] #from DftBase

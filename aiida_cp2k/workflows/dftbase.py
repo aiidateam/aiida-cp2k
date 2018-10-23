@@ -4,12 +4,6 @@ from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.utils import CalculationFactory, DataFactory
-<<<<<<< HEAD
-from aiida.work.workchain import ToContext, if_, while_
-
-from .dftutilities import dict_merge, get_multiplicity, get_atom_kinds, default_options_dict
-
-=======
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, Outputs, ToContext, if_, while_
 from copy import deepcopy
@@ -17,7 +11,6 @@ from copy import deepcopy
 from .dftutilities import dict_merge, get_atom_kinds, default_options, empty_pd
 
 # calculation objects
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
 Cp2kCalculation = CalculationFactory('cp2k')
 
 cp2k_default_parameters = {
@@ -168,13 +161,8 @@ def scf_was_diverging(fpath):
 #    return False
 
 def scf_getting_weird(fpath):
-<<<<<<< HEAD
-    """A function that detects weird things are happening"""
-    #TODO: True for the moment so that it alwayys switch to CG
-=======
     """A function that detects weird things are happening."""
     #TODO: True for the moment so that it always switch to CG
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
     return True
 
 class Cp2kDftBaseWorkChain(WorkChain):
@@ -190,10 +178,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
         spec.input('_options', valid_type=dict, default=deepcopy(default_options))
         spec.input('parent_folder', valid_type=RemoteData, default=None, required=False)
 
-<<<<<<< HEAD
-=======
         # specify the chain of calculations to be performed
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
         spec.outline(
             cls.setup,
             while_(cls.should_run_calculation)(
@@ -203,7 +188,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
             ),
             cls.return_results,
         )
-        
+
         # specify the outputs of the workchain
         spec.output('output_structure', valid_type=StructureData, required=False)
         spec.output('output_parameters', valid_type=ParameterData)
@@ -239,28 +224,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
 
         self.ctx._options = self.inputs._options
 
-<<<<<<< HEAD
-        self.ctx.options = self.inputs.options.get_dict()
-
-        # Trying to guess the multiplicity of the system
-        if self.inputs._guess_multiplicity:
-            self.report("Guessing multiplicity")
-            multiplicity = get_multiplicity(self.inputs.structure)
-            self.ctx.parameters['FORCE_EVAL']['DFT']['MULTIPLICITY'] = multiplicity
-            self.report("Obtained multiplicity: {}".format(multiplicity))
-            if multiplicity != 1:
-                self.ctx.parameters['FORCE_EVAL']['DFT']['UKS'] = True
-                self.report("Switching to UKS calculation")
-<<<<<<< HEAD
-        # Otherwise take the default
-=======
-            else:
-                self.report("As multiplicity is 1, I do NOT switch on UKS.")
-            # Otherwise take the default
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
-=======
 #        self.report("Cp2kDftBaseWorkchain, self.ctx.parameters, final:\n{}".format(str(self.ctx.parameters)))
->>>>>>> 41763b2e9995b36b2c7267ebc536f2fee2a8a43b
 
     def should_run_calculation(self):
         return not self.ctx.done
@@ -290,20 +254,12 @@ class Cp2kDftBaseWorkChain(WorkChain):
 
     def run_calculation(self):
         """Run cp2k calculation."""
-<<<<<<< HEAD
-
-=======
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
         # Create the calculation process and launch it
         process = Cp2kCalculation.process()
         running  = submit(process, **self.ctx.inputs)
         self.report("pk: {} | Running DFT calculation with cp2k".format(running.pid))
         self.ctx.nruns += 1
-<<<<<<< HEAD
-        return ToContext(calculation=Outputs(future))
-=======
         return ToContext(calculation=Outputs(running))
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d
 
     def inspect_calculation(self):
         """Analyse the results of CP2K calculation and decide weather there is a need to restart it. If yes, then

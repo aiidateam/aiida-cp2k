@@ -38,8 +38,6 @@ default_options = {
     },
     "max_wallclock_seconds": 1 * 60 * 60,
     }
-<<<<<<< HEAD
-=======
 
 empty_pd = ParameterData(dict={}).store()
 
@@ -63,4 +61,3 @@ disable_printing_charges_dict = {
             },
         },
     }
->>>>>>> 42f134e5573d437dbf3b6f31a0dc83041626022d

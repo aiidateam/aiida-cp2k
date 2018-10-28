@@ -280,6 +280,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
         # TODO: make a try here, can be that those outputs do not exist
         self.ctx.restart_calc = self.ctx.calculation['remote_folder']
         self.ctx.output_parameters = self.ctx.calculation['output_parameters']
+        self.ctx.retrieved = self.ctx.calculation['retrieved']
 
         #TODO: parse and analyse the bandgap
 
@@ -331,3 +332,4 @@ class Cp2kDftBaseWorkChain(WorkChain):
         self.out('output_structure', self.ctx.structure)
         self.out('output_parameters', self.ctx.output_parameters)
         self.out('remote_folder', self.ctx.restart_calc)
+        self.out('retrieved', self.ctx.retrieved)

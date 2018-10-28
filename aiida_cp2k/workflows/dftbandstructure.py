@@ -193,10 +193,10 @@ def get_kpoints_path_cp2k(point_coord, path):
         })
     return Kpath
 
-class BandStructure(WorkChain):
+class Cp2kBandStructureWorkChain(WorkChain):
     @classmethod
     def define(cls, spec):
-        super(BandStructure, cls).define(spec)
+        super(Cp2kBandStructureWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
         spec.input("parameters", valid_type=ParameterData,

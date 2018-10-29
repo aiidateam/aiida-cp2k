@@ -15,9 +15,9 @@ structure.store()
 options_dict = {
     "resources": {
         "num_machines": 1,
-        "num_mpiprocs_per_machine": 4,
+        "num_mpiprocs_per_machine": 2,
     },
-    "max_wallclock_seconds": 3 * 60 * 60,
+    "max_wallclock_seconds": 1 * 60 * 60,
     }
 options = ParameterData(dict=options_dict)
 
@@ -35,7 +35,7 @@ params_dict = {
         },
 }
 parameters = ParameterData(dict=params_dict)
-code = test_and_get_code('cp2k@localhost', expected_code_type='cp2k')
+code = test_and_get_code('cp2k-5.1@localhost', expected_code_type='cp2k')
 submit(Cp2kRobustGeoOptWorkChain,
         code=code,
         structure=structure,

@@ -86,14 +86,14 @@ class Cp2kParser(Parser):
         content = open(abs_fn).read()
 
         # parse coordinate section
-        m = re.search('\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, DOTALL)
+        m = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, DOTALL)
         coord_lines = [line.strip().split() for line in m.group(1).split("\n")]
         symbols = [line[0] for line in coord_lines]
         positions_str = [line[1:] for line in coord_lines]
         positions = np.array(positions_str, np.float64)
 
         # parse cell section
-        m = re.search('\n\s*&CELL\n(.*?)\n\s*&END CELL\n', content, re.DOTALL)
+        m = re.search(r'\n\s*&CELL\n(.*?)\n\s*&END CELL\n', content, re.DOTALL)
         cell_lines = [line.strip().split() for line in m.group(1).split("\n")]
         cell_str = [line[1:] for line in cell_lines if line[0] in 'ABC']
         cell = np.array(cell_str, np.float64)

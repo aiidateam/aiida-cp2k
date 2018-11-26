@@ -1,5 +1,6 @@
 from .atomic_convention1 import spin, basis_set, pseudo
 from aiida.orm.data.parameter import ParameterData
+from aiida.work import workfunction as wf
 
 def dict_merge(dct, merge_dct):
     """ Taken from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
@@ -61,3 +62,10 @@ disable_printing_charges_dict = {
             },
         },
     }
+
+@wf
+def merge_ParameterData(p1, p2):
+    p1_dict = p1.get_dict()
+    p2_dict = p2.get_dict()
+    dict_merge(p1_dict, p2_dict)
+    return ParameterData(dict=p1_dict).store()

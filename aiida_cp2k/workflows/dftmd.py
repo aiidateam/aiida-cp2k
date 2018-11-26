@@ -17,7 +17,7 @@ cp2k_motion ={
     'MOTION': {
         'MD': {
             'ENSEMBLE': 'NVT',                      #main options: NVT, NPT_F
-            'STEPS': 50,                            #default: 3
+            'STEPS': 20,                            #default: 3
             'TIMESTEP': '[fs] 0.5',                 #default: [fs] 0.5
             'TEMPERATURE': '[K] 300',               #default: [K] 300
             'DISPLACEMENT_TOL': '[angstrom] 1.0',   #default: [bohr] 100

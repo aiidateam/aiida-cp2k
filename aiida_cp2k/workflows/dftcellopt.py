@@ -91,6 +91,7 @@ class Cp2kCellOptWorkChain(WorkChain):
         )
 
         # specify the outputs of the workchain
+        spec.output('input_parameters', valid_type=ParameterData)
         spec.output('output_structure', valid_type=StructureData)
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
@@ -154,6 +155,7 @@ class Cp2kCellOptWorkChain(WorkChain):
         self.ctx.restart_calc = self.ctx.cp2k['remote_folder']
 
     def return_results(self):
+        self.out('input_parameters', self.ctx.inputs['parameters'])
         self.out('output_structure', self.ctx.structure)
         self.out('output_parameters', self.ctx.output_parameters)
         self.out('remote_folder', self.ctx.restart_calc)

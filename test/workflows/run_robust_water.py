@@ -19,7 +19,6 @@ options_dict = {
     },
     "max_wallclock_seconds": 3 * 60 * 60,
     }
-options = ParameterData(dict=options_dict)
 
 params_dict = {
         'MOTION':{
@@ -40,7 +39,7 @@ submit(Cp2kRobustGeoOptWorkChain,
         code=code,
         structure=structure,
         parameters=parameters,
-        options=options,
+        _options=options_dict,
         _label='MyFirstWokchain',
         _guess_multiplicity=True,
         )

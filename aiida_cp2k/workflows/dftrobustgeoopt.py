@@ -74,6 +74,10 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
         self.ctx.structure = self.ctx.cp2k['output_structure']
         self.ctx.restart_calc = self.ctx.cp2k['remote_folder']
         self.ctx.output_parameters = self.ctx.cp2k['output_parameters'] #from DftBase
+        self.ctx.last_dft_dict = {'FORCE_EVAL': {'DFT': None}}
+        self.ctx.last_dft_dict['FORCE_EVAL']['DFT'] = \
+                deepcopy(self.ctx.cp2k['input_parameters'].get_dict()['FORCE_EVAL']['DFT'])
+
 
     def run_energy(self):
         """Run ENERGY calculation."""
@@ -98,18 +102,18 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
         """Run CELL_OPT calculation."""
 
         # For the first time we do wery rough cell optimization with only 20 steps max.
-        geo_pd = ParameterData(dict={
+        geo_motion = {
                 'MOTION':{
                     'CELL_OPT': {
                         'MAX_ITER': 20,
                         },
                     },
-                })
-
+                }
+        dict_merge(geo_motion, self.ctx.last_dft_dict)
         inputs = {
             'code'                : self.inputs.code,
             'structure'           : self.ctx.structure,
-            'parameters'          : merge_ParameterData(self.ctx.parameters, geo_pd),
+            'parameters'          : merge_ParameterData(ParameterData(dict=geo_motion), self.ctx.parameters),
             '_options'            : self.inputs._options,
             '_label'              : 'Cp2kCellOptWorkChain',
             }
@@ -128,7 +132,7 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
         inputs = {
             'code'                : self.inputs.code,
             'structure'           : self.ctx.structure,
-            'parameters'          : self.ctx.parameters,
+            'parameters'          : merge_ParameterData(ParameterData(dict=self.ctx.last_dft_dict), self.ctx.parameters),
             '_options'            : self.inputs._options,
             '_label'              : 'Cp2kMdWorkChain',
             }
@@ -147,7 +151,7 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
         inputs = {
             'code'                : self.inputs.code,
             'structure'           : self.ctx.structure,
-            'parameters'          : self.ctx.parameters,
+            'parameters'          : merge_ParameterData(ParameterData(dict=self.ctx.last_dft_dict), self.ctx.parameters),
             '_options'            : self.inputs._options,
             '_label'              : 'Cp2kGeoOptWorkChain',
             }
@@ -166,7 +170,7 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
         inputs = {
             'code'                : self.inputs.code,
             'structure'           : self.ctx.structure,
-            'parameters'          : self.ctx.parameters,
+            'parameters'          : merge_ParameterData(ParameterData(dict=self.ctx.last_dft_dict), self.ctx.parameters),
             '_options'            : self.inputs._options,
             '_label'              : 'Cp2kCellOptWorkChain',
             }

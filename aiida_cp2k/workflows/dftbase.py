@@ -133,37 +133,20 @@ def scf_converged(fpath):
             return True
     return False
 
-def scf_was_diverging(fpath):
-    """A function that detects diverging SCF: always diverging if not converged!"""
-    return True
-#    content = last_scf_loop(fpath)
-#    for line in content:
-#        if "Minimizer" in line and "CG" in line:
-#            grep_string = "OT CG"
-#            break
-#
-#        elif "Minimizer" in line and "DIIS" in line:
-#            grep_string = "OT DIIS"
-#            break
-#
-#    n_change = 7
-#    difference = []
-#    n_positive = 0
-#    for line in content:
-#        if grep_string in line:
-#            difference.append(line.split()[n_change])
-#    for number in difference[-12:]:
-#        if float(number) > 0:
-#            n_positive +=1
-#
-#    if n_positive>5:
-#        return True
-#    return False
-
 def scf_getting_weird(fpath):
     """A function that detects weird things are happening."""
-    #TODO: True for the moment so that it always switch to CG
-    return True
+    with open(fpath) as f:
+        content = f.readlines()
+    # find the last appearance of "Total charge density on r-space grids:" in the file
+    # this should compare the expected number of electrons and the number of electrons
+    # that was obtainted integrating the charge-density
+    for n, line in enumerate(reversed(content)):
+        if "Total charge density on r-space grids:" in line:
+            break
+    if abs(float(content[-n-1].split()[6])) > 1e-4:
+        return True
+    else:
+        return False
 
 class Cp2kDftBaseWorkChain(WorkChain):
     """A base workchain to be used for DFT calculations with CP2K."""
@@ -190,6 +173,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
         )
 
         # specify the outputs of the workchain
+        spec.output('input_parameters', valid_type=ParameterData)
         spec.output('output_structure', valid_type=StructureData, required=False)
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
@@ -271,7 +255,6 @@ class Cp2kDftBaseWorkChain(WorkChain):
         # I will try to disprove those statements. I will not succeed in doing
         # so - the calculation will be considered as completed
         converged_geometry = True
-        converged_scf = True
         exceeded_time = False
 
         # File to analyze
@@ -298,6 +281,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
             self.report("Cp2k calculation did not provide any output structure")
 
         # Second check is whether the last SCF did converge
+        olddict = deepcopy(self.ctx.parameters)
         converged_scf = scf_converged(outfile)
         if not converged_scf and scf_getting_weird(outfile):
             # If, however, scf was even diverging I should go for more robust
@@ -311,6 +295,9 @@ class Cp2kDftBaseWorkChain(WorkChain):
             # I will disable outer_scf steps to enforce convergence
             self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['MAX_SCF'] = 2000
             self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['OUTER_SCF']['MAX_SCF'] = 0
+
+            if olddict == self.ctx.parameters:
+                raise RuntimeError("Cp2kDftBaseWorkChain: Sorry, I no longer know what can be improved.")
 
             # TODO: I may also look for the forces here. For example a very
             # strong force may cause convergence problems, needs to be
@@ -329,6 +316,7 @@ class Cp2kDftBaseWorkChain(WorkChain):
             self.ctx.done = True
 
     def return_results(self):
+        self.out('input_parameters', self.ctx.inputs['parameters'])
         self.out('output_structure', self.ctx.structure)
         self.out('output_parameters', self.ctx.output_parameters)
         self.out('remote_folder', self.ctx.restart_calc)

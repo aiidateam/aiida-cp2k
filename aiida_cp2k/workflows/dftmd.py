@@ -17,7 +17,7 @@ cp2k_motion ={
     'MOTION': {
         'MD': {
             'ENSEMBLE': 'NVT',                      #main options: NVT, NPT_F
-            'STEPS': 50,                            #default: 3
+            'STEPS': 20,                            #default: 3
             'TIMESTEP': '[fs] 0.5',                 #default: [fs] 0.5
             'TEMPERATURE': '[K] 300',               #default: [K] 300
             'DISPLACEMENT_TOL': '[angstrom] 1.0',   #default: [bohr] 100
@@ -99,6 +99,7 @@ class Cp2kMdWorkChain(WorkChain):
         )
 
         # specify the outputs of the workchain
+        spec.output('input_parameters', valid_type=ParameterData)
         spec.output('output_structure', valid_type=StructureData)
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
@@ -162,6 +163,7 @@ class Cp2kMdWorkChain(WorkChain):
         self.ctx.restart_calc = self.ctx.cp2k['remote_folder']
 
     def return_results(self):
+        self.out('input_parameters', self.ctx.inputs['parameters'])
         self.out('output_structure', self.ctx.structure)
         self.out('output_parameters', self.ctx.output_parameters)
         self.out('remote_folder', self.ctx.restart_calc)

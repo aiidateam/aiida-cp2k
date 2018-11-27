@@ -7,7 +7,7 @@ from aiida.work.run import submit
 from ase.io import read
 from aiida_cp2k.workflows import Cp2kRobustGeoOptWorkChain
 
-atoms = read('/home/daniele/Programs/aiida-database/frameworks/test/Cu-MOF-74_h211.cif')
+atoms = read('Cu-MOF-74.cif')
 structure = StructureData(ase=atoms)
 structure.label='Cu-MOF-74'
 structure.store()
@@ -17,10 +17,7 @@ options_dict = {
         "num_machines": 2,
     },
     "max_wallclock_seconds": 1 * 60 * 60,
-    'prepend_text': '#SBATCH --partition=debug',
     }
-
-options = ParameterData(dict=options_dict)
 
 params_dict = {
         'MOTION':{
@@ -36,12 +33,12 @@ params_dict = {
         },
 }
 parameters = ParameterData(dict=params_dict)
-code = test_and_get_code('cp2k-5.1@fidis', expected_code_type='cp2k')
+code = test_and_get_code('cp2k@fidis-debug', expected_code_type='cp2k')
 submit(Cp2kRobustGeoOptWorkChain,
         code=code,
         structure=structure,
         parameters=parameters,
-        options=options,
+        _options=options_dict,
         _label='MyFirstWokchain',
         _guess_multiplicity=True,
         )

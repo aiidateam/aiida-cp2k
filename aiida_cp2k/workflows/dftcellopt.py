@@ -17,7 +17,7 @@ cp2k_motion ={
     'MOTION': {
         'CELL_OPT': {
             'TYPE': 'DIRECT_CELL_OPT',                 #default: DIRECT_CELL_OPT
-            'KEEP_ANGLES' : True,                      #default: structure
+            'KEEP_ANGLES' : False,                     #default: False
             'KEEP_SYMMETRY': False,                    #default: False (works only if symm is specified in the &CELL)
             'OPTIMIZER': 'BFGS',                       #default: BFGS
             'MAX_ITER': 100,                           #default: 200

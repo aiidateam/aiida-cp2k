@@ -86,7 +86,7 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
             'structure'           : self.inputs.structure,
             'parameters'          : self.ctx.parameters,
             '_options'            : self.inputs._options,
-            '_label'              : 'Cp2kDftBaseWorkChain',
+            '_label'              : 'Stage0_Energy',
             }
 
         # restart wavefunctions if they are provided
@@ -101,11 +101,12 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
     def run_cellopt_init(self):
         """Run CELL_OPT calculation."""
 
-        # For the first time we do wery rough cell optimization with only 20 steps max.
+        # For the first time we do wery rough cell optimization with only 20 steps max and keeping angles fixed.
         geo_motion = {
                 'MOTION':{
                     'CELL_OPT': {
                         'MAX_ITER': 20,
+                        'KEEP_ANGLES' : True,
                         },
                     },
                 }
@@ -113,9 +114,9 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
         inputs = {
             'code'                : self.inputs.code,
             'structure'           : self.ctx.structure,
-            'parameters'          : merge_ParameterData(ParameterData(dict=geo_motion), self.ctx.parameters),
+            'parameters'          : merge_ParameterData(self.ctx.parameters, ParameterData(dict=geo_motion)),
             '_options'            : self.inputs._options,
-            '_label'              : 'Cp2kCellOptWorkChain',
+            '_label'              : 'Stage1_CellOpt',
             }
 
         # restart wavefunctions if they are provided
@@ -134,7 +135,7 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
             'structure'           : self.ctx.structure,
             'parameters'          : merge_ParameterData(ParameterData(dict=self.ctx.last_dft_dict), self.ctx.parameters),
             '_options'            : self.inputs._options,
-            '_label'              : 'Cp2kMdWorkChain',
+            '_label'              : 'Stage2_MD',
             }
 
         # restart wavefunctions if they are provided
@@ -153,7 +154,7 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
             'structure'           : self.ctx.structure,
             'parameters'          : merge_ParameterData(ParameterData(dict=self.ctx.last_dft_dict), self.ctx.parameters),
             '_options'            : self.inputs._options,
-            '_label'              : 'Cp2kGeoOptWorkChain',
+            '_label'              : 'Stage3_GeoOpt',
             }
 
         # restart wavefunctions if they are provided
@@ -172,7 +173,7 @@ class Cp2kRobustGeoOptWorkChain(WorkChain):
             'structure'           : self.ctx.structure,
             'parameters'          : merge_ParameterData(ParameterData(dict=self.ctx.last_dft_dict), self.ctx.parameters),
             '_options'            : self.inputs._options,
-            '_label'              : 'Cp2kCellOptWorkChain',
+            '_label'              : 'Stage4_CellOpt',
             }
 
         # restart wavefunctions if they are provided

@@ -6,10 +6,12 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
+import io
 import re
+from re import DOTALL
+
 import ase
 import numpy as np
-from re import DOTALL
 
 from aiida.parsers.parser import Parser
 from aiida.orm.data.parameter import ParameterData
@@ -23,7 +25,6 @@ class Cp2kParser(Parser):
     Parser for the output of CP2K.
     """
 
-    # --------------------------------------------------------------------------
     def __init__(self, calc):
         """
         Initialize the instance of Cp2kParser
@@ -34,7 +35,6 @@ class Cp2kParser(Parser):
         if not isinstance(calc, Cp2kCalculation):
             raise OutputParsingError("Input calc must be a Cp2kCalculation")
 
-    # --------------------------------------------------------------------------
     def parse_with_retrieved(self, retrieved):
         """
         Receives in input a dictionary of retrieved nodes.
@@ -43,29 +43,35 @@ class Cp2kParser(Parser):
         out_folder = retrieved['retrieved']
 
         new_nodes_list = []
-        self._parse_stdout(out_folder, new_nodes_list)
-        try:
-            self._parse_trajectory(out_folder, new_nodes_list)
-        except Exception:
-            pass
+        new_nodes_list += self._parse_stdout(out_folder)
+
+        if self._calc._RESTART_FILE_NAME in out_folder.get_folder_list():
+            new_nodes_list.append(self._parse_trajectory(out_folder))
 
         return True, new_nodes_list
 
-    # --------------------------------------------------------------------------
-    def _parse_stdout(self, out_folder, new_nodes_list):
-        fn = self._calc._OUTPUT_FILE_NAME
-        if fn not in out_folder.get_folder_list():
+    def _parse_stdout(self, out_folder):
+        fname = self._calc._OUTPUT_FILE_NAME
+
+        if fname not in out_folder.get_folder_list():
             raise OutputParsingError("Cp2k output file not retrieved")
 
-        result_dict = {'exceeded_walltime': False}
-        abs_fn = out_folder.get_abs_path(fn)
-        with open(abs_fn, "r") as f:
-            for line in f.readlines():
+        result_dict = {
+            'exceeded_walltime': False,
+            }
+
+        abs_fname = out_folder.get_abs_path(fname)
+
+        with io.open(abs_fname, 'r', encoding='utf8') as fhandle:
+            for line in fhandle.readlines():
                 if line.startswith(' ENERGY| '):
+                    # should we find the output energy multiple times, just use the last one
                     result_dict['energy'] = float(line.split()[8])
                     result_dict['energy_units'] = "a.u."
+
                 if 'The number of warnings for this run is' in line:
                     result_dict['nwarnings'] = int(line.split()[-1])
+
                 if 'exceeded requested execution time' in line:
                     result_dict['exceeded_walltime'] = True
 
@@ -73,34 +79,28 @@ class Cp2kParser(Parser):
             raise OutputParsingError("CP2K did not finish properly.")
 
         pair = ('output_parameters', ParameterData(dict=result_dict))
-        new_nodes_list.append(pair)
+        return pair
 
-    # --------------------------------------------------------------------------
-    def _parse_trajectory(self, out_folder, new_nodes_list):
-        fn = self._calc._RESTART_FILE_NAME
-        if fn not in out_folder.get_folder_list():
-            return  # not every run type produces a trajectory
-
+    def _parse_trajectory(self, out_folder):
         # read restart file
-        abs_fn = out_folder.get_abs_path(fn)
-        content = open(abs_fn).read()
+        abs_fn = out_folder.get_abs_path(self._calc._RESTART_FILE_NAME)
+
+        with io.open(abs_fn, 'r', encoding='utf8') as fhandle:
+            content = fhandle.read()
 
         # parse coordinate section
-        m = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, DOTALL)
-        coord_lines = [line.strip().split() for line in m.group(1).split("\n")]
+        match = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, DOTALL)
+        coord_lines = [line.strip().split() for line in match.group(1).split("\n")]
         symbols = [line[0] for line in coord_lines]
         positions_str = [line[1:] for line in coord_lines]
         positions = np.array(positions_str, np.float64)
 
         # parse cell section
-        m = re.search(r'\n\s*&CELL\n(.*?)\n\s*&END CELL\n', content, re.DOTALL)
-        cell_lines = [line.strip().split() for line in m.group(1).split("\n")]
+        match = re.search(r'\n\s*&CELL\n(.*?)\n\s*&END CELL\n', content, re.DOTALL)
+        cell_lines = [line.strip().split() for line in match.group(1).split("\n")]
         cell_str = [line[1:] for line in cell_lines if line[0] in 'ABC']
         cell = np.array(cell_str, np.float64)
 
         # create StructureData
         atoms = ase.Atoms(symbols=symbols, positions=positions, cell=cell)
-        pair = ('output_structure', StructureData(ase=atoms))
-        new_nodes_list.append(pair)
-
-# EOF
+        return ('output_structure', StructureData(ase=atoms))

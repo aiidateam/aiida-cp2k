@@ -8,13 +8,20 @@
     "description": "The CP2K plugin for the AiiDA workflow and provenance engine.",
     "classifiers": [
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
         "Development Status :: 4 - Beta"
     ],
+    "setup_requires": ["reentry"],
+    "reentry_register": true,
     "install_requires": [
-        "aiida",
+        "aiida-core >= 1.0.0a1",
         "ase"
     ],
+    "extras_require": {
+        "testing": [
+            "pytest"
+        ]
+    },
     "entry_points": {
         "aiida.calculations": [
             "cp2k = aiida_cp2k.calculations:Cp2kCalculation"

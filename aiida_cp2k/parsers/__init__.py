@@ -8,7 +8,6 @@
 
 import io
 import re
-from re import DOTALL
 
 import ase
 import numpy as np
@@ -46,7 +45,7 @@ class Cp2kParser(Parser):
         new_nodes_list += self._parse_stdout(out_folder)
 
         if self._calc._RESTART_FILE_NAME in out_folder.get_folder_list():
-            new_nodes_list.append(self._parse_trajectory(out_folder))
+            new_nodes_list += self._parse_trajectory(out_folder)
 
         return True, new_nodes_list
 
@@ -79,7 +78,7 @@ class Cp2kParser(Parser):
             raise OutputParsingError("CP2K did not finish properly.")
 
         pair = ('output_parameters', ParameterData(dict=result_dict))
-        return pair
+        return [pair]
 
     def _parse_trajectory(self, out_folder):
         # read restart file
@@ -89,7 +88,7 @@ class Cp2kParser(Parser):
             content = fhandle.read()
 
         # parse coordinate section
-        match = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, DOTALL)
+        match = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, re.DOTALL)
         coord_lines = [line.strip().split() for line in match.group(1).split("\n")]
         symbols = [line[0] for line in coord_lines]
         positions_str = [line[1:] for line in coord_lines]
@@ -103,4 +102,4 @@ class Cp2kParser(Parser):
 
         # create StructureData
         atoms = ase.Atoms(symbols=symbols, positions=positions, cell=cell)
-        return ('output_structure', StructureData(ase=atoms))
+        return [('output_structure', StructureData(ase=atoms))]

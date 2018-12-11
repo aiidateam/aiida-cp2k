@@ -9,14 +9,11 @@
 import io
 import re
 
-import ase
-import numpy as np
-
 from aiida.parsers.parser import Parser
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.structure import StructureData
 from aiida.parsers.exceptions import OutputParsingError
-from aiida_cp2k.calculations import Cp2kCalculation
+
+from aiida.orm import CalculationFactory
+Cp2kCalculation = CalculationFactory('cp2k')
 
 
 class Cp2kParser(Parser):
@@ -50,6 +47,8 @@ class Cp2kParser(Parser):
         return True, new_nodes_list
 
     def _parse_stdout(self, out_folder):
+        from aiida.orm.data.parameter import ParameterData
+
         fname = self._calc._OUTPUT_FILE_NAME
 
         if fname not in out_folder.get_folder_list():
@@ -81,6 +80,10 @@ class Cp2kParser(Parser):
         return [pair]
 
     def _parse_trajectory(self, out_folder):
+        from aiida.orm.data.structure import StructureData
+        import ase
+        import numpy as np
+
         # read restart file
         abs_fn = out_folder.get_abs_path(self._calc._RESTART_FILE_NAME)
 

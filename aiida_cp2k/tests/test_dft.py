@@ -8,7 +8,6 @@
 ###############################################################################
 
 import pytest
-import ase.build
 
 from . import get_code, calculation_execution_test
 
@@ -17,6 +16,7 @@ from . import get_code, calculation_execution_test
 def test_process(new_database, new_workdir):  # pylint: disable=unused-argument
     from aiida.orm.data.structure import StructureData
     from aiida.orm.data.parameter import ParameterData
+    import ase.build
 
     code = get_code(entry_point='cp2k')
 
@@ -65,7 +65,7 @@ def test_process(new_database, new_workdir):  # pylint: disable=unused-argument
 
     # resources
 
-    calc.set_max_wallclock_seconds(3*60)  # 3 mini
+    calc.set_max_wallclock_seconds(3*60)  # 3 min
     calc.set_withmpi(False)
     calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 1})
 

@@ -15,7 +15,7 @@ from aiida.orm.data.remote import RemoteData
 from aiida.common.datastructures import CalcInfo, CodeInfo
 from aiida.common.exceptions import InputValidationError
 
-from ..utils import Cp2kInput
+from .utils import Cp2kInput
 
 
 class Cp2kCalculation(JobCalculation):

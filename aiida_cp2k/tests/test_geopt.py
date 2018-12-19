@@ -7,18 +7,24 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
+import os
+import shutil
+import tempfile
+
 import pytest
 
 from . import get_code, calculation_execution_test
 
 
-@pytest.mark.process_execution
-def test_process(new_database, new_workdir):  # pylint: disable=unused-argument
+FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'files/geopt')
+
+
+def get_calc():
+    """prepare a calculation object"""
+
     from aiida.orm.data.structure import StructureData
     from aiida.orm.data.parameter import ParameterData
     import ase.build
-
-    code = get_code(entry_point='cp2k')
 
     # structure
     atoms = ase.build.molecule('H2')
@@ -63,10 +69,11 @@ def test_process(new_database, new_workdir):  # pylint: disable=unused-argument
         }
     })
 
+    code = get_code(entry_point='cp2k')
     calc = code.new_calc()
 
-    calc.label = "AiiDA CP2K DFT test"
-    calc.description = "Test job submission with the AiiDA CP2K plugin with DFT"
+    calc.label = "AiiDA CP2K test"
+    calc.description = "Test job submission with the AiiDA CP2K plugin"
 
     # resources
 
@@ -77,20 +84,60 @@ def test_process(new_database, new_workdir):  # pylint: disable=unused-argument
     calc.use_structure(structure)
     calc.use_parameters(parameters)
 
+    return calc
+
+
+def get_retrieved():
+    """Set up a fake 'retrieved' dict and the respective output"""
+
+    from aiida.orm.data.folder import FolderData
+
+    tmp_dir = tempfile.mkdtemp()
+
+    for fname in ['aiida.out', 'aiida-1.restart']:
+        shutil.copyfile(os.path.join(FIXTURE_DIR, fname), os.path.join(tmp_dir, fname))
+
+    res = FolderData()
+    res.replace_with_folder(tmp_dir)
+    shutil.rmtree(tmp_dir)
+
+    return {'retrieved': res}
+
+
+@pytest.mark.process_execution
+def test_calc(new_database, new_workdir):
+    calc = get_calc()
+
     # store and submit
     calc.store_all()
 
-    calculation_execution_test(calc, check_paths=[calc._OUTPUT_FILE_NAME])
+    calculation_execution_test(calc, check_paths=[calc._OUTPUT_FILE_NAME, calc._RESTART_FILE_NAME])
 
-    assert calc.res.exceeded_walltime is False
 
-    # check energy
+def test_parser(new_database, new_workdir):
+    """Test the CP2K output parser"""
+
+    from aiida_cp2k.parsers import Cp2kParser
+
+    parser = Cp2kParser(get_calc())
+    success, node_list = parser.parse_with_retrieved(get_retrieved())
+
+    # check that parsing worked
+    assert success
+
+    # make sure we got the expected output nodes
+    node_dict = {n[0]: n[1] for n in node_list}
+    assert all(key in node_dict.keys() for key in ['output_parameters', 'output_structure']), (
+            "list of output nodes is missing some required nodes")
+
+    # check the parsed energy
     expected_energy = -1.14009973178
-    assert abs(calc.res.energy - expected_energy) < 1e-10, (
-            f"calculated energy value {calc.res.energy} differs from reference {expected_energy}")
+    energy = node_dict['output_parameters'].get_dict()['energy']
+    assert abs(energy - expected_energy) < 1e-10, (
+            f"calculated energy value {energy} differs from reference {expected_energy}")
 
-    # check geometry
+    # check the geometry
     expected_dist = 0.736103879818
-    dist = calc.out.output_structure.get_ase().get_distance(0, 1)
+    dist = node_dict['output_structure'].get_ase().get_distance(0, 1)
     assert abs(dist - expected_dist) < 1e-7, (
             f"calculated H-H distance {dist} differs from reference {expected_dist}")

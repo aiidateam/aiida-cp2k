@@ -143,7 +143,8 @@ class Cp2kCalculation(JobCalculation):
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = []
         calcinfo.retrieve_list = [self._OUTPUT_FILE_NAME,
-                                  self._RESTART_FILE_NAME]
+                                  self._RESTART_FILE_NAME,
+                                  ['*dcd', '.', 0]]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
         # symlinks

@@ -197,11 +197,10 @@ class Cp2kCalculation(JobCalculation):
                 raise InputValidationError(msg)
 
         # handle additional parameter files
-        local_copy_list = []
-        for key, val in inputdict.items():
-            if isinstance(val, SinglefileData):
-                inputdict.pop(key)
-                local_copy_list.append((val.get_file_abs_path(), val.filename))
+        local_copy_list = [(v.get_file_abs_path(), v.filename) for v in inputdict.values() if isinstance(v, SinglefileData)]
+
+        # and filter them from the inputdict
+        inputdict = {k: v for k, v in inputdict.items() if not isinstance(v, SinglefileData)}
 
         if inputdict:
             msg = "unrecognized input nodes: " + str(inputdict.keys())

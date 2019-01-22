@@ -8,12 +8,10 @@
 ###############################################################################
 
 import os
-import shutil
-import tempfile
 
 import pytest
 
-from . import get_code, calculation_execution_test
+from . import get_code, calculation_execution_test, get_retrieved
 
 
 FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'files/geopt')
@@ -87,23 +85,6 @@ def get_calc():
     return calc
 
 
-def get_retrieved():
-    """Set up a fake 'retrieved' dict and the respective output"""
-
-    from aiida.orm.data.folder import FolderData
-
-    tmp_dir = tempfile.mkdtemp()
-
-    for fname in ['aiida.out', 'aiida-1.restart']:
-        shutil.copyfile(os.path.join(FIXTURE_DIR, fname), os.path.join(tmp_dir, fname))
-
-    res = FolderData()
-    res.replace_with_folder(tmp_dir)
-    shutil.rmtree(tmp_dir)
-
-    return {'retrieved': res}
-
-
 @pytest.mark.process_execution
 def test_calc(new_database, new_workdir):
     calc = get_calc()
@@ -120,7 +101,7 @@ def test_parser(new_database, new_workdir):
     from aiida_cp2k.parsers import Cp2kParser
 
     parser = Cp2kParser(get_calc())
-    success, node_list = parser.parse_with_retrieved(get_retrieved())
+    success, node_list = parser.parse_with_retrieved(get_retrieved(FIXTURE_DIR, ['aiida.out', 'aiida-1.restart']))
 
     # check that parsing worked
     assert success

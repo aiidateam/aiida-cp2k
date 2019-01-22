@@ -5,6 +5,7 @@ testing that does not pollute your profiles/databases.
 """
 
 import os
+import shutil
 import tempfile
 
 
@@ -155,3 +156,20 @@ def calculation_execution_test(calc, allowed_returncodes=(0, ), check_paths=None
                 subfolder.get_abs_path(outpath, check_existence=True)
 
         print("calculation completed execution")
+
+
+def get_retrieved(fixture_dir, filenames):
+    """Set up a fake 'retrieved' dict and the respective output"""
+
+    from aiida.orm.data.folder import FolderData
+
+    tmp_dir = tempfile.mkdtemp()
+
+    for fname in filenames:
+        shutil.copyfile(os.path.join(fixture_dir, fname), os.path.join(tmp_dir, fname))
+
+    res = FolderData()
+    res.replace_with_folder(tmp_dir)
+    shutil.rmtree(tmp_dir)
+
+    return {'retrieved': res}

@@ -1,0 +1,337 @@
+ DBCSR| CPU Multiplication driver                                           XSMM
+ DBCSR| Multrec recursion limit                                              512
+ DBCSR| Multiplication stack size                                           1000
+ DBCSR| Maximum elements for images                                    UNLIMITED
+ DBCSR| Multiplicative factor virtual images                                   1
+ DBCSR| Use multiplication densification                                       T
+ DBCSR| Multiplication size stacks                                             3
+
+
+  **** **** ******  **  PROGRAM STARTED AT               2019-01-22 14:45:21.552
+ ***** ** ***  *** **   PROGRAM STARTED ON                                tcpc18
+ **    ****   ******    PROGRAM STARTED BY                               tiziano
+ ***** **    ** ** **   PROGRAM PROCESS ID                                  6058
+  **** **  *******  **  PROGRAM STARTED IN /tmp/tmpiza_avuy/test_repo/sandbox/tm
+                                           phly1xi99/20190122-00001
+
+ CP2K| version string:                    CP2K version 7.0 (Development Version)
+ CP2K| source code revision number:                                git:543e72ece
+ CP2K| cp2kflags: libint fftw3 libxc xsmm libderiv_max_am1=5 libint_max_am=6 spg
+ CP2K|            lib json
+ CP2K| is freely available from                            https://www.cp2k.org/
+ CP2K| Program compiled at                          Mit Jan 16 17:02:54 CET 2019
+ CP2K| Program compiled on                                                tcpc18
+ CP2K| Program compiled for                                                local
+ CP2K| Data directory path                               /data/tiziano/cp2k/data
+ CP2K| Input file name                                                 aiida.inp
+
+ GLOBAL| Force Environment number                                              1
+ GLOBAL| Basis set file name                                           BASIS_SET
+ GLOBAL| Potential file name                                           POTENTIAL
+ GLOBAL| MM Potential file name                                     MM_POTENTIAL
+ GLOBAL| Coordinate file name                                         coords.pdb
+ GLOBAL| Method name                                                        CP2K
+ GLOBAL| Project name                                                      aiida
+ GLOBAL| Preferred FFT library                                             FFTW3
+ GLOBAL| Preferred diagonalization lib.                                       SL
+ GLOBAL| Run type                                                   ENERGY_FORCE
+ GLOBAL| All-to-all communication in single precision                          F
+ GLOBAL| FFTs using library dependent lengths                                  F
+ GLOBAL| Global print level                                               MEDIUM
+ GLOBAL| MPI I/O enabled                                                       T
+ GLOBAL| Total number of message passing processes                             1
+ GLOBAL| Number of threads for this process                                    1
+ GLOBAL| This output is from process                                           0
+ GLOBAL| CPU model name :  Intel(R) Core(TM) i7-4790 CPU @ 3.60GHz
+
+ MEMORY| system memory details [Kb]
+ MEMORY|                        rank 0           min           max       average
+ MEMORY| MemTotal             16373600      16373600      16373600      16373600
+ MEMORY| MemFree               4160348       4160348       4160348       4160348
+ MEMORY| Buffers                296444        296444        296444        296444
+ MEMORY| Cached                4911380       4911380       4911380       4911380
+ MEMORY| Slab                   532848        532848        532848        532848
+ MEMORY| SReclaimable           380340        380340        380340        380340
+ MEMORY| MemLikelyFree         9748512       9748512       9748512       9748512
+
+
+ *** Fundamental physical constants (SI units) ***
+
+ *** Literature: B. J. Mohr and B. N. Taylor,
+ ***             CODATA recommended values of the fundamental physical
+ ***             constants: 2006, Web Version 5.1
+ ***             http://physics.nist.gov/constants
+
+ Speed of light in vacuum [m/s]                             2.99792458000000E+08
+ Magnetic constant or permeability of vacuum [N/A**2]       1.25663706143592E-06
+ Electric constant or permittivity of vacuum [F/m]          8.85418781762039E-12
+ Planck constant (h) [J*s]                                  6.62606896000000E-34
+ Planck constant (h-bar) [J*s]                              1.05457162825177E-34
+ Elementary charge [C]                                      1.60217648700000E-19
+ Electron mass [kg]                                         9.10938215000000E-31
+ Electron g factor [ ]                                     -2.00231930436220E+00
+ Proton mass [kg]                                           1.67262163700000E-27
+ Fine-structure constant                                    7.29735253760000E-03
+ Rydberg constant [1/m]                                     1.09737315685270E+07
+ Avogadro constant [1/mol]                                  6.02214179000000E+23
+ Boltzmann constant [J/K]                                   1.38065040000000E-23
+ Atomic mass unit [kg]                                      1.66053878200000E-27
+ Bohr radius [m]                                            5.29177208590000E-11
+
+ *** Conversion factors ***
+
+ [u] -> [a.u.]                                              1.82288848426455E+03
+ [Angstrom] -> [Bohr] = [a.u.]                              1.88972613288564E+00
+ [a.u.] = [Bohr] -> [Angstrom]                              5.29177208590000E-01
+ [a.u.] -> [s]                                              2.41888432650478E-17
+ [a.u.] -> [fs]                                             2.41888432650478E-02
+ [a.u.] -> [J]                                              4.35974393937059E-18
+ [a.u.] -> [N]                                              8.23872205491840E-08
+ [a.u.] -> [K]                                              3.15774647902944E+05
+ [a.u.] -> [kJ/mol]                                         2.62549961709828E+03
+ [a.u.] -> [kcal/mol]                                       6.27509468713739E+02
+ [a.u.] -> [Pa]                                             2.94210107994716E+13
+ [a.u.] -> [bar]                                            2.94210107994716E+08
+ [a.u.] -> [atm]                                            2.90362800883016E+08
+ [a.u.] -> [eV]                                             2.72113838565563E+01
+ [a.u.] -> [Hz]                                             6.57968392072181E+15
+ [a.u.] -> [1/cm] (wave numbers)                            2.19474631370540E+05
+ [a.u./Bohr**2] -> [1/cm]                                   5.14048714338585E+03
+ 
+
+
+                      ************* ******** ***********   
+                     ************* **********************  
+                     ****     **** ****      ***********   
+                     ******** ****  *******     ****       
+                     *******  ****   *******   ****        
+                     ****     ****       ****  ****        
+                     ****     **** **********  ****        
+                      ****     **** ********    ****       
+                     FRONTIERS IN SIMULATION TECHNOLOGY    
+                                                           
+                        C.J. Mundy, S. Balasubramanian,    
+                     Ken Bagchi, J. Hutter, Ari Seitsonen  
+                      IFW Kuo, T. Laino, J. VandeVondele   
+                                 Version 1.0               
+
+                                                           
+
+
+ CELL| Volume [angstrom^3]:                                             8867.320
+ CELL| Vector a [angstrom]:      20.000     0.000     0.000    |a| =      20.000
+ CELL| Vector b [angstrom]:       0.000    21.526     0.000    |b| =      21.526
+ CELL| Vector c [angstrom]:       0.000     0.000    20.596    |c| =      20.596
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                             YES
+
+ CELL_REF| Volume [angstrom^3]:                                         8867.320
+ CELL_REF| Vector a [angstrom    20.000     0.000     0.000    |a| =      20.000
+ CELL_REF| Vector b [angstrom     0.000    21.526     0.000    |b| =      21.526
+ CELL_REF| Vector c [angstrom     0.000     0.000    20.596    |c| =      20.596
+ CELL_REF| Angle (b,c), alpha [degree]:                                   90.000
+ CELL_REF| Angle (a,c), beta  [degree]:                                   90.000
+ CELL_REF| Angle (a,b), gamma [degree]:                                   90.000
+ CELL_REF| Numerically orthorhombic:                                         YES
+
+ EWALD| Summation is done by:                                               SPME
+ EWALD| Alpha parameter [       ANGSTROM^-1]                              0.4400
+ EWALD| Real Space Cutoff [          ANGSTROM]                            7.6680
+ EWALD| G-space max. Miller index                         24        24        24
+ EWALD| Spline interpolation order                                             6
+
+ CELL_TOP| Volume [angstrom^3]:                                         8867.320
+ CELL_TOP| Vector a [angstrom    20.000     0.000     0.000    |a| =      20.000
+ CELL_TOP| Vector b [angstrom     0.000    21.526     0.000    |b| =      21.526
+ CELL_TOP| Vector c [angstrom     0.000     0.000    20.596    |c| =      20.596
+ CELL_TOP| Angle (b,c), alpha [degree]:                                   90.000
+ CELL_TOP| Angle (a,c), beta  [degree]:                                   90.000
+ CELL_TOP| Angle (a,b), gamma [degree]:                                   90.000
+ CELL_TOP| Numerically orthorhombic:                                         YES
+
+ GENERATE|  Preliminary Number of Bonds generated:                             2
+ GENERATE|  Achieved consistency in connectivity generation.
+ GENERATE|  Number of Bonds generated:                                         2
+ GENERATE|  Preliminary Number of Bends generated:                             1
+ GENERATE|  Number of Bends generated:                                         1
+ GENERATE|  Number of UB generated:                                            1
+ GENERATE|  Preliminary Number of Torsions generated:                          0
+
+ FORCEFIELD| WARNING: A non Critical ForceField parameter is missing! CP2K GOES!
+ FORCEFIELD| Non critical parameters are:Urey-Bradley,Torsions,Impropers, Opbends and 1-4
+ FORCEFIELD| All missing parameters will not contribute to the potential energy!
+ FORCEFIELD| Activate the print key FF_INFO to have a list of missing parameters
+
+ CHARGE_INFO| Total Charge of the Classical System:                     0.000000
+
+ SPLINE_INFO| Generating 3 splines for NONBONDED14 interactions 
+              Due to 2 different atomic kinds
+  ...1  ...2  ...3
+ SPLINE_INFO| Number of unique splines computed:            3
+ SPLINE_INFO| Done
+
+ SPLINE_INFO| Generating 3 splines for NONBONDED interactions 
+              Due to 2 different atomic kinds
+  ...1  ...2  ...3
+ SPLINE_INFO| Number of unique splines computed:            3
+ SPLINE_INFO| Done
+
+
+ MOLECULE KIND INFORMATION
+
+     1. Molecule kind: MOL1                      Number of atoms:              3
+                     Atom         Atomic kind name
+                        1                        O
+                        2                        H
+                        3                        H
+
+        The name was automatically generated: T
+        Number of molecules:      1
+        Molecule list:                1
+        Number of bonds:            2
+        Number of bends:            1
+
+
+ MOLECULE KIND SET INFORMATION               Total Number of bonds:            2
+                                             Total Number of bends:            1
+                                             Total Number of Urey-Bradley:     0
+                                             Total Number of torsions:         0
+                                             Total Number of improper:         0
+                                              Total Number of opbends:         0
+
+
+ MODULE FIST:  ATOMIC COORDINATES IN ANGSTROM
+
+  Atom  Kind  ATM_TYP       X           Y           Z          q(eff)       Mass
+
+     1    1   O         10.000000   10.763000   10.596000     -0.85      15.9994
+     2    2   H         10.000000   11.526000   10.000000      0.42       1.0079
+     3    2   H         10.000000   10.000000   10.000000      0.42       1.0079
+
+
+
+ PW_GRID| Information for grid number                                          1
+ PW_GRID| Cutoff [a.u.]                                                      1.4
+ PW_GRID| spherical cutoff:                                                  YES
+ PW_GRID| Grid points within cutoff                                         2483
+ PW_GRID|   Bounds   1            -12      11                Points:          24
+ PW_GRID|   Bounds   2            -12      11                Points:          24
+ PW_GRID|   Bounds   3            -12      11                Points:          24
+ PW_GRID| Volume element (a.u.^3)   4.329         Volume (a.u.^3)     59839.6412
+ PW_GRID| Grid span                                                    HALFSPACE
+
+ RS_GRID| Information for grid number                                          1
+ RS_GRID|   Bounds   1            -12      11                Points:          24
+ RS_GRID|   Bounds   2            -12      11                Points:          24
+ RS_GRID|   Bounds   3            -12      11                Points:          24
+ MM DIPOLE [BERRY PHASE](A.U.)|                        0.000000       -3.099751        6.886251
+ MM DIPOLE [BERRY PHASE](Debye)|                       0.000000       -7.878781       17.503103
+ MM DIPOLE [BERRY PHASE] DERIVATIVE(A.U.)|             0.000000        0.000000        0.000000
+
+ ENERGY| Total FORCE_EVAL ( FIST ) energy (a.u.):              0.000146927412614
+
+
+ -------------------------------------------------------------------------------
+ -                                                                             -
+ -                                DBCSR STATISTICS                             -
+ -                                                                             -
+ -------------------------------------------------------------------------------
+ COUNTER                                    TOTAL       BLAS       SMM       ACC
+ flops inhomo. stacks                           0       0.0%      0.0%      0.0%
+ flops total                         0.000000E+00       0.0%      0.0%      0.0%
+ flops max/rank                      0.000000E+00       0.0%      0.0%      0.0%
+ matmuls inhomo. stacks                         0       0.0%      0.0%      0.0%
+ matmuls total                                  0       0.0%      0.0%      0.0%
+ number of processed stacks                     0       0.0%      0.0%      0.0%
+ average stack size                                     0.0       0.0       0.0
+ marketing flops                     0.000000E+00
+ -------------------------------------------------------------------------------
+
+ MEMORY| Estimated peak process memory [MiB]                                  44
+
+ -------------------------------------------------------------------------------
+ -                                                                             -
+ -                           R E F E R E N C E S                               -
+ -                                                                             -
+ -------------------------------------------------------------------------------
+ 
+ CP2K version 7.0 (Development Version), the CP2K developers group (2018).
+ CP2K is freely available from https://www.cp2k.org/ .
+
+ Schuett, Ole; Messmer, Peter; Hutter, Juerg; VandeVondele, Joost. 
+ Electronic Structure Calculations on Graphics Processing Units, John Wiley & Sons, Ltd, 173-190 (2016). 
+ GPU-Accelerated Sparse Matrix-Matrix Multiplication for Linear Scaling Density Functional Theory.
+ https://dx.doi.org/10.1002/9781118670712.ch8
+
+
+ Borstnik, U; VandeVondele, J; Weber, V; Hutter, J. 
+ PARALLEL COMPUTING, 40 (5-6), 47-58 (2014). 
+ Sparse matrix multiplication: The distributed block-compressed sparse
+ row library.
+ https://dx.doi.org/10.1016/j.parco.2014.03.012
+
+
+ Hutter, J; Iannuzzi, M; Schiffmann, F; VandeVondele, J. 
+ WILEY INTERDISCIPLINARY REVIEWS-COMPUTATIONAL MOLECULAR SCIENCE, 4 (1), 15-25 (2014). 
+ CP2K: atomistic simulations of condensed matter systems.
+ https://dx.doi.org/10.1002/wcms.1159
+
+
+ Frigo, M; Johnson, SG. 
+ PROCEEDINGS OF THE IEEE, 93 (2), 216-231 (2005). 
+ The design and implementation of FFTW3.
+ https://dx.doi.org/10.1109/JPROC.2004.840301
+
+
+ ESSMANN, U; PERERA, L; BERKOWITZ, ML; DARDEN, T; LEE, H; PEDERSEN, LG. 
+ JOURNAL OF CHEMICAL PHYSICS, 103 (19), 8577-8593 (1995). 
+ A SMOOTH PARTICLE MESH EWALD METHOD.
+ https://dx.doi.org/10.1063/1.470117
+
+
+ -------------------------------------------------------------------------------
+ -                                                                             -
+ -                                T I M I N G                                  -
+ -                                                                             -
+ -------------------------------------------------------------------------------
+ SUBROUTINE                       CALLS  ASD         SELF TIME        TOTAL TIME
+                                MAXIMUM       AVERAGE  MAXIMUM  AVERAGE  MAXIMUM
+ CP2K                                 1  1.0    0.001    0.001    0.014    0.014
+ fist_create_force_env                1  2.0    0.000    0.000    0.008    0.008
+ fist_init                            1  3.0    0.000    0.000    0.008    0.008
+ force_field_control                  1  4.0    0.000    0.000    0.006    0.006
+ read_force_field_charmm              1  5.0    0.002    0.002    0.006    0.006
+ parser_read_line                   123  6.1    0.000    0.000    0.005    0.005
+ parser_read_line_low                10  7.2    0.005    0.005    0.005    0.005
+ fist_calc_energy_force               1  2.0    0.000    0.000    0.004    0.004
+ spme_evaluate                        1  3.0    0.000    0.000    0.003    0.003
+ pw_transfer                          9  4.6    0.000    0.000    0.003    0.003
+ fft_wrap_pw1pw2                      4  5.0    0.000    0.000    0.003    0.003
+ fft_wrap_pw1pw2_10                   4  6.0    0.000    0.000    0.003    0.003
+ fft3d_s                              5  6.0    0.001    0.001    0.003    0.003
+ get_fft_scratch                      5  7.0    0.002    0.002    0.002    0.002
+ topology_control                     1  4.0    0.000    0.000    0.001    0.001
+ coordinate_control                   1  5.0    0.000    0.000    0.001    0.001
+ coordinate_control_READ_COORDI       1  6.0    0.000    0.000    0.001    0.001
+ read_coordinate_pdb                  1  7.0    0.000    0.000    0.001    0.001
+ dbcsr_finalize_lib                   1  2.0    0.001    0.001    0.001    0.001
+ fist_init_subsys                     1  4.0    0.000    0.000    0.000    0.000
+ ewald_pw_init                        1  5.0    0.000    0.000    0.000    0.000
+ pw_grid_setup                        1  6.0    0.000    0.000    0.000    0.000
+ pw_grid_setup_internal               1  7.0    0.000    0.000    0.000    0.000
+ -------------------------------------------------------------------------------
+
+    Writing callgraph to: runtime.callgraph
+
+ -------------------------------------------------------------------------------
+ The number of warnings for this run is : 0
+ 
+ -------------------------------------------------------------------------------
+  **** **** ******  **  PROGRAM ENDED AT                 2019-01-22 14:45:21.587
+ ***** ** ***  *** **   PROGRAM RAN ON                                    tcpc18
+ **    ****   ******    PROGRAM RAN BY                                   tiziano
+ ***** **    ** ** **   PROGRAM PROCESS ID                                  6058
+  **** **  *******  **  PROGRAM STOPPED IN /tmp/tmpiza_avuy/test_repo/sandbox/tm
+                                           phly1xi99/20190122-00001

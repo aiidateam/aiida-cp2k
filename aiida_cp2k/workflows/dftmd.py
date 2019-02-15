@@ -151,7 +151,7 @@ class Cp2kMdWorkChain(WorkChain):
         """Run scf calculation."""
         # Create the calculation process and launch it
         running = submit(Cp2kDftBaseWorkChain, **self.ctx.inputs)
-        self.report("pk: {} | Running cp2k MD NVT".format(running.pid))
+        self.report("pk: {} | Running cp2k MD".format(running.pid))
         return ToContext(cp2k=Outputs(running))
 
     def inspect_calculation(self):

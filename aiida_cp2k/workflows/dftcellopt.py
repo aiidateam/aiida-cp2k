@@ -17,8 +17,8 @@ cp2k_motion ={
     'MOTION': {
         'CELL_OPT': {
             'TYPE': 'DIRECT_CELL_OPT',                 #default: DIRECT_CELL_OPT
-            'KEEP_ANGLES' : False,                     #default: False
-            'KEEP_SYMMETRY': False,                    #default: False (works only if symm is specified in the &CELL)
+            #'KEEP_ANGLES' : False,                     #default: False
+            #'KEEP_SYMMETRY': False,                    #default: False (works only if symm is specified in the &CELL)
             'OPTIMIZER': 'BFGS',                       #default: BFGS
             'MAX_ITER': 100,                           #default: 200
             'EXTERNAL_PRESSURE': '[bar] 0.0',          #default: [bar] 100 0 0 0 100 0 0 0 100
@@ -27,9 +27,9 @@ cp2k_motion ={
             'RMS_DR':    '[bohr] 0.015',               #default: [bohr] 0.0015
             'MAX_FORCE': '[bohr^-1*hartree] 0.0010',   #default: [bohr^-1*hartree] 0.00045
             'RMS_FORCE': '[bohr^-1*hartree] 0.0007',   #default: [bohr^-1*hartree] 0.00030
-            'BFGS' : {
-                'TRUST_RADIUS': '[angstrom] 0.25',     #default: [angstrom] 0.25
-            },
+            #'BFGS' : {
+            #    'TRUST_RADIUS': '[angstrom] 0.25',     #default: [angstrom] 0.25
+            #},
         },
         'PRINT': {
             'TRAJECTORY': {

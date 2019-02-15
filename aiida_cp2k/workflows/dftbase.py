@@ -87,11 +87,17 @@ cp2k_default_parameters = {
                     'STRIDE': '1 1 1',
                 },
                 'MO_CUBES': {
-                    '_': 'ON', # this is to print the band gap
+                    '_': 'ON', # this is to print the band gap, but only at the end
                     'WRITE_CUBE': 'F',
                     'STRIDE': '1 1 1',
                     'NLUMO': 1,
                     'NHOMO': 1,
+                    'ADD_LAST': 'SYMBOLIC',
+                    'EACH': {
+                        'CELL_OPT': 0,
+                        'GEO_OPT': 0,
+                        'MD': 0,
+                    },
                 },
                 'MULLIKEN': {
                     '_': 'ON',  #default: ON

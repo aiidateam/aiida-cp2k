@@ -46,9 +46,6 @@ disable_printing_charges_dict = {
     'FORCE_EVAL': {
         'DFT': {
             'PRINT':{
-                'MO_CUBES': {
-                    '_': 'OFF',
-                    },
                 'MULLIKEN': {
                     '_': 'OFF',
                     },

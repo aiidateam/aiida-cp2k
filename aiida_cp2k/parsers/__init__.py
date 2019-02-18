@@ -8,6 +8,7 @@
 
 import re
 import ase
+import math
 import numpy as np
 from re import DOTALL
 
@@ -60,7 +61,8 @@ class Cp2kParser(Parser):
         result_dict = {'exceeded_walltime': False}
         abs_fn = out_folder.get_abs_path(fn)
         with open(abs_fn, "r") as f:
-            for line in f.readlines():
+            lines = f.readlines()
+            for i, line in enumerate(lines):
                 if line.startswith(' ENERGY| '):
                     result_dict['energy'] = float(line.split()[8])
                     result_dict['energy_units'] = "a.u."
@@ -68,12 +70,60 @@ class Cp2kParser(Parser):
                     result_dict['nwarnings'] = int(line.split()[-1])
                 if 'exceeded requested execution time' in line:
                     result_dict['exceeded_walltime'] = True
+                if "KPOINTS| Band Structure Calculation" in line:
+                    from aiida.orm.data.array.bands import BandsData
+                    b = BandsData()
+                    kpoints, labels, bands = self._parse_bands(lines, i)
+                    b.set_kpoints(kpoints)
+                    b.labels = labels
+                    b.set_bands(bands, units='eV')
+                    new_nodes_list.append(('output_bands', b))
 
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")
 
         pair = ('output_parameters', ParameterData(dict=result_dict))
         new_nodes_list.append(pair)
+
+    # --------------------------------------------------------------------------
+    def _parse_bands(self, lines, n_start):
+        """Parse band structure from cp2k output"""
+        kpoints = []
+        labels = []
+        bands_s1 = []
+        bands_s2 = []
+        known_kpoints = {}
+
+        current_set = 0
+        n_in_set = 0
+        pattern = re.compile(".*?Nr.*?Spin.*?K-Point.*?", re.DOTALL)
+
+        selected_lines = lines[n_start:]
+        for current_line, line in enumerate(selected_lines):
+            splitted = line.split()
+            if "KPOINTS| Special K-Point" in line:
+                kpoint = tuple(map(float, splitted[-3:]))
+                if not " ".join(splitted[-5:-3]) == "not specified":
+                    label = splitted[-4]
+                    known_kpoints[kpoint] = label
+            elif pattern.match(line):
+                spin =  int(splitted[3])
+                kpoint = tuple(map(float, splitted[-3:]))
+                n_bands = int(selected_lines[current_line+1])
+                kpoint_n_lines = int(math.ceil(n_bands / 4.))
+                band = map(float, ' '.join(selected_lines[current_line+2:current_line+2+kpoint_n_lines]).split())
+                if spin == 1:
+                    if kpoint in known_kpoints:
+                        labels.append((len(kpoints),known_kpoints[kpoint]))
+                    kpoints.append(kpoint)
+                    bands_s1.append(band)
+                elif spin == 2:
+                    bands_s2.append(band)
+        if bands_s2:
+            bands = [bands_s1, bands_s2]
+        else:
+            bands = bands_s1
+        return np.array(kpoints), labels, np.array(bands)
 
     # --------------------------------------------------------------------------
     def _parse_trajectory(self, out_folder, new_nodes_list):

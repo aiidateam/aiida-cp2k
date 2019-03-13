@@ -1,28 +1,22 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
-# AiiDA-CP2K is hosted on GitHub at https://github.com/cp2k/aiida-cp2k        #
+# AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-
+"""Run molecular mechanics calculation"""
 from __future__ import print_function
+from __future__ import absolute_import
 
 import sys
 import ase.build
-from utils import wait_for_calc
 
-from aiida import load_dbenv, is_dbenv_loaded
-from aiida.backends import settings
-if not is_dbenv_loaded():
-    load_dbenv(profile=settings.AIIDADB_PROFILE)
-
-from aiida.common.example_helpers import test_and_get_code  # noqa
-from aiida.orm.data.structure import StructureData  # noqa
-from aiida.orm.data.parameter import ParameterData  # noqa
-from aiida.orm.data.singlefile import SinglefileData  # noqa
-
+from aiida.orm import (Code, Dict, SinglefileData)
+from aiida.engine import run
+from aiida.common import NotExistent
+from aiida_cp2k.calculations import Cp2kCalculation
 
 # ==============================================================================
 if len(sys.argv) != 2:
@@ -30,12 +24,13 @@ if len(sys.argv) != 2:
     sys.exit(1)
 
 codename = sys.argv[1]
-code = test_and_get_code(codename, expected_code_type='cp2k')
+try:
+    code = Code.get_from_string(codename)
+except NotExistent:
+    print("The code '{}' does not exist".format(codename))
+    sys.exit(1)
 
 print("Testing CP2K ENERGY on H2O (MM) ...")
-
-# calc object
-calc = code.new_calc()
 
 # force field
 with open("/tmp/water.pot", "w") as f:
@@ -57,36 +52,41 @@ O      0.000000  -0.152100     1.768200
 HBOND CUTHB 0.5
 
 END""")
-water_pot = SinglefileData(file="/tmp/water.pot")
-calc.use_file(water_pot, linkname="water_pot")
+water_pot = SinglefileData(filepath="/tmp/water.pot")
 
 # structure using pdb format, because it also carries topology information
 atoms = ase.build.molecule('H2O')
 atoms.center(vacuum=10.0)
 atoms.write("/tmp/coords.pdb", format="proteindatabank")
 cell = atoms.cell
-coords_pdb = SinglefileData(file="/tmp/coords.pdb")
-calc.use_file(coords_pdb, linkname="coords_pdb")
+coords_pdb = SinglefileData(filepath="/tmp/coords.pdb")
 
 # parameters
 # based on cp2k/tests/Fist/regtest-1-1/water_1.inp
-parameters = ParameterData(dict={
+parameters = Dict(
+    dict={
         'FORCE_EVAL': {
             'METHOD': 'fist',
             'MM': {
                 'FORCEFIELD': {
                     'PARM_FILE_NAME': 'water.pot',
                     'PARMTYPE': 'CHM',
-                    'CHARGE': [
-                        {'ATOM': 'O', 'CHARGE': -0.8476},
-                        {'ATOM': 'H', 'CHARGE': 0.4238}]
+                    'CHARGE': [{
+                        'ATOM': 'O',
+                        'CHARGE': -0.8476
+                    }, {
+                        'ATOM': 'H',
+                        'CHARGE': 0.4238
+                    }]
                 },
-                'POISSON': {'EWALD': {
-                    'EWALD_TYPE': 'spme',
-                    'ALPHA': 0.44,
-                    'GMAX': 24,
-                    'O_SPLINE': 6
-                }}
+                'POISSON': {
+                    'EWALD': {
+                        'EWALD_TYPE': 'spme',
+                        'ALPHA': 0.44,
+                        'GMAX': 24,
+                        'O_SPLINE': 6
+                    }
+                }
             },
             'SUBSYS': {
                 'CELL': {
@@ -102,40 +102,52 @@ parameters = ParameterData(dict={
             'CALLGRAPH': 'master',
             'CALLGRAPH_FILE_NAME': 'runtime'
         }
-})
-calc.use_parameters(parameters)
+    })
 
 # settings
-settings_dict = {'additional_retrieve_list': ["runtime.callgraph"]}
-settings = ParameterData(dict=settings_dict)
-calc.use_settings(settings)
+settings = Dict(dict={'additional_retrieve_list': ["runtime.callgraph"]})
 
 # resources
-calc.set_max_wallclock_seconds(3*60)  # 3 min
-calc.set_resources({"num_machines": 1})
+options = {
+    "resources": {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
+    },
+    "max_wallclock_seconds": 1 * 3 * 60,  # 3 minutes
+}
 
-# store and submit
-calc.store_all()
-calc.submit()
-print("submitted calculation: PK=%s" % calc.pk)
+# collect all inputs
+inputs = {
+    'parameters': parameters,
+    'settings': settings,
+    'code': code,
+    'file': {
+        'water_pot': water_pot,
+        'coords_pdb': coords_pdb,
+    },
+    'metadata': {
+        'options': options,
+    }
+}
 
-wait_for_calc(calc)
+print("Submitted calculation...")
+calc = run(Cp2kCalculation, **inputs)
 
 # check warnings
-assert calc.res.nwarnings == 0
+assert calc['output_parameters'].dict.nwarnings == 0
 
 # check energy
 expected_energy = 0.146927412614e-3
-if abs(calc.res.energy - expected_energy) < 1e-10:
+if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
     print("OK, energy has the expected value")
 else:
     print("ERROR!")
     print("Expected energy value: {}".format(expected_energy))
-    print("Actual energy value: {}".format(calc.res.energy))
+    print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
     sys.exit(3)
 
 # check if callgraph is there
-if "runtime.callgraph" in calc.out.retrieved.get_folder_list():
+if "runtime.callgraph" in calc['retrieved']._repository.list_object_names():  # pylint: disable=protected-access
     print("OK, callgraph file was retrived")
 else:
     print("ERROR!")

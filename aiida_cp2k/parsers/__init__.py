@@ -2,63 +2,66 @@
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
-# AiiDA-CP2K is hosted on GitHub at https://github.com/cp2k/aiida-cp2k        #
+# AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-
+import os
 import re
 import ase
 import numpy as np
 from re import DOTALL
 
-from aiida.parsers.parser import Parser
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.structure import StructureData
-from aiida.parsers.exceptions import OutputParsingError
+from aiida.parsers import Parser
+from aiida.orm import Dict, StructureData
+from aiida.common import OutputParsingError
 from aiida_cp2k.calculations import Cp2kCalculation
 
 
 class Cp2kParser(Parser):
-    """
-    Parser for the output of CP2K.
-    """
+    """Parser for the output of CP2K."""
 
     # --------------------------------------------------------------------------
     def __init__(self, calc):
-        """
-        Initialize the instance of Cp2kParser
-        """
+        """Initialize the instance of Cp2kParser"""
         super(Cp2kParser, self).__init__(calc)
 
         # check for valid input
-        if not isinstance(calc, Cp2kCalculation):
-            raise OutputParsingError("Input calc must be a Cp2kCalculation")
+        # skipped because it was causing problems
+        #if not isinstance(calc, Cp2kCalculation):
+        #    raise OutputParsingError("Input calc must be a Cp2kCalculation")
 
     # --------------------------------------------------------------------------
-    def parse_with_retrieved(self, retrieved):
+    def parse(self, **kwargs):
         """
         Receives in input a dictionary of retrieved nodes.
         Does all the logic here.
         """
-        out_folder = retrieved['retrieved']
 
-        new_nodes_list = []
-        self._parse_stdout(out_folder, new_nodes_list)
         try:
-            self._parse_trajectory(out_folder, new_nodes_list)
+            out_folder = self.retrieved
+        except exceptions.NotExistent:
+            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
+
+        results = self._parse_stdout(out_folder)
+        self.out('output_parameters', results)
+        
+        try:
+            structure = self._parse_trajectory(out_folder)
+            self.out('output_structure', structure)
         except Exception:
             pass
 
-        return True, new_nodes_list
+
+
 
     # --------------------------------------------------------------------------
-    def _parse_stdout(self, out_folder, new_nodes_list):
-        fn = self._calc._OUTPUT_FILE_NAME
-        if fn not in out_folder.get_folder_list():
+    def _parse_stdout(self, out_folder):
+        fn = self.node.load_process_class()._DEFAULT_OUTPUT_FILE
+        if fn not in out_folder._repository.list_object_names():
             raise OutputParsingError("Cp2k output file not retrieved")
 
         result_dict = {'exceeded_walltime': False}
-        abs_fn = out_folder.get_abs_path(fn)
+        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fn)
         with open(abs_fn, "r") as f:
             for line in f.readlines():
                 if line.startswith(' ENERGY| '):
@@ -72,17 +75,16 @@ class Cp2kParser(Parser):
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")
 
-        pair = ('output_parameters', ParameterData(dict=result_dict))
-        new_nodes_list.append(pair)
+        return Dict(dict=result_dict)
 
     # --------------------------------------------------------------------------
-    def _parse_trajectory(self, out_folder, new_nodes_list):
-        fn = self._calc._RESTART_FILE_NAME
+    def _parse_trajectory(self, out_folder):
+        fn = self.node.load_process_class()._DEFAULT_RESTART_FILE_NAME
         if fn not in out_folder.get_folder_list():
             return  # not every run type produces a trajectory
 
         # read restart file
-        abs_fn = out_folder.get_abs_path(fn)
+        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fn)
         content = open(abs_fn).read()
 
         # parse coordinate section
@@ -100,7 +102,6 @@ class Cp2kParser(Parser):
 
         # create StructureData
         atoms = ase.Atoms(symbols=symbols, positions=positions, cell=cell)
-        pair = ('output_structure', StructureData(ase=atoms))
-        new_nodes_list.append(pair)
+        return StructureData(ase=atoms)
 
 # EOF

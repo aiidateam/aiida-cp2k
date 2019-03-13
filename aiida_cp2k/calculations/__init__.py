@@ -2,155 +2,125 @@
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
-# AiiDA-CP2K is hosted on GitHub at https://github.com/cp2k/aiida-cp2k        #
+# AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-from aiida.orm.calculation.job import JobCalculation
-from aiida.common.utils import classproperty
-from aiida.orm.data.structure import StructureData
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.singlefile import SinglefileData
-from aiida.orm.data.remote import RemoteData
-from aiida.common.datastructures import CalcInfo, CodeInfo
-from aiida.common.exceptions import InputValidationError
+import six
+from aiida.engine import CalcJob
+from aiida.orm import Dict, SinglefileData, StructureData, RemoteData
+from aiida.common import CalcInfo, CodeInfo, InputValidationError
 
 
-class Cp2kCalculation(JobCalculation):
+class Cp2kCalculation(CalcJob):
     """
     This is a Cp2kCalculation, subclass of JobCalculation,
-    to prepare input for an ab-inition Cp2kCalculation.
+    to prepare input for an ab-initio CP2K calculation.
     For information on CP2K, refer to: https://www.cp2k.org
     """
 
-    # --------------------------------------------------------------------------
-    def _init_internal_params(self):
-        """
-        Set parameters of instance
-        """
-        super(Cp2kCalculation, self)._init_internal_params()
-        self._INPUT_FILE_NAME = 'aiida.inp'
-        self._OUTPUT_FILE_NAME = 'aiida.out'
-        self._DEFAULT_INPUT_FILE = self._INPUT_FILE_NAME
-        self._DEFAULT_OUTPUT_FILE = self._OUTPUT_FILE_NAME
-        self._PROJECT_NAME = 'aiida'
-        self._RESTART_FILE_NAME = self._PROJECT_NAME + '-1.restart'
-        self._PARENT_CALC_FOLDER_NAME = 'parent_calc/'
-        self._COORDS_FILE_NAME = 'aiida.coords.xyz'
-        self._default_parser = 'cp2k'
+    # Defaults
+    _DEFAULT_INPUT_FILE = 'aiida.inp'
+    _DEFAULT_OUTPUT_FILE = 'aiida.out'
+    _DEFAULT_PROJECT_NAME = 'aiida'
+    _DEFAULT_RESTART_FILE_NAME = _DEFAULT_PROJECT_NAME + '-1.restart'
+    _DEFAULT_PARENT_CALC_FOLDER_NAME = 'parent_calc/'
+    _DEFAULT_COORDS_FILE_NAME = 'aiida.coords.xyz'
+    _DEFAULT_PARSER = 'cp2k'
 
-    # --------------------------------------------------------------------------
-    @classproperty
-    def _use_methods(cls):
-        """
-        Extend the parent _use_methods with further keys.
-        This will be manually added to the _use_methods in each subclass
-        """
-        retdict = JobCalculation._use_methods
-        retdict.update({
-            "structure": {
-               'valid_types': StructureData,
-               'additional_parameter': None,
-               'linkname': 'structure',
-               'docstring': "Choose the input structure to use",
-               },
-            "settings": {
-               'valid_types': ParameterData,
-               'additional_parameter': None,
-               'linkname': 'settings',
-               'docstring': "Use an additional node for special settings",
-               },
-            "parameters": {
-               'valid_types': ParameterData,
-               'additional_parameter': None,
-               'linkname': 'parameters',
-               'docstring': "Use a node that specifies the "
-                            "input parameters for the namelists",
-               },
-            "parent_folder": {
-               'valid_types': RemoteData,
-               'additional_parameter': None,
-               'linkname': 'parent_calc_folder',
-               'docstring': "Use a remote folder as parent folder "
-                            "(for restarts and similar)",
-               },
-            "file": {
-               'valid_types': SinglefileData,
-               'additional_parameter': "linkname",
-               'linkname': cls._get_linkname_file,
-               'docstring': "Use files to provide additional parameters",
-               },
-            })
-        return retdict
-
-    # --------------------------------------------------------------------------
     @classmethod
-    def _get_linkname_file(cls, linkname):
-        return(linkname)
+    def define(cls, spec):
+        super(Cp2kCalculation, cls).define(spec)
+
+        # Input parameters
+        spec.input('structure', valid_type=StructureData, help='the input structure')
+        spec.input('parameters', valid_type=Dict, help='the input parameters')
+        spec.input('settings', valid_type=Dict, required=False, help='additional input parameters')
+        spec.input('resources', valid_type=dict, required=False, help='special settings')
+        spec.input('parent_calc_folder', valid_type=RemoteData, required=False, help='remote folder used for restarts')
+        spec.input_namespace('file', valid_type=SinglefileData, required=False, help='additional input files', dynamic=True)
+
+        # Default file names, parser, etc..
+        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE, non_db=True)
+        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE, non_db=True)
+        spec.input('metadata.options.parser_name', valid_type=six.string_types, default=cls._DEFAULT_PARSER, non_db=True)
+
+        # Exit codes
+        spec.exit_code(100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
+
+        # Output parameters
+        spec.output('output_parameters', valid_type=Dict, required=True, help='the results of the calculation')
+        spec.output('structure', valid_type=StructureData, required=False, help='optional relaxed structure')
+
 
     # --------------------------------------------------------------------------
-    def _prepare_for_submission(self, tempfolder, inputdict):
+    def prepare_for_submission(self, folder):
+        """Create the input files from the input nodes passed to this instance of the `CalcJob`.
+    
+        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
+        :return: `aiida.common.datastructures.CalcInfo` instance
         """
-        This is the routine to be called when you want to create
-        the input files and related stuff with a plugin.
+        # create input structure
+        structure = self.inputs.structure
+        struct_fn = folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME)
+        structure.export(struct_fn, fileformat="xyz")
 
-        :param tempfolder: a aiida.common.folders.Folder subclass where
-                           the plugin should put all its files.
-        :param inputdict: a dictionary with the input nodes, as they would
-                be returned by get_inputdata_dict (without the Code!)
-        """
-
-        in_nodes = self._verify_inlinks(inputdict)
-        params, structure, code, settings, local_copy_list, \
-            parent_calc_folder = in_nodes
-
-        # write cp2k input file
-        inp = Cp2kInput(params)
-        inp.add_keyword("GLOBAL/PROJECT", self._PROJECT_NAME)
-        if structure is not None:
-            struct_fn = tempfolder.get_abs_path(self._COORDS_FILE_NAME)
-            structure.export(struct_fn, fileformat="xyz")
-            for i, a in enumerate('ABC'):
-                val = '{:<15} {:<15} {:<15}'.format(*structure.cell[i])
-                inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/'+a, val)
-            topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
-            inp.add_keyword(topo + "/COORD_FILE_NAME", self._COORDS_FILE_NAME)
-            inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ")
-        inp_fn = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
+        # create cp2k input file
+        inp = Cp2kInput(self.inputs.parameters.get_dict())
+        inp.add_keyword("GLOBAL/PROJECT", self._DEFAULT_PROJECT_NAME)
+        for i, a in enumerate('ABC'):
+            val = '{:<15} {:<15} {:<15}'.format(*structure.cell[i])
+            inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/'+a, val)
+        topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
+        inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME)
+        inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ")
+        inp_fn = folder.get_abs_path(self._DEFAULT_INPUT_FILE)
         with open(inp_fn, "w") as f:
             f.write(inp.render())
+
+        if 'settings' in self.inputs:
+            settings = self.inputs.settings.get_dict()
+        else:
+            settings = {}
 
         # create code info
         codeinfo = CodeInfo()
         cmdline = settings.pop('cmdline', [])
-        cmdline += ["-i", self._INPUT_FILE_NAME]
+        cmdline += ["-i", self._DEFAULT_INPUT_FILE]
         codeinfo.cmdline_params = cmdline
-        codeinfo.stdout_name = self._OUTPUT_FILE_NAME
+        codeinfo.stdout_name = self._DEFAULT_OUTPUT_FILE
         codeinfo.join_files = True
-        codeinfo.code_uuid = code.uuid
+        codeinfo.code_uuid = self.inputs.code.uuid
 
         # create calc info
         calcinfo = CalcInfo()
-        calcinfo.stdin_name = self._INPUT_FILE_NAME
+        calcinfo.stdin_name = self._DEFAULT_INPUT_FILE
         calcinfo.uuid = self.uuid
         calcinfo.cmdline_params = codeinfo.cmdline_params
-        calcinfo.stdin_name = self._INPUT_FILE_NAME
-        calcinfo.stdout_name = self._OUTPUT_FILE_NAME
+        calcinfo.stdin_name = self._DEFAULT_INPUT_FILE
+        calcinfo.stdout_name = self._DEFAULT_OUTPUT_FILE
         calcinfo.codes_info = [codeinfo]
 
         # file lists
         calcinfo.remote_symlink_list = []
-        calcinfo.local_copy_list = local_copy_list
+        if 'file' in self.inputs:
+            local_copy_list = []
+            # TODO, make sure that self.inputs.file is an array, and not something else
+            for fl in self.inputs.file:
+                filepath = os.path.join(fl._repository._get_base_folder().abspath, fl.filename)
+                local_copy_list.append(filepath, fl.filename)
+            calcinfo.local_copy_list = local_copy_list
+
         calcinfo.remote_copy_list = []
-        calcinfo.retrieve_list = [self._OUTPUT_FILE_NAME,
-                                  self._RESTART_FILE_NAME]
+        calcinfo.retrieve_list = [self._DEFAULT_OUTPUT_FILE,
+                                  self._DEFAULT_RESTART_FILE_NAME]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
         # symlinks
-        if parent_calc_folder is not None:
-            comp_uuid = parent_calc_folder.get_computer().uuid
+        if 'parent_calc_folder' in self.inputs:
+            comp_uuid = self.inputs.parent_calc_folder.get_computer().uuid
             remote_path = parent_calc_folder.get_remote_path()
-            symlink = (comp_uuid, remote_path, self._PARENT_CALC_FOLDER_NAME)
+            symlink = (comp_uuid, remote_path, self._DEFAULT_PARENT_CALC_FOLDER_NAME)
             calcinfo.remote_symlink_list.append(symlink)
 
         # check for left over settings
@@ -161,56 +131,6 @@ class Cp2kCalculation(JobCalculation):
             raise InputValidationError(msg)
 
         return calcinfo
-
-    # --------------------------------------------------------------------------
-    def _verify_inlinks(self, inputdict):
-        # parameters
-        params_node = inputdict.pop('parameters', None)
-        if params_node is None:
-            raise InputValidationError("No parameters specified")
-        if not isinstance(params_node, ParameterData):
-            raise InputValidationError("parameters type not ParameterData")
-        params = params_node.get_dict()
-
-        # structure
-        structure = inputdict.pop('structure', None)
-        if structure is not None:
-            if not isinstance(structure, StructureData):
-                raise InputValidationError("structure type not StructureData")
-
-        # code
-        code = inputdict.pop(self.get_linkname('code'), None)
-        if code is None:
-            raise InputValidationError("No code specified")
-
-        # settings
-        # ... if not provided fall back to empty dict
-        settings_node = inputdict.pop('settings', ParameterData())
-        if not isinstance(settings_node, ParameterData):
-            raise InputValidationError("settings type not ParameterData")
-        settings = settings_node.get_dict()
-
-        # parent calc folder
-        parent_calc_folder = inputdict.pop('parent_calc_folder', None)
-        if parent_calc_folder is not None:
-            if not isinstance(parent_calc_folder, RemoteData):
-                msg = "parent_calc_folder type not RemoteData"
-                raise InputValidationError(msg)
-
-        # handle additional parameter files
-        local_copy_list = []
-        for k, v in inputdict.items():
-            if isinstance(v, SinglefileData):
-                inputdict.pop(k)
-                local_copy_list.append((v.get_file_abs_path(), v.filename))
-
-        if inputdict:
-            msg = "unrecognized input nodes: " + str(inputdict.keys())
-            raise InputValidationError(msg)
-
-        return(params, structure, code, settings, local_copy_list,
-               parent_calc_folder)
-
 
 # ==============================================================================
 class Cp2kInput(object):

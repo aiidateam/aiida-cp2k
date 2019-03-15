@@ -80,8 +80,8 @@ class Cp2kParser(Parser):
     # --------------------------------------------------------------------------
     def _parse_trajectory(self, out_folder):
         fn = self.node.load_process_class()._DEFAULT_RESTART_FILE_NAME
-        if fn not in out_folder.get_folder_list():
-            return  # not every run type produces a trajectory
+        if fn not in out_folder._repository.list_object_names():
+            raise Exception  # not every run type produces a trajectory
 
         # read restart file
         abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fn)

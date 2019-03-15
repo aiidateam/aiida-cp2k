@@ -12,17 +12,16 @@ from __future__ import print_function
 import sys
 import ase.build
 import numpy as np
-from utils import wait_for_calc
 
 from aiida import load_dbenv, is_dbenv_loaded
 from aiida.backends import settings
 if not is_dbenv_loaded():
     load_dbenv(profile=settings.AIIDADB_PROFILE)
 
-from aiida.common.example_helpers import test_and_get_code  # noqa
-from aiida.orm.data.structure import StructureData  # noqa
-from aiida.orm.data.parameter import ParameterData  # noqa
-from aiida.orm.data.singlefile import SinglefileData  # noqa
+from aiida.orm import Code, Dict, StructureData, SinglefileData  # noqa
+from aiida.engine import run 
+from aiida.common import NotExistent
+from aiida_cp2k.calculations import Cp2kCalculation
 
 
 # ==============================================================================
@@ -31,12 +30,13 @@ if len(sys.argv) != 2:
     sys.exit(1)
 
 codename = sys.argv[1]
-code = test_and_get_code(codename, expected_code_type='cp2k')
+try:
+    code = Code.get_from_string(codename)
+except NotExistent:
+    print ("The code '{}' does not exist".format(codename))
+    sys.exit(1)
 
 print("Testing structure roundtrip precision ase->aiida->cp2k->aiida->ase...")
-
-# calc object
-calc = code.new_calc()
 
 # structure
 epsilon = 1e-10  # expected precision in Angstrom
@@ -45,11 +45,9 @@ positions = [(0, 0, 0), (0, 0, dist)]
 cell = np.diag([4, -4, 4 + epsilon])
 atoms = ase.Atoms('H2', positions=positions, cell=cell)
 structure = StructureData(ase=atoms)
-calc.use_structure(structure)
-
 
 # parameters
-parameters = ParameterData(dict={
+parameters = Dict(dict={
     'GLOBAL': {
         'RUN_TYPE': 'MD',
     },
@@ -81,21 +79,30 @@ parameters = ParameterData(dict={
         },
     },
 })
-calc.use_parameters(parameters)
 
 # resources
-calc.set_max_wallclock_seconds(3*60)  # 3 min
-calc.set_resources({"num_machines": 1})
+options = {
+    "resources": {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
+    },
+    "max_wallclock_seconds": 1 * 60 * 60,
+}
 
-# store and submit
-calc.store_all()
-calc.submit()
-print("submitted calculation: PK=%s" % calc.pk)
+inputs = {
+        'structure': structure,
+        'parameters':parameters,
+        'code': code,
+        'metadata': {
+            'options': options,
+        }
+}
 
-wait_for_calc(calc)
+print("submitted calculation...")
+calc = run(Cp2kCalculation, **inputs)
 
 # check structure preservation
-atoms2 = calc.out.output_structure.get_ase()
+atoms2 = calc['output_structure'].get_ase()
 
 # zeros should be preserved exactly
 if np.all(atoms2.positions[0] == 0.0):

@@ -10,17 +10,17 @@
 from __future__ import print_function
 
 import sys
-from utils import wait_for_calc
 
 from aiida import load_dbenv, is_dbenv_loaded
 from aiida.backends import settings
 if not is_dbenv_loaded():
     load_dbenv(profile=settings.AIIDADB_PROFILE)
 
-from aiida.common.example_helpers import test_and_get_code  # noqa
-from aiida.orm.data.structure import StructureData  # noqa
-from aiida.orm.data.parameter import ParameterData  # noqa
-from aiida.orm.data.singlefile import SinglefileData  # noqa
+from aiida.orm import Code, Dict, StructureData, SinglefileData
+from aiida.engine import run
+from aiida.common import NotExistent
+from aiida_cp2k.calculations import Cp2kCalculation
+
 
 
 # ==============================================================================
@@ -29,15 +29,16 @@ if len(sys.argv) != 2:
     sys.exit(1)
 
 codename = sys.argv[1]
-code = test_and_get_code(codename, expected_code_type='cp2k')
+try:
+    code = Code.get_from_string(codename)
+except NotExistent:
+    print ("The code '{}' does not exist".format(codename))
+    sys.exit(1)
 
 print("Testing CP2K ENERGY on H2 (DFT) without StructureData...")
 
-# calc object
-calc = code.new_calc()
-
 # parameters
-parameters = ParameterData(dict={
+parameters = Dict(dict={
     'FORCE_EVAL': {
         'METHOD': 'Quickstep',
         'DFT': {
@@ -76,27 +77,35 @@ parameters = ParameterData(dict={
         },
     }
 })
-calc.use_parameters(parameters)
 
 # resources
-calc.set_max_wallclock_seconds(3*60)  # 3 min
-calc.set_resources({"num_machines": 1})
+options = {
+    "resources": {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
+    },
+    "max_wallclock_seconds": 1 * 3 * 60,
+}
 
-# store and submit
-calc.store_all()
-calc.submit()
-print("submitted calculation: PK=%s" % calc.pk)
+inputs = {
+        'parameters':parameters,
+        'code': code,
+        'metadata': {
+            'options': options,
+        }
+}
 
-wait_for_calc(calc)
+print("submitted calculation...")
+calc = run(Cp2kCalculation, **inputs)
 
 # check energy
 expected_energy = -1.14005678487
-if abs(calc.res.energy - expected_energy) < 1e-10:
+if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
     print("OK, energy has the expected value")
 else:
     print("ERROR!")
     print("Expected energy value: {}".format(expected_energy))
-    print("Actual energy value: {}".format(calc.res.energy))
+    print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
     sys.exit(3)
 
 sys.exit(0)

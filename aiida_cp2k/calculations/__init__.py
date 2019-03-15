@@ -6,6 +6,7 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
+import os
 import six
 from aiida.engine import CalcJob
 from aiida.orm import Dict, SinglefileData, StructureData, RemoteData
@@ -33,8 +34,8 @@ class Cp2kCalculation(CalcJob):
         super(Cp2kCalculation, cls).define(spec)
 
         # Input parameters
-        spec.input('structure', valid_type=StructureData, help='the input structure')
         spec.input('parameters', valid_type=Dict, help='the input parameters')
+        spec.input('structure', valid_type=StructureData, required=False, help='the input structure')
         spec.input('settings', valid_type=Dict, required=False, help='additional input parameters')
         spec.input('resources', valid_type=dict, required=False, help='special settings')
         spec.input('parent_calc_folder', valid_type=RemoteData, required=False, help='remote folder used for restarts')
@@ -61,19 +62,22 @@ class Cp2kCalculation(CalcJob):
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
         # create input structure
-        structure = self.inputs.structure
-        struct_fn = folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME)
-        structure.export(struct_fn, fileformat="xyz")
+        if 'structure' in self.inputs:
+            structure = self.inputs.structure
+            struct_fn = folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME)
+            structure.export(struct_fn, fileformat="xyz")
 
         # create cp2k input file
         inp = Cp2kInput(self.inputs.parameters.get_dict())
         inp.add_keyword("GLOBAL/PROJECT", self._DEFAULT_PROJECT_NAME)
-        for i, a in enumerate('ABC'):
-            val = '{:<15} {:<15} {:<15}'.format(*structure.cell[i])
-            inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/'+a, val)
-        topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
-        inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME)
-        inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ")
+        if 'structure' in self.inputs:
+            for i, a in enumerate('ABC'):
+                val = '{:<15} {:<15} {:<15}'.format(*structure.cell[i])
+                inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/'+a, val)
+            topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
+            inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME)
+            inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ")
+
         inp_fn = folder.get_abs_path(self._DEFAULT_INPUT_FILE)
         with open(inp_fn, "w") as f:
             f.write(inp.render())
@@ -105,10 +109,9 @@ class Cp2kCalculation(CalcJob):
         calcinfo.remote_symlink_list = []
         if 'file' in self.inputs:
             local_copy_list = []
-            # TODO, make sure that self.inputs.file is an array, and not something else
-            for fl in self.inputs.file:
+            for fl in self.inputs.file.values():
                 filepath = os.path.join(fl._repository._get_base_folder().abspath, fl.filename)
-                local_copy_list.append(filepath, fl.filename)
+                local_copy_list.append((fl.uuid, fl.filename, fl.filename))
             calcinfo.local_copy_list = local_copy_list
 
         calcinfo.remote_copy_list = []
@@ -118,8 +121,8 @@ class Cp2kCalculation(CalcJob):
 
         # symlinks
         if 'parent_calc_folder' in self.inputs:
-            comp_uuid = self.inputs.parent_calc_folder.get_computer().uuid
-            remote_path = parent_calc_folder.get_remote_path()
+            comp_uuid = self.inputs.parent_calc_folder.computer.uuid
+            remote_path = self.inputs.parent_calc_folder.get_remote_path()
             symlink = (comp_uuid, remote_path, self._DEFAULT_PARENT_CALC_FOLDER_NAME)
             calcinfo.remote_symlink_list.append(symlink)
 

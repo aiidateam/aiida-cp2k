@@ -10,15 +10,14 @@ from __future__ import print_function
 
 import sys
 import ase.build
-from utils import wait_for_calc
 
 from aiida import load_dbenv, is_dbenv_loaded
 from aiida.backends import settings
 if not is_dbenv_loaded():
     load_dbenv(profile=settings.AIIDADB_PROFILE)
 
-from aiida.orm import Code, Dict, StructureData, SinglefileData  # noqa
-from aiida.engine import submit
+from aiida.orm import Code, Dict, StructureData, SinglefileData
+from aiida.engine import run
 from aiida.common import NotExistent
 from aiida_cp2k.calculations import Cp2kCalculation
 
@@ -32,7 +31,7 @@ codename = sys.argv[1]
 try:
     code = Code.get_from_string(codename)
 except NotExistent:
-    print ("The code {} does not exist".format(codename))
+    print ("The code '{}' does not exist".format(codename))
     sys.exit(1)
 
 print("Testing CP2K ENERGY on H2O (DFT)...")
@@ -79,12 +78,14 @@ parameters = Dict(dict={
         },
     }
 })
+
+
 options = {
     "resources": {
         "num_machines": 1,
-#        "num_mpiprocs_per_machine": 1,
+        "num_mpiprocs_per_machine": 1,
     },
-    "max_wallclock_seconds": 1 * 60 * 60,
+    "max_wallclock_seconds": 1 * 3 * 60,
 }
 inputs = {
         'structure': structure,
@@ -95,4 +96,5 @@ inputs = {
         }
 }
 
-submit(Cp2kCalculation, **inputs)
+print("Submitted calculation...")
+run(Cp2kCalculation, **inputs)

@@ -14,7 +14,7 @@ import sys
 import json
 
 a = os.getenv("TRAVIS_TAG")
-b = "v" + json.load(open("setup.json"))['version']
+b = "v" + json.load(open("../setup.json"))['version']
 
 if not a:
     print("TRAVIS_TAG not set")

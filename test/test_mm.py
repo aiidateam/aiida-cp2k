@@ -9,6 +9,7 @@
 
 from __future__ import print_function
 
+from __future__ import absolute_import
 import sys
 import ase.build
 
@@ -17,11 +18,10 @@ from aiida.backends import settings
 if not is_dbenv_loaded():
     load_dbenv(profile=settings.AIIDADB_PROFILE)
 
-from aiida.orm import Code, Dict, StructureData, SinglefileData
-from aiida.engine import run
-from aiida.common import NotExistent
-from aiida_cp2k.calculations import Cp2kCalculation
-
+from aiida.orm import (Code, Dict, SinglefileData)  # noqa
+from aiida.engine import run  # noqa
+from aiida.common import NotExistent  # noqa
+from aiida_cp2k.calculations import Cp2kCalculation  # noqa
 
 # ==============================================================================
 if len(sys.argv) != 2:
@@ -32,12 +32,10 @@ codename = sys.argv[1]
 try:
     code = Code.get_from_string(codename)
 except NotExistent:
-    print ("The code '{}' does not exist".format(codename))
+    print("The code '{}' does not exist".format(codename))
     sys.exit(1)
 
-
 print("Testing CP2K ENERGY on H2O (MM) ...")
-
 
 # force field
 with open("/tmp/water.pot", "w") as f:
@@ -70,23 +68,32 @@ coords_pdb = SinglefileData(filepath="/tmp/coords.pdb")
 
 # parameters
 # based on cp2k/tests/Fist/regtest-1-1/water_1.inp
-parameters = Dict(dict={
+parameters = Dict(
+    dict={
         'FORCE_EVAL': {
             'METHOD': 'fist',
             'MM': {
                 'FORCEFIELD': {
-                    'PARM_FILE_NAME': 'water.pot',
-                    'PARMTYPE': 'CHM',
-                    'CHARGE': [
-                        {'ATOM': 'O', 'CHARGE': -0.8476},
-                        {'ATOM': 'H', 'CHARGE': 0.4238}]
+                    'PARM_FILE_NAME':
+                    'water.pot',
+                    'PARMTYPE':
+                    'CHM',
+                    'CHARGE': [{
+                        'ATOM': 'O',
+                        'CHARGE': -0.8476
+                    }, {
+                        'ATOM': 'H',
+                        'CHARGE': 0.4238
+                    }]
                 },
-                'POISSON': {'EWALD': {
-                    'EWALD_TYPE': 'spme',
-                    'ALPHA': 0.44,
-                    'GMAX': 24,
-                    'O_SPLINE': 6
-                }}
+                'POISSON': {
+                    'EWALD': {
+                        'EWALD_TYPE': 'spme',
+                        'ALPHA': 0.44,
+                        'GMAX': 24,
+                        'O_SPLINE': 6
+                    }
+                }
             },
             'SUBSYS': {
                 'CELL': {
@@ -102,11 +109,10 @@ parameters = Dict(dict={
             'CALLGRAPH': 'master',
             'CALLGRAPH_FILE_NAME': 'runtime'
         }
-})
+    })
 
 # settings
 settings = Dict(dict={'additional_retrieve_list': ["runtime.callgraph"]})
-
 
 # resources
 options = {
@@ -114,22 +120,21 @@ options = {
         "num_machines": 1,
         "num_mpiprocs_per_machine": 1,
     },
-    "max_wallclock_seconds": 1 * 3 * 60, # 3 minutes
+    "max_wallclock_seconds": 1 * 3 * 60,  # 3 minutes
 }
-
 
 # collect all inputs
 inputs = {
-    'parameters':parameters,
+    'parameters': parameters,
     'settings': settings,
     'code': code,
-    'file':{
+    'file': {
         'water_pot': water_pot,
         'coords_pdb': coords_pdb,
-        },
+    },
     'metadata': {
-            'options': options,
-            }
+        'options': options,
+    }
 }
 
 print("Submitted calculation...")
@@ -145,11 +150,12 @@ if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
 else:
     print("ERROR!")
     print("Expected energy value: {}".format(expected_energy))
-    print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
+    print("Actual energy value: {}".format(
+        calc['output_parameters'].dict.energy))
     sys.exit(3)
 
 # check if callgraph is there
-if "runtime.callgraph" in calc['retrieved']._repository.list_object_names():
+if "runtime.callgraph" in calc['retrieved']._repository.list_object_names():  # pylint: disable=protected-access
     print("OK, callgraph file was retrived")
 else:
     print("ERROR!")

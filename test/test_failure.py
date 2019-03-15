@@ -8,6 +8,7 @@
 ###############################################################################
 from __future__ import print_function
 
+from __future__ import absolute_import
 import sys
 
 from aiida import load_dbenv, is_dbenv_loaded
@@ -15,11 +16,11 @@ from aiida.backends import settings
 if not is_dbenv_loaded():
     load_dbenv(profile=settings.AIIDADB_PROFILE)
 
-from aiida.orm import Dict  # noqa
-from aiida.common import NotExistent
-from aiida.engine import run
-from aiida_cp2k.calculations import Cp2kCalculation
-from aiida.common.exceptions import OutputParsingError
+from aiida.orm import (Code, Dict)  # noqa
+from aiida.common import NotExistent  # noqa
+from aiida.engine import run  # noqa
+from aiida_cp2k.calculations import Cp2kCalculation  # noqa
+from aiida.common.exceptions import OutputParsingError  # noqa
 
 # ==============================================================================
 if len(sys.argv) != 2:
@@ -31,13 +32,13 @@ codename = sys.argv[1]
 try:
     code = Code.get_from_string(codename)
 except NotExistent:
-    print ("The code '{}' does not exist".format(codename))
+    print("The code '{}' does not exist".format(codename))
     sys.exit(1)
 
 print("Testing CP2K failure...")
 
 # a broken CP2K input
-parameters = Dict(dict= {'GLOBAL': {'FOO_BAR_QUUX': 42}})
+parameters = Dict(dict={'GLOBAL': {'FOO_BAR_QUUX': 42}})
 options = {
     "resources": {
         "num_machines": 1,
@@ -48,11 +49,11 @@ options = {
 
 print("Submitted calculation...")
 inputs = {
-        'parameters':parameters,
-        'code': code,
-        'metadata': {
-            'options': options,
-        }
+    'parameters': parameters,
+    'code': code,
+    'metadata': {
+        'options': options,
+    }
 }
 try:
     run(Cp2kCalculation, **inputs)

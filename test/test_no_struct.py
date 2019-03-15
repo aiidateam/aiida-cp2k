@@ -9,6 +9,7 @@
 
 from __future__ import print_function
 
+from __future__ import absolute_import
 import sys
 
 from aiida import load_dbenv, is_dbenv_loaded
@@ -16,12 +17,10 @@ from aiida.backends import settings
 if not is_dbenv_loaded():
     load_dbenv(profile=settings.AIIDADB_PROFILE)
 
-from aiida.orm import Code, Dict, StructureData, SinglefileData
-from aiida.engine import run
-from aiida.common import NotExistent
-from aiida_cp2k.calculations import Cp2kCalculation
-
-
+from aiida.orm import (Code, Dict, SinglefileData)  # noqa
+from aiida.engine import run  # noqa
+from aiida.common import NotExistent  # noqa
+from aiida_cp2k.calculations import Cp2kCalculation  # noqa
 
 # ==============================================================================
 if len(sys.argv) != 2:
@@ -32,51 +31,62 @@ codename = sys.argv[1]
 try:
     code = Code.get_from_string(codename)
 except NotExistent:
-    print ("The code '{}' does not exist".format(codename))
+    print("The code '{}' does not exist".format(codename))
     sys.exit(1)
 
 print("Testing CP2K ENERGY on H2 (DFT) without StructureData...")
 
 # parameters
-parameters = Dict(dict={
-    'FORCE_EVAL': {
-        'METHOD': 'Quickstep',
-        'DFT': {
-            'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-            'QS': {
-                'EPS_DEFAULT': 1.0e-12,
-                'WF_INTERPOLATION': 'ps',
-                'EXTRAPOLATION_ORDER': 3,
-            },
-            'MGRID': {
-                'NGRIDS': 4,
-                'CUTOFF': 280,
-                'REL_CUTOFF': 30,
-            },
-            'XC': {
-                'XC_FUNCTIONAL': {
-                    '_': 'LDA',
+parameters = Dict(
+    dict={
+        'FORCE_EVAL': {
+            'METHOD': 'Quickstep',
+            'DFT': {
+                'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+                'QS': {
+                    'EPS_DEFAULT': 1.0e-12,
+                    'WF_INTERPOLATION': 'ps',
+                    'EXTRAPOLATION_ORDER': 3,
+                },
+                'MGRID': {
+                    'NGRIDS': 4,
+                    'CUTOFF': 280,
+                    'REL_CUTOFF': 30,
+                },
+                'XC': {
+                    'XC_FUNCTIONAL': {
+                        '_': 'LDA',
+                    },
+                },
+                'POISSON': {
+                    'PERIODIC': 'none',
+                    'PSOLVER': 'MT',
                 },
             },
-            'POISSON': {
-                'PERIODIC': 'none',
-                'PSOLVER': 'MT',
+            'SUBSYS': {
+                # structure directly included in parameters
+                'CELL': {
+                    'ABC': '4.0   4.0   4.75'
+                },
+                'COORD': {
+                    ' ':
+                    ['H    2.0   2.0   2.737166', 'H    2.0   2.0   2.000000']
+                },
+                'KIND': [
+                    {
+                        '_': 'O',
+                        'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
+                        'POTENTIAL': 'GTH-LDA-q6'
+                    },
+                    {
+                        '_': 'H',
+                        'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
+                        'POTENTIAL': 'GTH-LDA-q1'
+                    },
+                ],
             },
-        },
-        'SUBSYS': {
-            # structure directly included in parameters
-            'CELL': {'ABC': '4.0   4.0   4.75'},
-            'COORD': {' ': ['H    2.0   2.0   2.737166',
-                            'H    2.0   2.0   2.000000']},
-            'KIND': [
-                {'_': 'O', 'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                    'POTENTIAL': 'GTH-LDA-q6'},
-                {'_': 'H', 'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                    'POTENTIAL': 'GTH-LDA-q1'},
-            ],
-        },
-    }
-})
+        }
+    })
 
 # resources
 options = {
@@ -88,11 +98,11 @@ options = {
 }
 
 inputs = {
-        'parameters':parameters,
-        'code': code,
-        'metadata': {
-            'options': options,
-        }
+    'parameters': parameters,
+    'code': code,
+    'metadata': {
+        'options': options,
+    }
 }
 
 print("submitted calculation...")
@@ -105,7 +115,8 @@ if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
 else:
     print("ERROR!")
     print("Expected energy value: {}".format(expected_energy))
-    print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
+    print("Actual energy value: {}".format(
+        calc['output_parameters'].dict.energy))
     sys.exit(3)
 
 sys.exit(0)

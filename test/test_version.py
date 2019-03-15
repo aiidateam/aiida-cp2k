@@ -9,10 +9,10 @@
 
 from __future__ import print_function
 
+from __future__ import absolute_import
 import sys
 import json
 import aiida_cp2k
-
 
 a = json.load(open("../setup.json"))['version']
 b = aiida_cp2k.__version__

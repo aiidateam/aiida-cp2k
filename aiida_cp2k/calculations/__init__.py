@@ -6,7 +6,8 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-import os
+from __future__ import absolute_import
+
 import six
 from aiida.engine import CalcJob
 from aiida.orm import Dict, SinglefileData, StructureData, RemoteData
@@ -35,24 +36,67 @@ class Cp2kCalculation(CalcJob):
 
         # Input parameters
         spec.input('parameters', valid_type=Dict, help='the input parameters')
-        spec.input('structure', valid_type=StructureData, required=False, help='the input structure')
-        spec.input('settings', valid_type=Dict, required=False, help='additional input parameters')
-        spec.input('resources', valid_type=dict, required=False, help='special settings')
-        spec.input('parent_calc_folder', valid_type=RemoteData, required=False, help='remote folder used for restarts')
-        spec.input_namespace('file', valid_type=SinglefileData, required=False, help='additional input files', dynamic=True)
+        spec.input(
+            'structure',
+            valid_type=StructureData,
+            required=False,
+            help='the input structure')
+        spec.input(
+            'settings',
+            valid_type=Dict,
+            required=False,
+            help='additional input parameters')
+        spec.input(
+            'resources',
+            valid_type=dict,
+            required=False,
+            help='special settings')
+        spec.input(
+            'parent_calc_folder',
+            valid_type=RemoteData,
+            required=False,
+            help='remote folder used for restarts')
+        spec.input_namespace(
+            'file',
+            valid_type=SinglefileData,
+            required=False,
+            help='additional input files',
+            dynamic=True)
 
         # Default file names, parser, etc..
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE, non_db=True)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE, non_db=True)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, default=cls._DEFAULT_PARSER, non_db=True)
+        spec.input(
+            'metadata.options.input_filename',
+            valid_type=six.string_types,
+            default=cls._DEFAULT_INPUT_FILE,
+            non_db=True)
+        spec.input(
+            'metadata.options.output_filename',
+            valid_type=six.string_types,
+            default=cls._DEFAULT_OUTPUT_FILE,
+            non_db=True)
+        spec.input(
+            'metadata.options.parser_name',
+            valid_type=six.string_types,
+            default=cls._DEFAULT_PARSER,
+            non_db=True)
 
         # Exit codes
-        spec.exit_code(100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(
+            100,
+            'ERROR_NO_RETRIEVED_FOLDER',
+            message='The retrieved folder data node could not be accessed.')
 
         # Output parameters
-        spec.output('output_parameters', valid_type=Dict, required=True, help='the results of the calculation')
-        spec.output('structure', valid_type=StructureData, required=False, help='optional relaxed structure')
-
+        spec.output(
+            'output_parameters',
+            valid_type=Dict,
+            required=True,
+            help='the results of the calculation')
+        spec.output(
+            'structure',
+            valid_type=StructureData,
+            required=False,
+            help='optional relaxed structure')
 
     # --------------------------------------------------------------------------
     def prepare_for_submission(self, folder):
@@ -63,23 +107,24 @@ class Cp2kCalculation(CalcJob):
         """
         # create input structure
         if 'structure' in self.inputs:
-            structure = self.inputs.structure
-            struct_fn = folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME)
-            structure.export(struct_fn, fileformat="xyz")
+            self.inputs.structure.export(
+                folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME),
+                fileformat="xyz")
 
         # create cp2k input file
         inp = Cp2kInput(self.inputs.parameters.get_dict())
         inp.add_keyword("GLOBAL/PROJECT", self._DEFAULT_PROJECT_NAME)
         if 'structure' in self.inputs:
             for i, a in enumerate('ABC'):
-                val = '{:<15} {:<15} {:<15}'.format(*structure.cell[i])
-                inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/'+a, val)
+                inp.add_keyword(
+                    'FORCE_EVAL/SUBSYS/CELL/' + a, '{:<15} {:<15} {:<15}'.
+                    format(*self.inputs.structure.cell[i]))
             topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
-            inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME)
+            inp.add_keyword(topo + "/COORD_FILE_NAME",
+                            self._DEFAULT_COORDS_FILE_NAME)
             inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ")
 
-        inp_fn = folder.get_abs_path(self._DEFAULT_INPUT_FILE)
-        with open(inp_fn, "w") as f:
+        with open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), "w") as f:
             f.write(inp.render())
 
         if 'settings' in self.inputs:
@@ -89,9 +134,8 @@ class Cp2kCalculation(CalcJob):
 
         # create code info
         codeinfo = CodeInfo()
-        cmdline = settings.pop('cmdline', [])
-        cmdline += ["-i", self._DEFAULT_INPUT_FILE]
-        codeinfo.cmdline_params = cmdline
+        codeinfo.cmdline_params = settings.pop(
+            'cmdline', []) + ["-i", self._DEFAULT_INPUT_FILE]
         codeinfo.stdout_name = self._DEFAULT_OUTPUT_FILE
         codeinfo.join_files = True
         codeinfo.code_uuid = self.inputs.code.uuid
@@ -108,32 +152,34 @@ class Cp2kCalculation(CalcJob):
         # file lists
         calcinfo.remote_symlink_list = []
         if 'file' in self.inputs:
-            local_copy_list = []
+            calcinfo.local_copy_list = []
             for fl in self.inputs.file.values():
-                filepath = os.path.join(fl._repository._get_base_folder().abspath, fl.filename)
-                local_copy_list.append((fl.uuid, fl.filename, fl.filename))
-            calcinfo.local_copy_list = local_copy_list
+                calcinfo.local_copy_list.append((fl.uuid, fl.filename,
+                                                 fl.filename))
 
         calcinfo.remote_copy_list = []
-        calcinfo.retrieve_list = [self._DEFAULT_OUTPUT_FILE,
-                                  self._DEFAULT_RESTART_FILE_NAME]
+        calcinfo.retrieve_list = [
+            self._DEFAULT_OUTPUT_FILE, self._DEFAULT_RESTART_FILE_NAME
+        ]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
         # symlinks
         if 'parent_calc_folder' in self.inputs:
             comp_uuid = self.inputs.parent_calc_folder.computer.uuid
             remote_path = self.inputs.parent_calc_folder.get_remote_path()
-            symlink = (comp_uuid, remote_path, self._DEFAULT_PARENT_CALC_FOLDER_NAME)
+            symlink = (comp_uuid, remote_path,
+                       self._DEFAULT_PARENT_CALC_FOLDER_NAME)
             calcinfo.remote_symlink_list.append(symlink)
 
         # check for left over settings
         if settings:
-            msg = "The following keys have been found "
-            msg += "in the settings input node {}, ".format(self.pk)
-            msg += "but were not understood: " + ",".join(settings.keys())
-            raise InputValidationError(msg)
+            raise InputValidationError(
+                "The following keys have been found " +
+                "in the settings input node {}, ".format(self.pk) +
+                "but were not understood: " + ",".join(list(settings.keys())))
 
         return calcinfo
+
 
 # ==============================================================================
 class Cp2kInput(object):
@@ -141,14 +187,14 @@ class Cp2kInput(object):
         self.params = params
 
     # --------------------------------------------------------------------------
-    def add_keyword(self, kwpath, value, params=None):
+    def add_keyword(self, kwpath, value):
         self._add_keyword_low(kwpath.split("/"), value, self.params)
 
     # --------------------------------------------------------------------------
     def _add_keyword_low(self, kwpath, value, params):
         if len(kwpath) == 1:
             params[kwpath[0]] = value
-        elif kwpath[0] not in params.keys():
+        elif kwpath[0] not in list(params.keys()):
             new_subsection = {}
             params[kwpath[0]] = new_subsection
             self._add_keyword_low(kwpath[1:], value, new_subsection)
@@ -200,17 +246,18 @@ class Cp2kInput(object):
             if key.startswith('@') or key.startswith('$'):
                 raise InputValidationError("CP2K preprocessor not supported")
             if isinstance(val, dict):
-                output.append('%s&%s %s' % (' '*indent, key, val.pop('_', '')))
+                output.append(
+                    '%s&%s %s' % (' ' * indent, key, val.pop('_', '')))
                 self._render_section(output, val, indent + 3)
-                output.append('%s&END %s' % (' '*indent, key))
+                output.append('%s&END %s' % (' ' * indent, key))
             elif isinstance(val, list):
                 for listitem in val:
-                    self._render_section(output,  {key: listitem}, indent)
+                    self._render_section(output, {key: listitem}, indent)
             elif isinstance(val, bool):
                 val_str = '.true.' if val else '.false.'
-                output.append('%s%s  %s' % (' '*indent, key, val_str))
+                output.append('%s%s  %s' % (' ' * indent, key, val_str))
             else:
-                output.append('%s%s  %s' % (' '*indent, key, val))
+                output.append('%s%s  %s' % (' ' * indent, key, val))
 
 
 # EOF

@@ -9,6 +9,7 @@
 
 from __future__ import print_function
 
+from __future__ import absolute_import
 import sys
 import ase.build
 import numpy as np
@@ -18,11 +19,10 @@ from aiida.backends import settings
 if not is_dbenv_loaded():
     load_dbenv(profile=settings.AIIDADB_PROFILE)
 
-from aiida.orm import Code, Dict, StructureData, SinglefileData  # noqa
-from aiida.engine import run 
-from aiida.common import NotExistent
-from aiida_cp2k.calculations import Cp2kCalculation
-
+from aiida.orm import (Code, Dict, StructureData, SinglefileData)  # noqa
+from aiida.engine import run  # noqa
+from aiida.common import NotExistent  # noqa
+from aiida_cp2k.calculations import Cp2kCalculation  # noqa
 
 # ==============================================================================
 if len(sys.argv) != 2:
@@ -33,7 +33,7 @@ codename = sys.argv[1]
 try:
     code = Code.get_from_string(codename)
 except NotExistent:
-    print ("The code '{}' does not exist".format(codename))
+    print("The code '{}' does not exist".format(codename))
     sys.exit(1)
 
 print("Testing structure roundtrip precision ase->aiida->cp2k->aiida->ase...")
@@ -47,38 +47,39 @@ atoms = ase.Atoms('H2', positions=positions, cell=cell)
 structure = StructureData(ase=atoms)
 
 # parameters
-parameters = Dict(dict={
-    'GLOBAL': {
-        'RUN_TYPE': 'MD',
-    },
-    'MOTION': {
-        'MD': {
-            'TIMESTEP': 0.0,  # do not move atoms
-            'STEPS': 1,
+parameters = Dict(
+    dict={
+        'GLOBAL': {
+            'RUN_TYPE': 'MD',
         },
-    },
-    'FORCE_EVAL': {
-        'METHOD': 'Quickstep',
-        'DFT': {
-            'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-            'SCF': {
-                 'MAX_SCF': 1,
+        'MOTION': {
+            'MD': {
+                'TIMESTEP': 0.0,  # do not move atoms
+                'STEPS': 1,
             },
-            'XC': {
-                'XC_FUNCTIONAL': {
-                    '_': 'LDA',
+        },
+        'FORCE_EVAL': {
+            'METHOD': 'Quickstep',
+            'DFT': {
+                'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+                'SCF': {
+                    'MAX_SCF': 1,
+                },
+                'XC': {
+                    'XC_FUNCTIONAL': {
+                        '_': 'LDA',
+                    },
+                },
+            },
+            'SUBSYS': {
+                'KIND': {
+                    '_': 'DEFAULT',
+                    'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
+                    'POTENTIAL': 'GTH-LDA',
                 },
             },
         },
-        'SUBSYS': {
-            'KIND': {
-                '_': 'DEFAULT',
-                'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                'POTENTIAL': 'GTH-LDA',
-            },
-        },
-    },
-})
+    })
 
 # resources
 options = {
@@ -90,12 +91,12 @@ options = {
 }
 
 inputs = {
-        'structure': structure,
-        'parameters':parameters,
-        'code': code,
-        'metadata': {
-            'options': options,
-        }
+    'structure': structure,
+    'parameters': parameters,
+    'code': code,
+    'metadata': {
+        'options': options,
+    }
 }
 
 print("submitted calculation...")

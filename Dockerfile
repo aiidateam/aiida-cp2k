@@ -1,7 +1,7 @@
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
-# AiiDA-CP2K is hosted on GitHub at https://github.com/cp2k/aiida-cp2k        #
+# AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
@@ -14,11 +14,13 @@ ENV DEBCONF_NONINTERACTIVE_SEEN=true
 
 RUN apt-get update && apt-get install -yq --no-install-recommends \
     build-essential       \
+    git                   \
     python-setuptools     \
     python-wheel          \
     python-pip            \
     python-dev            \
     postgresql            \
+    rabbitmq-server       \
     less                  \
     nano                  \
     sudo                  \
@@ -26,13 +28,10 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
     cp2k                  \
   && rm -rf /var/lib/apt/lists/*
 
-# install python dependencies early to leverage docker build cache
-RUN pip install flake8 aiida ase
-
 # install aiida-cp2k
 COPY . /opt/aiida-cp2k
 WORKDIR /opt/aiida-cp2k/
-RUN pip install .
+RUN pip install .[pre-commit]
 
 # create ubuntu user with sudo powers
 RUN adduser --disabled-password --gecos "" ubuntu               && \

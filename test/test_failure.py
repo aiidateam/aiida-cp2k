@@ -1,26 +1,22 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
-# AiiDA-CP2K is hosted on GitHub at https://github.com/cp2k/aiida-cp2k        #
+# AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
+"""Run failing calculation"""
 from __future__ import print_function
-
 from __future__ import absolute_import
+
 import sys
 
-from aiida import load_dbenv, is_dbenv_loaded
-from aiida.backends import settings
-if not is_dbenv_loaded():
-    load_dbenv(profile=settings.AIIDADB_PROFILE)
-
-from aiida.orm import (Code, Dict)  # noqa
-from aiida.common import NotExistent  # noqa
-from aiida.engine import run  # noqa
-from aiida_cp2k.calculations import Cp2kCalculation  # noqa
-from aiida.common.exceptions import OutputParsingError  # noqa
+from aiida.orm import (Code, Dict)
+from aiida.common import NotExistent
+from aiida.engine import run
+from aiida.common.exceptions import OutputParsingError
+from aiida_cp2k.calculations import Cp2kCalculation
 
 # ==============================================================================
 if len(sys.argv) != 2:

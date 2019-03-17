@@ -1,26 +1,22 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
-# AiiDA-CP2K is hosted on GitHub at https://github.com/cp2k/aiida-cp2k        #
+# AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
+"""Run DFT calculation with structure specified in the input file"""
 
 from __future__ import print_function
-
 from __future__ import absolute_import
+
 import sys
 
-from aiida import load_dbenv, is_dbenv_loaded
-from aiida.backends import settings
-if not is_dbenv_loaded():
-    load_dbenv(profile=settings.AIIDADB_PROFILE)
-
-from aiida.orm import (Code, Dict, SinglefileData)  # noqa
-from aiida.engine import run  # noqa
-from aiida.common import NotExistent  # noqa
-from aiida_cp2k.calculations import Cp2kCalculation  # noqa
+from aiida.orm import (Code, Dict)
+from aiida.engine import run
+from aiida.common import NotExistent
+from aiida_cp2k.calculations import Cp2kCalculation
 
 # ==============================================================================
 if len(sys.argv) != 2:
@@ -69,8 +65,7 @@ parameters = Dict(
                     'ABC': '4.0   4.0   4.75'
                 },
                 'COORD': {
-                    ' ':
-                    ['H    2.0   2.0   2.737166', 'H    2.0   2.0   2.000000']
+                    ' ': ['H    2.0   2.0   2.737166', 'H    2.0   2.0   2.000000']
                 },
                 'KIND': [
                     {
@@ -115,8 +110,7 @@ if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
 else:
     print("ERROR!")
     print("Expected energy value: {}".format(expected_energy))
-    print("Actual energy value: {}".format(
-        calc['output_parameters'].dict.energy))
+    print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
     sys.exit(3)
 
 sys.exit(0)

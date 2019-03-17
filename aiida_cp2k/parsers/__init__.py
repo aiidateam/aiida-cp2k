@@ -5,12 +5,15 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
+"""AiiDA-CP2K output parser"""
 from __future__ import absolute_import
+
 import os
 import re
+from re import DOTALL
+
 import ase
 import numpy as np
-from re import DOTALL
 
 from aiida.parsers import Parser
 from aiida.orm import Dict, StructureData
@@ -40,22 +43,22 @@ class Cp2kParser(Parser):
         try:
             structure = self._parse_trajectory(out_folder)
             self.out('output_structure', structure)
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             pass
 
         return ExitCode(0)
 
     # --------------------------------------------------------------------------
     def _parse_stdout(self, out_folder):
-        fn = self.node.load_process_class()._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
-        if fn not in out_folder._repository.list_object_names():  # pylint: disable=protected-access
+        """CP2K output parser"""
+        fname = self.node.load_process_class()._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
+        if fname not in out_folder._repository.list_object_names():  # pylint: disable=protected-access
             raise OutputParsingError("Cp2k output file not retrieved")
 
         result_dict = {'exceeded_walltime': False}
-        abs_fn = os.path.join(
-            out_folder._repository._get_base_folder().abspath, fn)  # pylint: disable=protected-access
-        with open(abs_fn, "r") as f:
-            for line in f.readlines():
+        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
+        with open(abs_fn, "r") as fobj:
+            for line in fobj.readlines():
                 if line.startswith(' ENERGY| '):
                     result_dict['energy'] = float(line.split()[8])
                     result_dict['energy_units'] = "a.u."
@@ -71,25 +74,25 @@ class Cp2kParser(Parser):
 
     # --------------------------------------------------------------------------
     def _parse_trajectory(self, out_folder):
-        fn = self.node.load_process_class()._DEFAULT_RESTART_FILE_NAME  # pylint: disable=protected-access
-        if fn not in out_folder._repository.list_object_names():  # pylint: disable=protected-access
+        """CP2K trajectory parser"""
+        fname = self.node.load_process_class()._DEFAULT_RESTART_FILE_NAME  # pylint: disable=protected-access
+        if fname not in out_folder._repository.list_object_names():  # pylint: disable=protected-access
             raise Exception  # not every run type produces a trajectory
 
         # read restart file
-        abs_fn = os.path.join(
-            out_folder._repository._get_base_folder().abspath, fn)  # pylint: disable=protected-access
+        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
         content = open(abs_fn).read()
 
         # parse coordinate section
-        m = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, DOTALL)
-        coord_lines = [line.strip().split() for line in m.group(1).split("\n")]
+        match = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, DOTALL)
+        coord_lines = [line.strip().split() for line in match.group(1).split("\n")]
         symbols = [line[0] for line in coord_lines]
         positions_str = [line[1:] for line in coord_lines]
         positions = np.array(positions_str, np.float64)
 
         # parse cell section
-        m = re.search(r'\n\s*&CELL\n(.*?)\n\s*&END CELL\n', content, re.DOTALL)
-        cell_lines = [line.strip().split() for line in m.group(1).split("\n")]
+        match = re.search(r'\n\s*&CELL\n(.*?)\n\s*&END CELL\n', content, re.DOTALL)
+        cell_lines = [line.strip().split() for line in match.group(1).split("\n")]
         cell_str = [line[1:] for line in cell_lines if line[0] in 'ABC']
         cell = np.array(cell_str, np.float64)
 

@@ -1,30 +1,25 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
-# AiiDA-CP2K is hosted on GitHub at https://github.com/cp2k/aiida-cp2k        #
+# AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-
+"""Test CP2K restart"""
 from __future__ import print_function
-
 from __future__ import absolute_import
+
 import re
 import sys
-import ase.build
 from copy import deepcopy
 
-from aiida import load_dbenv, is_dbenv_loaded
-from aiida.backends import settings
-if not is_dbenv_loaded():
-    load_dbenv(profile=settings.AIIDADB_PROFILE)
+import ase.build
 
-from aiida.orm import load_node  # noqa
-from aiida.orm import (Code, Dict, StructureData, SinglefileData)  # noqa
-from aiida.engine import run  # noqa
-from aiida.common import NotExistent  # noqa
-from aiida_cp2k.calculations import Cp2kCalculation  # noqa
+from aiida.orm import (Code, Dict, StructureData)
+from aiida.engine import run
+from aiida.common import NotExistent
+from aiida_cp2k.calculations import Cp2kCalculation
 
 # ==============================================================================
 if len(sys.argv) != 2:
@@ -140,8 +135,8 @@ print("OK, walltime exceeded as expected")
 
 # parameters
 params2 = deepcopy(params1.get_dict())
-del (params2['GLOBAL']['WALLTIME'])
-del (params2['MOTION']['GEO_OPT']['MAX_FORCE'])
+del params2['GLOBAL']['WALLTIME']
+del params2['MOTION']['GEO_OPT']['MAX_FORCE']
 restart_wfn_fn = './parent_calc/aiida-RESTART.wfn'
 params2['FORCE_EVAL']['DFT']['RESTART_FILE_NAME'] = restart_wfn_fn
 params2['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS'] = 'RESTART'

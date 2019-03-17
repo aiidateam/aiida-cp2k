@@ -1,15 +1,15 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
-# AiiDA-CP2K is hosted on GitHub at https://github.com/cp2k/aiida-cp2k        #
+# AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-
+"""Check travis tag"""
 from __future__ import print_function
-
 from __future__ import absolute_import
+
 import os
 import sys
 import json

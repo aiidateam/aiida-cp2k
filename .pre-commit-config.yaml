@@ -25,7 +25,6 @@
   - id: prospector
     language: system
     types: [file, python]
-    args: ["-tdodgy", "-tpep8", "-tprofile-validator", "-tpyflakes", "-tpylint"]
     name: prospector
     description: "This hook runs Prospector: https://github.com/landscapeio/prospector"
     entry: prospector

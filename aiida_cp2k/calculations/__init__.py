@@ -9,6 +9,7 @@
 
 from __future__ import absolute_import
 
+import io
 import six
 from aiida.engine import CalcJob
 from aiida.orm import Dict, SinglefileData, StructureData, RemoteData
@@ -88,7 +89,7 @@ class Cp2kCalculation(CalcJob):
             inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME)
             inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ")
 
-        with open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), "w") as fobj:
+        with io.open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8") as fobj:
             fobj.write(inp.render())
 
         if 'settings' in self.inputs:

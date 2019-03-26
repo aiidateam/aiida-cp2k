@@ -135,7 +135,7 @@ class Cp2kCalculation(CalcJob):
         if settings:
             raise InputValidationError("The following keys have been found " +
                                        "in the settings input node {}, ".format(self.pk) + "but were not understood: " +
-                                       ",".join(list(settings.keys())))
+                                       ",".join(settings.keys()))
 
         return calcinfo
 
@@ -156,7 +156,7 @@ class Cp2kInput(object):
         """Adds keyword"""
         if len(kwpath) == 1:
             params[kwpath[0]] = value
-        elif kwpath[0] not in list(params.keys()):
+        elif kwpath[0] not in params.keys():
             new_subsection = {}
             params[kwpath[0]] = new_subsection
             self._add_keyword_low(kwpath[1:], value, new_subsection)

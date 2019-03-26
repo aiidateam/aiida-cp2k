@@ -8,6 +8,7 @@
 """AiiDA-CP2K output parser"""
 from __future__ import absolute_import
 
+import io
 import os
 import re
 from re import DOTALL
@@ -59,7 +60,7 @@ class Cp2kParser(Parser):
 
         result_dict = {'exceeded_walltime': False}
         abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
-        with open(abs_fn, "r") as fobj:
+        with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
             for line in fobj.readlines():
                 if line.startswith(' ENERGY| '):
                     result_dict['energy'] = float(line.split()[8])
@@ -129,18 +130,19 @@ class Cp2kParser(Parser):
 
         # read restart file
         abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
-        content = open(abs_fn).read()
+        with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
+            content = fobj.read()
 
         # parse coordinate section
         match = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, DOTALL)
-        coord_lines = [line.strip().split() for line in match.group(1).split("\n")]
+        coord_lines = [line.strip().split() for line in match.group(1).splitlines()]
         symbols = [line[0] for line in coord_lines]
         positions_str = [line[1:] for line in coord_lines]
         positions = np.array(positions_str, np.float64)
 
         # parse cell section
         match = re.search(r'\n\s*&CELL\n(.*?)\n\s*&END CELL\n', content, re.DOTALL)
-        cell_lines = [line.strip().split() for line in match.group(1).split("\n")]
+        cell_lines = [line.strip().split() for line in match.group(1).splitlines()]
         cell_str = [line[1:] for line in cell_lines if line[0] in 'ABC']
         cell = np.array(cell_str, np.float64)
 

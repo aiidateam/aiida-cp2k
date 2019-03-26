@@ -10,6 +10,7 @@
     args:
       - --write
       - --nobackups
+      - --nofix=dict_six
 
 - repo: local
   hooks:

@@ -1,4 +1,4 @@
-#z!/bin/bash -e
+#!/bin/bash
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -6,9 +6,12 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-set -x
+set -o errexit
+set -o nounset
+set -o pipefail
+
 pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
-python test_version.py
+python check_version.py
 
 # start the daemon
 sudo service postgresql start
@@ -29,4 +32,3 @@ verdi ./test_single_calculation/test_precision.py cp2k@localhost
 
 # if all tests ran successfully
 echo "All tests have passed :-)"
-#EOF

@@ -14,14 +14,10 @@ import sys
 import json
 import aiida_cp2k
 
-a = json.load(open("../setup.json"))['version']
-b = aiida_cp2k.__version__
+a = aiida_cp2k.__version__
+with open("../setup.json") as fhandle:
+    b = json.load(fhandle)['version']
 
 if a != b:
-    print("ERROR!")
-    print("Versions are not consistent: '%s' vs '%s'" % (a, b))
+    print("ERROR: Versions in aiida_cp2k/__init__.py and setup.json are inconsistent: '%s' vs '%s'" % (a, b))
     sys.exit(3)
-
-sys.exit(0)
-
-# EOF

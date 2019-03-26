@@ -6,6 +6,4 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 """AiiDA-CP2K plugins, parsers, workflows, etc ..."""
-__version__ = "0.9"
-
-# EOF
+__version__ = "1.0.0"

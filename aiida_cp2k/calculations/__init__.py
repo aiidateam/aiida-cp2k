@@ -9,6 +9,7 @@
 
 from __future__ import absolute_import
 
+import io
 import six
 from aiida.engine import CalcJob
 from aiida.orm import Dict, SinglefileData, StructureData, RemoteData
@@ -88,7 +89,7 @@ class Cp2kCalculation(CalcJob):
             inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME)
             inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ")
 
-        with open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), "w") as fobj:
+        with io.open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8") as fobj:
             fobj.write(inp.render())
 
         if 'settings' in self.inputs:
@@ -134,7 +135,7 @@ class Cp2kCalculation(CalcJob):
         if settings:
             raise InputValidationError("The following keys have been found " +
                                        "in the settings input node {}, ".format(self.pk) + "but were not understood: " +
-                                       ",".join(list(settings.keys())))
+                                       ",".join(settings.keys()))
 
         return calcinfo
 
@@ -155,7 +156,7 @@ class Cp2kInput(object):
         """Adds keyword"""
         if len(kwpath) == 1:
             params[kwpath[0]] = value
-        elif kwpath[0] not in list(params.keys()):
+        elif kwpath[0] not in params.keys():
             new_subsection = {}
             params[kwpath[0]] = new_subsection
             self._add_keyword_low(kwpath[1:], value, new_subsection)

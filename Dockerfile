@@ -33,6 +33,9 @@ COPY . /opt/aiida-cp2k
 WORKDIR /opt/aiida-cp2k/
 RUN pip install .[pre-commit]
 
+# workaround for dependency chain in 1.0.0b1
+RUN pip install 'topika==0.1.3'
+
 # create ubuntu user with sudo powers
 RUN adduser --disabled-password --gecos "" ubuntu               && \
     echo "ubuntu ALL=(ALL) NOPASSWD: ALL" >>  /etc/sudoers

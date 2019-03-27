@@ -93,9 +93,6 @@ class Cp2kParser(Parser):
         bands_s1 = []
         bands_s2 = []
         known_kpoints = {}
-
-        current_set = 0
-        n_in_set = 0
         pattern = re.compile(".*?Nr.*?Spin.*?K-Point.*?", re.DOTALL)
 
         selected_lines = lines[n_start:]
@@ -107,14 +104,16 @@ class Cp2kParser(Parser):
                     label = splitted[-4]
                     known_kpoints[kpoint] = label
             elif pattern.match(line):
-                spin =  int(splitted[3])
+                spin = int(splitted[3])
                 kpoint = tuple(map(float, splitted[-3:]))
                 n_bands = int(selected_lines[current_line+1])
-                kpoint_n_lines = int(math.ceil(n_bands / 4.))
-                band = map(float, ' '.join(selected_lines[current_line+2:current_line+2+kpoint_n_lines]).split())
+                kpoint_n_lines = int(math.ceil(n_bands/4.))
+                band = map(float, ' '.join(selected_lines[
+                    current_line+2:current_line+2+kpoint_n_lines]).split())
                 if spin == 1:
                     if kpoint in known_kpoints:
-                        labels.append((len(kpoints),known_kpoints[kpoint]))
+                        labels.append((len(kpoints),
+                                       known_kpoints[kpoint]))
                     kpoints.append(kpoint)
                     bands_s1.append(band)
                 elif spin == 2:

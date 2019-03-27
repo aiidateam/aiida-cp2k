@@ -1,4 +1,4 @@
-#z!/bin/bash -e
+#!/bin/bash
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -6,7 +6,10 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-set -x
+set -o errexit
+set -o nounset
+set -o pipefail
+
 pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
 python check_version.py
 

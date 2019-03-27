@@ -8,7 +8,7 @@
 
 set -x
 pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
-python test_version.py
+python check_version.py
 
 # start the daemon
 sudo service postgresql start
@@ -25,4 +25,3 @@ verdi run test_failure.py   cp2k@localhost
 verdi run test_precision.py cp2k@localhost
 
 echo "All tests have passed :-)"
-#EOF

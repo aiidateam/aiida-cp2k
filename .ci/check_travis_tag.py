@@ -15,16 +15,12 @@ import sys
 import json
 
 a = os.getenv("TRAVIS_TAG")
-b = "v" + json.load(open("setup.json"))['version']
+with open("setup.json") as fhandle:
+    b = "v{version}".format(**json.load(fhandle))
 
 if not a:
     print("TRAVIS_TAG not set")
 
 elif a != b:
-    print("ERROR!")
-    print("TRAVIS_TAG and version are not consistend: '%s' vs '%s'" % (a, b))
+    print("ERROR: TRAVIS_TAG and version are inconsistent: '%s' vs '%s'" % (a, b))
     sys.exit(3)
-
-sys.exit(0)
-
-# EOF

@@ -12,7 +12,7 @@ from __future__ import absolute_import
 import io
 import six
 from aiida.engine import CalcJob
-from aiida.orm import Dict, SinglefileData, StructureData, RemoteData
+from aiida.orm import Dict, SinglefileData, StructureData, RemoteData, BandsData
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 
 
@@ -66,6 +66,7 @@ class Cp2kCalculation(CalcJob):
         # Output parameters
         spec.output('output_parameters', valid_type=Dict, required=True, help='the results of the calculation')
         spec.output('structure', valid_type=StructureData, required=False, help='optional relaxed structure')
+        spec.output('output_bands', valid_type=BandsData, required=False, help='optional band structure')
 
     # --------------------------------------------------------------------------
     def prepare_for_submission(self, folder):
@@ -141,7 +142,7 @@ class Cp2kCalculation(CalcJob):
 
 
 # ==============================================================================
-class Cp2kInput(object):
+class Cp2kInput(object):  # pylint: disable=old-style-class,useless-object-inheritance
     """Transforms dictionary into CP2K input"""
 
     def __init__(self, params):

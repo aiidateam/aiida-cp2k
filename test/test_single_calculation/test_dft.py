@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103
+# pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -7,6 +7,7 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 """Run simple DFT calculation"""
+
 from __future__ import print_function
 from __future__ import absolute_import
 

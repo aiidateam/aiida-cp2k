@@ -14,14 +14,18 @@ flake8 ../
 sudo service postgresql start
 verdi daemon start
 
-# run actual tests
-./test_mm.py        cp2k@localhost
-./test_dft.py       cp2k@localhost
-./test_geopt.py     cp2k@localhost
-./test_no_struct.py cp2k@localhost
-./test_restart.py   cp2k@localhost
-./test_failure.py   cp2k@localhost
-./test_precision.py cp2k@localhost
+# run single calculation tests
+./test_single_calculation/test_mm.py        cp2k@localhost
+./test_single_calculation/test_dft.py       cp2k@localhost
+./test_single_calculation/test_bands.py     cp2k@localhost
+./test_single_calculation/test_geopt.py     cp2k@localhost
+./test_single_calculation/test_no_struct.py cp2k@localhost
+./test_single_calculation/test_restart.py   cp2k@localhost
+./test_single_calculation/test_failure.py   cp2k@localhost
+./test_single_calculation/test_precision.py cp2k@localhost
 
+#  run workflows
+
+# if all tests ran successfully
 echo "All tests have passed :-)"
 #EOF

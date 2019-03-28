@@ -6,6 +6,6 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-__version__ = "0.9"
+__version__ = "0.10"
 
 # EOF

@@ -12,15 +12,15 @@ import io
 import os
 import re
 from re import DOTALL
+import math
+from six.moves import map
 
 import ase
-import math
 import numpy as np
 
 from aiida.parsers import Parser
 from aiida.orm import Dict, StructureData
 from aiida.common import OutputParsingError
-from six.moves import map
 
 
 class Cp2kParser(Parser):
@@ -40,8 +40,7 @@ class Cp2kParser(Parser):
         except NotExistent:
             return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
-        results = self._parse_stdout(out_folder)
-        self.out('output_parameters', results)
+        self._parse_stdout(out_folder)
 
         try:
             structure = self._parse_trajectory(out_folder)
@@ -61,7 +60,8 @@ class Cp2kParser(Parser):
         result_dict = {'exceeded_walltime': False}
         abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
         with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
-            for line in fobj.readlines():
+            lines = fobj.readlines()
+            for i_line, line in enumerate(lines):
                 if line.startswith(' ENERGY| '):
                     result_dict['energy'] = float(line.split()[8])
                     result_dict['energy_units'] = "a.u."
@@ -70,21 +70,22 @@ class Cp2kParser(Parser):
                 if 'exceeded requested execution time' in line:
                     result_dict['exceeded_walltime'] = True
                 if "KPOINTS| Band Structure Calculation" in line:
-                    from aiida.orm.data.array.bands import BandsData
-                    b = BandsData()
-                    kpoints, labels, bands = self._parse_bands(lines, i)
-                    b.set_kpoints(kpoints)
-                    b.labels = labels
-                    b.set_bands(bands, units='eV')
-                    new_nodes_list.append(('output_bands', b))
+                    from aiida.orm import BandsData
+                    bnds = BandsData()
+                    kpoints, labels, bands = self._parse_bands(lines, i_line)
+                    bnds.set_kpoints(kpoints)
+                    bnds.labels = labels
+                    bnds.set_bands(bands, units='eV')
+                    self.out('output_bands', bnds)
 
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")
 
-        return Dict(dict=result_dict)
+        self.out('output_parameters', Dict(dict=result_dict))
 
     # --------------------------------------------------------------------------
-    def _parse_bands(self, lines, n_start):
+    @staticmethod
+    def _parse_bands(lines, n_start):
         """Parse band structure from cp2k output"""
         kpoints = []
         labels = []
@@ -98,14 +99,13 @@ class Cp2kParser(Parser):
             splitted = line.split()
             if "KPOINTS| Special K-Point" in line:
                 kpoint = tuple(map(float, splitted[-3:]))
-                if not " ".join(splitted[-5:-3]) == "not specified":
+                if " ".join(splitted[-5:-3]) != "not specified":
                     label = splitted[-4]
                     known_kpoints[kpoint] = label
             elif pattern.match(line):
                 spin = int(splitted[3])
                 kpoint = tuple(map(float, splitted[-3:]))
-                n_bands = int(selected_lines[current_line + 1])
-                kpoint_n_lines = int(math.ceil(n_bands / 4.))
+                kpoint_n_lines = int(math.ceil(int(selected_lines[current_line + 1]) / 4.))
                 band = list(
                     map(float, ' '.join(selected_lines[current_line + 2:current_line + 2 + kpoint_n_lines]).split()))
                 if spin == 1:

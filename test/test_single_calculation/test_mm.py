@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103
+# pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -52,14 +52,14 @@ O      0.000000  -0.152100     1.768200
 HBOND CUTHB 0.5
 
 END""")
-water_pot = SinglefileData(filepath="/tmp/water.pot")
+water_pot = SinglefileData(filepath="/tmp/water.pot")  # pylint: disable=no-value-for-parameter
 
 # structure using pdb format, because it also carries topology information
 atoms = ase.build.molecule('H2O')
 atoms.center(vacuum=10.0)
 atoms.write("/tmp/coords.pdb", format="proteindatabank")
 cell = atoms.cell
-coords_pdb = SinglefileData(filepath="/tmp/coords.pdb")
+coords_pdb = SinglefileData(filepath="/tmp/coords.pdb")  # pylint: disable=no-value-for-parameter
 
 # parameters
 # based on cp2k/tests/Fist/regtest-1-1/water_1.inp

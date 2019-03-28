@@ -1,5 +1,5 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+# pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -197,7 +197,7 @@ inputs = {
         'options': options,
     }
 }
-print("submitted calculation: PK=%s" % calc.pk)
+print("submitted calculation...")
 calc = run(Cp2kCalculation, **inputs)
 
 bands = calc['output_bands']

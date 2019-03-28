@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -13,7 +12,12 @@ import json
 
 from setuptools import setup, find_packages
 
-if __name__ == '__main__':
+
+def run_setup():
     with open('setup.json', 'r') as info:
         kwargs = json.load(info)
     setup(include_package_data=True, packages=find_packages(), **kwargs)
+
+
+if __name__ == '__main__':
+    run_setup()

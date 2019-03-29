@@ -1,7 +1,7 @@
 {
-    "version": "0.10",
+    "version": "1.0.0b1",
     "name": "aiida_cp2k",
-    "url": "https://github.com/cp2k/aiida-cp2k",
+    "url": "https://github.com/aiidateam/aiida-cp2k",
     "license": "MIT License",
     "author": "Ole Schütt, Edward Ditler, Aliaksandr Yakutovich, Patrick Seewald, Tiziano Müller, Andreas Glöss, Leonid Kahle",
     "author_email": "ole.schuett@cp2k.org",
@@ -9,10 +9,12 @@
     "classifiers": [
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Development Status :: 4 - Beta"
     ],
     "install_requires": [
-        "aiida",
+        "aiida-core==1.0.0b1",
         "ase"
     ],
     "entry_points": {
@@ -25,5 +27,14 @@
     },
     "data_files": [
         [".", ["setup.json"]]
-    ]
+    ],
+    "extras_require": {
+	    "pre-commit":[
+		    "pre-commit==1.14.4",
+		    "yapf==0.26.0",
+		    "prospector==1.1.5",
+		    "pylint==1.9.4; python_version<'3.0'",
+		    "pylint==2.2.2; python_version>='3.0'"
+	    ]
+    }
 }

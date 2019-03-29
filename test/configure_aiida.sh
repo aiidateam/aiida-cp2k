@@ -2,7 +2,7 @@
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
-# AiiDA-CP2K is hosted on GitHub at https://github.com/cp2k/aiida-cp2k        #
+# AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
@@ -23,59 +23,45 @@ sudo -u postgres psql -d template1 -c "CREATE DATABASE aiidadb OWNER aiida;"
 sudo -u postgres psql -d template1 -c "GRANT ALL PRIVILEGES ON DATABASE aiidadb to aiida;"
 
 # setup aiida user
-verdi setup                                 \
-      --non-interactive                     \
-      --email aiida@localhost               \
-      --first-name Some                     \
-      --last-name Body                      \
-      --institution XYZ                     \
-      --backend django                      \
-      --db_user aiida                       \
-      --db_pass aiida_db_passwd             \
-      --db_name aiidadb                     \
-      --db_host localhost                   \
-      --db_port 5432                        \
-      --repo /home/ubuntu/aiida_repository  \
+verdi setup                                       \
+      --non-interactive                           \
+      --email aiida@localhost                     \
+      --first-name Some                           \
+      --last-name Body                            \
+      --institution XYZ                           \
+      --backend django                            \
+      --db-username aiida                         \
+      --db-password aiida_db_passwd               \
+      --db-name aiidadb                           \
+      --db-host localhost                         \
+      --db-port 5432                              \
+      --repository /home/ubuntu/aiida_repository  \
       default
 
 #bash -c 'echo -e "y\nsome.body@xyz.com" | verdi daemon configureuser'
-verdi profile setdefault verdi default
-verdi profile setdefault daemon default
-
-# increase logging level
-verdi devel setproperty logging.celery_loglevel DEBUG
-verdi devel setproperty logging.aiida_loglevel DEBUG
+verdi profile setdefault default
 
 # setup local computer
-cat > /tmp/setup_computer.txt << EndOfMessage
-localhost
-localhost
-The local computer
-True
-local
-direct
-#!/bin/bash
-/home/ubuntu/aiida_run
-mpirun -np {tot_num_mpiprocs}
-1
-EndOfMessage
-
 mkdir -p /home/ubuntu/aiida_run
-cat /tmp/setup_computer.txt | verdi computer setup
-verdi computer configure localhost
+
+verdi computer setup               \
+--non-interactive                  \
+-L localhost                       \
+-H localhost                       \
+-T local                           \
+-S direct                          \
+--work-dir /home/ubuntu/aiida_run
+
+verdi computer configure local localhost -n
 verdi computer test localhost
 
 # setup code
-cat > /tmp/setup_code.txt << EndOfMessage
-cp2k
-CP2K from Ubuntu
-False
-cp2k
-localhost
-/usr/bin/cp2k
-EndOfMessage
-
-cat /tmp/setup_code.txt | verdi code setup
+verdi code setup                \
+--non-interactive               \
+-L cp2k                         \
+-Y localhost                    \
+--remote-abs-path /usr/bin/cp2k \
+--input-plugin cp2k             \
 
 echo 'eval "$(verdi completioncommand)"' >> ~/.bashrc
 

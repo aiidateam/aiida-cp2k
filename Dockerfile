@@ -26,6 +26,8 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
     sudo                  \
     ssh                   \
     cp2k                  \
+    python3               \
+    python3-setuptools    \
   && rm -rf /var/lib/apt/lists/*
 
 # install aiida-cp2k
@@ -46,5 +48,3 @@ WORKDIR /opt/aiida-cp2k/test/
 RUN ./configure_aiida.sh
 
 CMD ./run_tests.sh
-
-#EOF

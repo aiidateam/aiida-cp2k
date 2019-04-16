@@ -102,7 +102,7 @@ class Cp2kCalculation(CalcJob):
             help="the results of the calculation",
         )
         spec.output(
-            "structure",
+            "output_structure",
             valid_type=StructureData,
             required=False,
             help="optional relaxed structure",

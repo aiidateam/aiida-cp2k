@@ -146,7 +146,7 @@ class Cp2kCalculation(CalcJob):
             folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8"
         ) as fobj:
             try:
-                fobj.write(inp.render())
+                inp.to_file(fobj)
             except ValueError as exc:
                 six.raise_from(
                     InputValidationError(

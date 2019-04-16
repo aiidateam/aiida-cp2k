@@ -8,6 +8,7 @@
 """AiiDA-CP2K input plugin"""
 
 from __future__ import absolute_import
+from itertools import chain
 
 import six
 
@@ -38,10 +39,17 @@ class Cp2kInput:
 
         Cp2kInput._add_keyword(kwpath, value, self._params)
 
-    def render(self):
+    def to_string(self):
         output = [self.DISCLAIMER]
         self._render_section(output, self._params)
-        return "\n".join(output)
+        return "\n".join(
+            chain([self.DISCLAIMER], Cp2kInput._render_section(self._params))
+        )
+
+    def to_file(self, fhandle):
+        fhandle.write(u"{self.DISCLAIMER}".format(self=self))
+        for line in Cp2kInput._render_section(self._params):
+            fhandle.write(u"\n{line}".format(line=line))
 
     @staticmethod
     def _add_keyword(kwpath, value, params):
@@ -57,7 +65,7 @@ class Cp2kInput:
         Cp2kInput._add_keyword(kwpath[1:], value, params[kwpath[0]])
 
     @staticmethod
-    def _render_section(output, params, indent=0, indent_width=3):
+    def _render_section(params, indent=0, indent_width=3):
         """
         It takes a dictionary and recurses through.
 
@@ -113,23 +121,23 @@ class Cp2kInput:
                 if "_" in val:  # if there is a section parameter, add it
                     line += " {}".format(val["_"])
 
-                output.append(line)
-                Cp2kInput._render_section(output, val, indent + indent_width)
-                output.append("{ispace}&END {key}".format(ispace=ispace, key=key))
+                yield line
+                # once we are on Python3-only, replace the following with a `yield from ...`
+                for item in Cp2kInput._render_section(val, indent + indent_width):
+                    yield item
+                yield "{ispace}&END {key}".format(ispace=ispace, key=key)
 
             elif isinstance(val, Sequence) and not isinstance(val, six.string_types):
                 for listitem in val:
-                    Cp2kInput._render_section(output, {key: listitem}, indent)
+                    # once we are on Python3-only, replace the following with a `yield from ...`
+                    for line in Cp2kInput._render_section({key: listitem}, indent):
+                        yield line
 
             elif isinstance(val, bool):
                 val_str = ".TRUE." if val else ".FALSE."
-                output.append(
-                    "{ispace}{key} {val_str}".format(
-                        ispace=ispace, key=key, val_str=val_str
-                    )
+                yield "{ispace}{key} {val_str}".format(
+                    ispace=ispace, key=key, val_str=val_str
                 )
 
             else:
-                output.append(
-                    "{ispace}{key} {val}".format(ispace=ispace, key=key, val=val)
-                )
+                yield "{ispace}{key} {val}".format(ispace=ispace, key=key, val=val)

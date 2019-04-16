@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0b1",
+    "version": "1.0.0b2",
     "name": "aiida_cp2k",
     "url": "https://github.com/aiidateam/aiida-cp2k",
     "license": "MIT License",
@@ -14,7 +14,7 @@
         "Development Status :: 4 - Beta"
     ],
     "install_requires": [
-        "aiida-core==1.0.0b1",
+        "aiida-core>=1.0.0b4",
         "ase"
     ],
     "entry_points": {
@@ -25,6 +25,8 @@
             "cp2k = aiida_cp2k.parsers:Cp2kParser"
         ]
     },
+    "setup_requires": ["reentry"],
+    "reentry_register": true,
     "data_files": [
         [".", ["setup.json"]]
     ],

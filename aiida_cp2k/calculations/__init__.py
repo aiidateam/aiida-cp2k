@@ -65,7 +65,7 @@ class Cp2kCalculation(CalcJob):
 
         # Output parameters
         spec.output('output_parameters', valid_type=Dict, required=True, help='the results of the calculation')
-        spec.output('structure', valid_type=StructureData, required=False, help='optional relaxed structure')
+        spec.output('output_structure', valid_type=StructureData, required=False, help='optional relaxed structure')
         spec.output('output_bands', valid_type=BandsData, required=False, help='optional band structure')
 
     # --------------------------------------------------------------------------

@@ -44,7 +44,7 @@ class Cp2kParser(Parser):
 
         try:
             structure = self._parse_trajectory(out_folder)
-            self.out('output_structure', structure)
+            self.out("output_structure", structure)
         except Exception:  # pylint: disable=broad-except
             pass
 
@@ -53,35 +53,42 @@ class Cp2kParser(Parser):
     # --------------------------------------------------------------------------
     def _parse_stdout(self, out_folder):
         """CP2K output parser"""
-        fname = self.node.load_process_class()._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
-        if fname not in out_folder._repository.list_object_names():  # pylint: disable=protected-access
+        fname = (
+            self.node.load_process_class()._DEFAULT_OUTPUT_FILE
+        )  # pylint: disable=protected-access
+        if (
+            fname not in out_folder._repository.list_object_names()
+        ):  # pylint: disable=protected-access
             raise OutputParsingError("Cp2k output file not retrieved")
 
-        result_dict = {'exceeded_walltime': False}
-        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
+        result_dict = {"exceeded_walltime": False}
+        abs_fn = os.path.join(
+            out_folder._repository._get_base_folder().abspath, fname
+        )  # pylint: disable=protected-access
         with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
             lines = fobj.readlines()
             for i_line, line in enumerate(lines):
-                if line.startswith(' ENERGY| '):
-                    result_dict['energy'] = float(line.split()[8])
-                    result_dict['energy_units'] = "a.u."
-                if 'The number of warnings for this run is' in line:
-                    result_dict['nwarnings'] = int(line.split()[-1])
-                if 'exceeded requested execution time' in line:
-                    result_dict['exceeded_walltime'] = True
+                if line.startswith(" ENERGY| "):
+                    result_dict["energy"] = float(line.split()[8])
+                    result_dict["energy_units"] = "a.u."
+                if "The number of warnings for this run is" in line:
+                    result_dict["nwarnings"] = int(line.split()[-1])
+                if "exceeded requested execution time" in line:
+                    result_dict["exceeded_walltime"] = True
                 if "KPOINTS| Band Structure Calculation" in line:
                     from aiida.orm import BandsData
+
                     bnds = BandsData()
                     kpoints, labels, bands = self._parse_bands(lines, i_line)
                     bnds.set_kpoints(kpoints)
                     bnds.labels = labels
-                    bnds.set_bands(bands, units='eV')
-                    self.out('output_bands', bnds)
+                    bnds.set_bands(bands, units="eV")
+                    self.out("output_bands", bnds)
 
-        if 'nwarnings' not in result_dict:
+        if "nwarnings" not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")
 
-        self.out('output_parameters', Dict(dict=result_dict))
+        self.out("output_parameters", Dict(dict=result_dict))
 
     # --------------------------------------------------------------------------
     @staticmethod
@@ -105,9 +112,19 @@ class Cp2kParser(Parser):
             elif pattern.match(line):
                 spin = int(splitted[3])
                 kpoint = tuple(map(float, splitted[-3:]))
-                kpoint_n_lines = int(math.ceil(int(selected_lines[current_line + 1]) / 4.))
+                kpoint_n_lines = int(
+                    math.ceil(int(selected_lines[current_line + 1]) / 4.0)
+                )
                 band = list(
-                    map(float, ' '.join(selected_lines[current_line + 2:current_line + 2 + kpoint_n_lines]).split()))
+                    map(
+                        float,
+                        " ".join(
+                            selected_lines[
+                                current_line + 2 : current_line + 2 + kpoint_n_lines
+                            ]
+                        ).split(),
+                    )
+                )
                 if spin == 1:
                     if kpoint in known_kpoints:
                         labels.append((len(kpoints), known_kpoints[kpoint]))
@@ -124,26 +141,32 @@ class Cp2kParser(Parser):
     # --------------------------------------------------------------------------
     def _parse_trajectory(self, out_folder):
         """CP2K trajectory parser"""
-        fname = self.node.load_process_class()._DEFAULT_RESTART_FILE_NAME  # pylint: disable=protected-access
-        if fname not in out_folder._repository.list_object_names():  # pylint: disable=protected-access
+        fname = (
+            self.node.load_process_class()._DEFAULT_RESTART_FILE_NAME
+        )  # pylint: disable=protected-access
+        if (
+            fname not in out_folder._repository.list_object_names()
+        ):  # pylint: disable=protected-access
             raise Exception  # not every run type produces a trajectory
 
         # read restart file
-        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
+        abs_fn = os.path.join(
+            out_folder._repository._get_base_folder().abspath, fname
+        )  # pylint: disable=protected-access
         with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
             content = fobj.read()
 
         # parse coordinate section
-        match = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, DOTALL)
+        match = re.search(r"\n\s*&COORD\n(.*?)\n\s*&END COORD\n", content, DOTALL)
         coord_lines = [line.strip().split() for line in match.group(1).splitlines()]
         symbols = [line[0] for line in coord_lines]
         positions_str = [line[1:] for line in coord_lines]
         positions = np.array(positions_str, np.float64)
 
         # parse cell section
-        match = re.search(r'\n\s*&CELL\n(.*?)\n\s*&END CELL\n', content, re.DOTALL)
+        match = re.search(r"\n\s*&CELL\n(.*?)\n\s*&END CELL\n", content, re.DOTALL)
         cell_lines = [line.strip().split() for line in match.group(1).splitlines()]
-        cell_str = [line[1:] for line in cell_lines if line[0] in 'ABC']
+        cell_str = [line[1:] for line in cell_lines if line[0] in "ABC"]
         cell = np.array(cell_str, np.float64)
 
         # create StructureData

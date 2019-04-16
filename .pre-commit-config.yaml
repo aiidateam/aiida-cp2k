@@ -11,21 +11,13 @@
       - --write
       - --nobackups
       - --nofix=dict_six
-
-- repo: local
+- repo: https://github.com/ambv/black
+  rev: stable
   hooks:
-  # yapf = yet another python formatter
-  - id: yapf
-    name: yapf
-    entry: yapf
-    language: system
-    types: [python]
-    args: ["-i"]
-
-  # prospector: collection of linters
-  - id: prospector
-    language: system
-    types: [file, python]
-    name: prospector
-    description: "This hook runs Prospector: https://github.com/landscapeio/prospector"
-    entry: prospector
+  - id: black
+    language_version: "python3"
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.0.0
+  hooks:
+  - id: flake8
+    language_version: "python3"

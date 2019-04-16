@@ -14,7 +14,7 @@ import sys
 import ase.build
 import numpy as np
 
-from aiida.orm import (Code, Dict, StructureData)
+from aiida.orm import Code, Dict, StructureData
 from aiida.engine import run
 from aiida.common import NotExistent
 from aiida_cp2k.calculations import Cp2kCalculation
@@ -38,67 +38,50 @@ epsilon = 1e-10  # expected precision in Angstrom
 dist = 0.74 + epsilon
 positions = [(0, 0, 0), (0, 0, dist)]
 cell = np.diag([4, -4, 4 + epsilon])
-atoms = ase.Atoms('H2', positions=positions, cell=cell)
+atoms = ase.Atoms("H2", positions=positions, cell=cell)
 structure = StructureData(ase=atoms)
 
 # parameters
 parameters = Dict(
     dict={
-        'GLOBAL': {
-            'RUN_TYPE': 'MD',
-        },
-        'MOTION': {
-            'MD': {
-                'TIMESTEP': 0.0,  # do not move atoms
-                'STEPS': 1,
+        "GLOBAL": {"RUN_TYPE": "MD"},
+        "MOTION": {"MD": {"TIMESTEP": 0.0, "STEPS": 1}},  # do not move atoms
+        "FORCE_EVAL": {
+            "METHOD": "Quickstep",
+            "DFT": {
+                "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
+                "SCF": {"MAX_SCF": 1},
+                "XC": {"XC_FUNCTIONAL": {"_": "LDA"}},
+            },
+            "SUBSYS": {
+                "KIND": {
+                    "_": "DEFAULT",
+                    "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                    "POTENTIAL": "GTH-LDA",
+                }
             },
         },
-        'FORCE_EVAL': {
-            'METHOD': 'Quickstep',
-            'DFT': {
-                'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-                'SCF': {
-                    'MAX_SCF': 1,
-                },
-                'XC': {
-                    'XC_FUNCTIONAL': {
-                        '_': 'LDA',
-                    },
-                },
-            },
-            'SUBSYS': {
-                'KIND': {
-                    '_': 'DEFAULT',
-                    'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                    'POTENTIAL': 'GTH-LDA',
-                },
-            },
-        },
-    })
+    }
+)
 
 # resources
 options = {
-    "resources": {
-        "num_machines": 1,
-        "num_mpiprocs_per_machine": 1,
-    },
+    "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
     "max_wallclock_seconds": 1 * 60 * 60,
 }
 
 inputs = {
-    'structure': structure,
-    'parameters': parameters,
-    'code': code,
-    'metadata': {
-        'options': options,
-    }
+    "structure": structure,
+    "parameters": parameters,
+    "code": code,
+    "metadata": {"options": options},
 }
 
 print("submitted calculation...")
 calc = run(Cp2kCalculation, **inputs)
 
 # check structure preservation
-atoms2 = calc['output_structure'].get_ase()
+atoms2 = calc["output_structure"].get_ase()
 
 # zeros should be preserved exactly
 if np.all(atoms2.positions[0] == 0.0):

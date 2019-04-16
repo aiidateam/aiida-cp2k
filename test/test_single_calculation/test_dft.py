@@ -15,7 +15,7 @@ import sys
 import ase.build
 
 from aiida.engine import run
-from aiida.orm import (Code, Dict, StructureData)
+from aiida.orm import Code, Dict, StructureData
 from aiida.common import NotExistent
 from aiida_cp2k.calculations import Cp2kCalculation
 
@@ -34,68 +34,53 @@ except NotExistent:
 print("Testing CP2K ENERGY on H2O (DFT)...")
 
 # structure
-atoms = ase.build.molecule('H2O')
+atoms = ase.build.molecule("H2O")
 atoms.center(vacuum=2.0)
 structure = StructureData(ase=atoms)
 
 # parameters
 parameters = Dict(
     dict={
-        'FORCE_EVAL': {
-            'METHOD': 'Quickstep',
-            'DFT': {
-                'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-                'QS': {
-                    'EPS_DEFAULT': 1.0e-12,
-                    'WF_INTERPOLATION': 'ps',
-                    'EXTRAPOLATION_ORDER': 3,
+        "FORCE_EVAL": {
+            "METHOD": "Quickstep",
+            "DFT": {
+                "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
+                "QS": {
+                    "EPS_DEFAULT": 1.0e-12,
+                    "WF_INTERPOLATION": "ps",
+                    "EXTRAPOLATION_ORDER": 3,
                 },
-                'MGRID': {
-                    'NGRIDS': 4,
-                    'CUTOFF': 280,
-                    'REL_CUTOFF': 30,
-                },
-                'XC': {
-                    'XC_FUNCTIONAL': {
-                        '_': 'LDA',
-                    },
-                },
-                'POISSON': {
-                    'PERIODIC': 'none',
-                    'PSOLVER': 'MT',
-                },
+                "MGRID": {"NGRIDS": 4, "CUTOFF": 280, "REL_CUTOFF": 30},
+                "XC": {"XC_FUNCTIONAL": {"_": "LDA"}},
+                "POISSON": {"PERIODIC": "none", "PSOLVER": "MT"},
             },
-            'SUBSYS': {
-                'KIND': [
+            "SUBSYS": {
+                "KIND": [
                     {
-                        '_': 'O',
-                        'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                        'POTENTIAL': 'GTH-LDA-q6'
+                        "_": "O",
+                        "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                        "POTENTIAL": "GTH-LDA-q6",
                     },
                     {
-                        '_': 'H',
-                        'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                        'POTENTIAL': 'GTH-LDA-q1'
+                        "_": "H",
+                        "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                        "POTENTIAL": "GTH-LDA-q1",
                     },
-                ],
+                ]
             },
         }
-    })
+    }
+)
 
 options = {
-    "resources": {
-        "num_machines": 1,
-        "num_mpiprocs_per_machine": 1,
-    },
+    "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
     "max_wallclock_seconds": 1 * 3 * 60,
 }
 inputs = {
-    'structure': structure,
-    'parameters': parameters,
-    'code': code,
-    'metadata': {
-        'options': options,
-    }
+    "structure": structure,
+    "parameters": parameters,
+    "code": code,
+    "metadata": {"options": options},
 }
 
 print("Submitted calculation...")

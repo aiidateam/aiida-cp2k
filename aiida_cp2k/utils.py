@@ -90,7 +90,7 @@ class Cp2kInput:
                 for listitem in val:
                     Cp2kInput._render_section(output, {key: listitem}, indent)
             elif isinstance(val, bool):
-                val_str = '.true.' if val else '.false.'
-                output.append('%s%s  %s' % (' ' * indent, key, val_str))
+                val_str = ".true." if val else ".false."
+                output.append("%s%s  %s" % (" " * indent, key, val_str))
             else:
-                output.append('%s%s  %s' % (' ' * indent, key, val))
+                output.append("%s%s  %s" % (" " * indent, key, val))

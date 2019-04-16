@@ -13,7 +13,7 @@ from __future__ import absolute_import
 
 import sys
 
-from aiida.orm import (Code, Dict)
+from aiida.orm import Code, Dict
 from aiida.engine import run
 from aiida.common import NotExistent
 from aiida_cp2k.calculations import Cp2kCalculation
@@ -35,82 +35,61 @@ print("Testing CP2K ENERGY on H2 (DFT) without StructureData...")
 # parameters
 parameters = Dict(
     dict={
-        'FORCE_EVAL': {
-            'METHOD': 'Quickstep',
-            'DFT': {
-                'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-                'QS': {
-                    'EPS_DEFAULT': 1.0e-12,
-                    'WF_INTERPOLATION': 'ps',
-                    'EXTRAPOLATION_ORDER': 3,
+        "FORCE_EVAL": {
+            "METHOD": "Quickstep",
+            "DFT": {
+                "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
+                "QS": {
+                    "EPS_DEFAULT": 1.0e-12,
+                    "WF_INTERPOLATION": "ps",
+                    "EXTRAPOLATION_ORDER": 3,
                 },
-                'MGRID': {
-                    'NGRIDS': 4,
-                    'CUTOFF': 280,
-                    'REL_CUTOFF': 30,
-                },
-                'XC': {
-                    'XC_FUNCTIONAL': {
-                        '_': 'LDA',
-                    },
-                },
-                'POISSON': {
-                    'PERIODIC': 'none',
-                    'PSOLVER': 'MT',
-                },
+                "MGRID": {"NGRIDS": 4, "CUTOFF": 280, "REL_CUTOFF": 30},
+                "XC": {"XC_FUNCTIONAL": {"_": "LDA"}},
+                "POISSON": {"PERIODIC": "none", "PSOLVER": "MT"},
             },
-            'SUBSYS': {
+            "SUBSYS": {
                 # structure directly included in parameters
-                'CELL': {
-                    'ABC': '4.0   4.0   4.75'
+                "CELL": {"ABC": "4.0   4.0   4.75"},
+                "COORD": {
+                    " ": ["H    2.0   2.0   2.737166", "H    2.0   2.0   2.000000"]
                 },
-                'COORD': {
-                    ' ': ['H    2.0   2.0   2.737166', 'H    2.0   2.0   2.000000']
-                },
-                'KIND': [
+                "KIND": [
                     {
-                        '_': 'O',
-                        'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                        'POTENTIAL': 'GTH-LDA-q6'
+                        "_": "O",
+                        "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                        "POTENTIAL": "GTH-LDA-q6",
                     },
                     {
-                        '_': 'H',
-                        'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                        'POTENTIAL': 'GTH-LDA-q1'
+                        "_": "H",
+                        "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                        "POTENTIAL": "GTH-LDA-q1",
                     },
                 ],
             },
         }
-    })
+    }
+)
 
 # resources
 options = {
-    "resources": {
-        "num_machines": 1,
-        "num_mpiprocs_per_machine": 1,
-    },
+    "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
     "max_wallclock_seconds": 1 * 3 * 60,
 }
 
-inputs = {
-    'parameters': parameters,
-    'code': code,
-    'metadata': {
-        'options': options,
-    }
-}
+inputs = {"parameters": parameters, "code": code, "metadata": {"options": options}}
 
 print("submitted calculation...")
 calc = run(Cp2kCalculation, **inputs)
 
 # check energy
 expected_energy = -1.14005678487
-if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
+if abs(calc["output_parameters"].dict.energy - expected_energy) < 1e-10:
     print("OK, energy has the expected value")
 else:
     print("ERROR!")
     print("Expected energy value: {}".format(expected_energy))
-    print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
+    print("Actual energy value: {}".format(calc["output_parameters"].dict.energy))
     sys.exit(3)
 
 sys.exit(0)

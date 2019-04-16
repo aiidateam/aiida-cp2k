@@ -18,11 +18,13 @@ def check_version():
     """Check if versions in setup.json and in plugin are consistent"""
     version1 = aiida_cp2k.__version__
     with open("../setup.json") as fhandle:
-        version2 = json.load(fhandle)['version']
+        version2 = json.load(fhandle)["version"]
 
     if version1 != version2:
-        print("ERROR: Versions in aiida_cp2k/__init__.py and setup.json are inconsistent: '%s' vs '%s'" % (version1,
-                                                                                                           version2))
+        print(
+            "ERROR: Versions in aiida_cp2k/__init__.py and setup.json are inconsistent: '%s' vs '%s'"
+            % (version1, version2)
+        )
         sys.exit(3)
 
 

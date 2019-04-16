@@ -12,7 +12,7 @@ from __future__ import absolute_import
 
 import sys
 
-from aiida.orm import (Code, Dict)
+from aiida.orm import Code, Dict
 from aiida.common import NotExistent
 from aiida.engine import run
 from aiida.common.exceptions import OutputParsingError
@@ -34,23 +34,14 @@ except NotExistent:
 print("Testing CP2K failure...")
 
 # a broken CP2K input
-parameters = Dict(dict={'GLOBAL': {'FOO_BAR_QUUX': 42}})
+parameters = Dict(dict={"GLOBAL": {"FOO_BAR_QUUX": 42}})
 options = {
-    "resources": {
-        "num_machines": 1,
-        "num_mpiprocs_per_machine": 1,
-    },
+    "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
     "max_wallclock_seconds": 1 * 2 * 60,
 }
 
 print("Submitted calculation...")
-inputs = {
-    'parameters': parameters,
-    'code': code,
-    'metadata': {
-        'options': options,
-    }
-}
+inputs = {"parameters": parameters, "code": code, "metadata": {"options": options}}
 try:
     run(Cp2kCalculation, **inputs)
     print("ERROR!")

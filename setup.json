@@ -29,6 +29,9 @@
         [".", ["setup.json"]]
     ],
     "extras_require": {
+        "test":[
+            "pytest==4.4.1"
+        ],
 	    "pre-commit":[
 		    "pre-commit==1.14.4",
 		    "pylint==1.9.4; python_version<'3.0'",

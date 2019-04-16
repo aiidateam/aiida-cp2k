@@ -7,6 +7,9 @@
 ###############################################################################
 
 from __future__ import absolute_import
+
+import pytest
+
 from aiida_cp2k.utils import Cp2kInput
 
 
@@ -43,3 +46,15 @@ def test_multiple_force_eval():
             inp=inp
         )
     )
+
+
+def test_invalid_lowercase_key():
+    inp = Cp2kInput({"foo": "bar"})
+    with pytest.raises(ValueError):
+        inp.render()
+
+
+def test_invalid_preprocessor():
+    inp = Cp2kInput({"@SET": "bar"})
+    with pytest.raises(ValueError):
+        inp.render()

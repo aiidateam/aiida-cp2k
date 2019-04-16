@@ -9,6 +9,8 @@
 
 from __future__ import absolute_import
 
+import six
+
 
 class Cp2kInput:
     """Transforms dictionary into CP2K input"""
@@ -22,7 +24,19 @@ class Cp2kInput:
             self._params = params
 
     def add_keyword(self, kwpath, value):
-        self._add_keyword_low(kwpath.split("/"), value, self._params)
+        """
+        Add a value for the given keyword.
+
+        Args:
+            kwpath: Can be a single keyword, a path with `/` as divider for sections & key,
+                    or a sequence with sections and key
+            value: the value to set the given key to
+        """
+
+        if isinstance(kwpath, six.string_types):
+            kwpath = kwpath.split("/")
+
+        Cp2kInput._add_keyword(kwpath, value, self._params)
 
     def render(self):
         output = [self.DISCLAIMER]
@@ -30,24 +44,25 @@ class Cp2kInput:
         return "\n".join(output)
 
     @staticmethod
-    def _add_keyword_low(kwpath, value, params):
-        """Adds keyword"""
-        if len(kwpath) == 1:
+    def _add_keyword(kwpath, value, params):
+        """Add keyword in given nested dictionary"""
+
+        if len(kwpath) == 1:  # key/value for the current level
             params[kwpath[0]] = value
-        elif kwpath[0] not in params.keys():
-            new_subsection = {}
-            params[kwpath[0]] = new_subsection
-            Cp2kInput._add_keyword_low(kwpath[1:], value, new_subsection)
-        else:
-            Cp2kInput._add_keyword_low(kwpath[1:], value, params[kwpath[0]])
+            return
+
+        if kwpath[0] not in params.keys():  # create an empty section if necessary
+            params[kwpath[0]] = {}
+
+        Cp2kInput._add_keyword(kwpath[1:], value, params[kwpath[0]])
 
     @staticmethod
-    def _render_section(output, params, indent=0):
+    def _render_section(output, params, indent=0, indent_width=3):
         """
         It takes a dictionary and recurses through.
 
         For key-value pair it checks whether the value is a dictionary
-        and prepends the key with &
+        and prepends the key with & (CP2K section)
         It passes the valued to the same function, increasing the indentation
         If the value is a list, I assume that this is something the user
         wants to store repetitively
@@ -74,23 +89,47 @@ class Cp2kInput:
                   &END KIND
         """
 
+        if six.PY2:
+            from collections import Mapping, Sequence
+        else:
+            from collections.abc import Mapping, Sequence
+
         for key, val in sorted(params.items()):
+            # the `_` is reserved for section params and evaluated in the prior call
+            if key == "_":
+                continue
+
+            # keys are not case-insensitive, ensure that they follow the current scheme
             if key.upper() != key:
-                raise ValueError("keyword '%s' not upper case" % key)
-            if key.startswith("@") or key.startswith("$"):
-                raise ValueError("CP2K preprocessor not supported")
-            if isinstance(val, dict):
-                line = "%s&%s" % (" " * indent, key)
+                raise ValueError("keyword '{key}' not upper case".format(key=key))
+
+            if key.startswith(("@", "$")):
+                raise ValueError("CP2K preprocessor directives not supported")
+
+            ispace = " " * indent
+
+            if isinstance(val, Mapping):
+                line = "{ispace}&{key}".format(ispace=ispace, key=key)
                 if "_" in val:  # if there is a section parameter, add it
-                    line += " %s" % val["_"]
+                    line += " {}".format(val["_"])
+
                 output.append(line)
-                Cp2kInput._render_section(output, val, indent + 3)
-                output.append("%s&END %s" % (" " * indent, key))
-            elif isinstance(val, list):
+                Cp2kInput._render_section(output, val, indent + indent_width)
+                output.append("{ispace}&END {key}".format(ispace=ispace, key=key))
+
+            elif isinstance(val, Sequence) and not isinstance(val, six.string_types):
                 for listitem in val:
                     Cp2kInput._render_section(output, {key: listitem}, indent)
+
             elif isinstance(val, bool):
-                val_str = ".true." if val else ".false."
-                output.append("%s%s  %s" % (" " * indent, key, val_str))
+                val_str = ".TRUE." if val else ".FALSE."
+                output.append(
+                    "{ispace}{key} {val_str}".format(
+                        ispace=ispace, key=key, val_str=val_str
+                    )
+                )
+
             else:
-                output.append("%s%s  %s" % (" " * indent, key, val))
+                output.append(
+                    "{ispace}{key} {val}".format(ispace=ispace, key=key, val=val)
+                )

@@ -20,13 +20,40 @@ def test_render_empty():
 
 def test_render_str_val():
     inp = Cp2kInput({"FOO": "bar"})
-    assert inp.render() == "{inp.DISCLAIMER}\nFOO  bar".format(inp=inp)
+    assert inp.render() == "{inp.DISCLAIMER}\nFOO bar".format(inp=inp)
 
 
 def test_add_keyword():
     inp = Cp2kInput({"FOO": "bar"})
     inp.add_keyword("BAR", "boo")
-    assert inp.render() == "{inp.DISCLAIMER}\nBAR  boo\nFOO  bar".format(inp=inp)
+    assert inp.render() == "{inp.DISCLAIMER}\nBAR boo\nFOO bar".format(inp=inp)
+
+    inp.add_keyword("BOO/BAZ", "boo")
+    assert (
+        inp.render()
+        == """{inp.DISCLAIMER}
+BAR boo
+&BOO
+   BAZ boo
+&END BOO
+FOO bar""".format(
+            inp=inp
+        )
+    )
+
+    inp.add_keyword(["BOO", "BII"], "boo")
+    assert (
+        inp.render()
+        == """{inp.DISCLAIMER}
+BAR boo
+&BOO
+   BAZ boo
+   BII boo
+&END BOO
+FOO bar""".format(
+            inp=inp
+        )
+    )
 
 
 def test_multiple_force_eval():
@@ -35,17 +62,41 @@ def test_multiple_force_eval():
         inp.render()
         == """{inp.DISCLAIMER}
 &FORCE_EVAL
-   FOO  bar
+   FOO bar
 &END FORCE_EVAL
 &FORCE_EVAL
-   FOO  bar
+   FOO bar
 &END FORCE_EVAL
 &FORCE_EVAL
-   FOO  bar
+   FOO bar
 &END FORCE_EVAL""".format(
             inp=inp
         )
     )
+
+
+def test_kinds():
+    inp = Cp2kInput({"KIND": [{"_": "H"}, {"_": "O"}]})
+    assert (
+        inp.render()
+        == """{inp.DISCLAIMER}
+&KIND H
+&END KIND
+&KIND O
+&END KIND""".format(
+            inp=inp
+        )
+    )
+
+
+def test_invariant_under_render():
+    param = {"KIND": [{"_": "H"}, {"_": "O"}]}
+    Cp2kInput(param).render()
+    assert param == {"KIND": [{"_": "H"}, {"_": "O"}]}
+
+    param = {"SEC": {"_": "H"}}
+    Cp2kInput(param).render()
+    assert param == {"SEC": {"_": "H"}}
 
 
 def test_invalid_lowercase_key():

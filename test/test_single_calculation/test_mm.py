@@ -55,7 +55,7 @@ HBOND CUTHB 0.5
 END"""
     )
 water_pot = SinglefileData(
-    filepath="/tmp/water.pot"
+    file="/tmp/water.pot"
 )  # pylint: disable=no-value-for-parameter
 
 # structure using pdb format, because it also carries topology information
@@ -64,7 +64,7 @@ atoms.center(vacuum=10.0)
 atoms.write("/tmp/coords.pdb", format="proteindatabank")
 cell = atoms.cell
 coords_pdb = SinglefileData(
-    filepath="/tmp/coords.pdb"
+    file="/tmp/coords.pdb"
 )  # pylint: disable=no-value-for-parameter
 
 # parameters

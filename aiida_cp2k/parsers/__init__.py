@@ -56,26 +56,31 @@ class Cp2kParser(Parser):
         if fname not in out_folder._repository.list_object_names():
             raise OutputParsingError("Cp2k output file not retrieved")
 
-        result_dict = {"exceeded_walltime": False}
         abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)
 
         with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
             lines = fobj.readlines()
-            for i_line, line in enumerate(lines):
-                if line.startswith(' ENERGY| '):
-                    result_dict['energy'] = float(line.split()[8])
-                    result_dict['energy_units'] = "a.u."
-                if 'The number of warnings for this run is' in line:
-                    result_dict['nwarnings'] = int(line.split()[-1])
-                if 'exceeded requested execution time' in line:
-                    result_dict['exceeded_walltime'] = True
-                if "KPOINTS| Band Structure Calculation" in line:
-                    bnds = BandsData()
-                    kpoints, labels, bands = self._parse_bands(lines, i_line)
-                    bnds.set_kpoints(kpoints)
-                    bnds.labels = labels
-                    bnds.set_bands(bands, units='eV')
-                    self.out('output_bands', bnds)
+
+        result_dict = {"exceeded_walltime": False}
+
+        for i_line, line in enumerate(lines):
+            if line.startswith(" ENERGY| "):
+                result_dict["energy"] = float(line.split()[8])
+                result_dict["energy_units"] = "a.u."
+            elif "The number of warnings for this run is" in line:
+                result_dict["nwarnings"] = int(line.split()[-1])
+            elif "exceeded requested execution time" in line:
+                result_dict["exceeded_walltime"] = True
+            elif "KPOINTS| Band Structure Calculation" in line:
+                kpoints, labels, bands = self._parse_bands(lines, i_line)
+                bnds = BandsData()
+                bnds.set_kpoints(kpoints)
+                bnds.labels = labels
+                bnds.set_bands(bands, units="eV")
+                self.out("output_bands", bnds)
+            else:
+                # ignore all other lines
+                pass
 
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")

@@ -91,5 +91,5 @@ To run the tests locally install [Docker](https://docs.docker.com/engine/install
 ```
 git clone https://github.com/cp2k/aiida-cp2k
 docker build -t aiida_cp2k_test aiida-cp2k
-docker run -it --init aiida_cp2k_test
+docker run -it --init aiida_cp2k_test pytest -v
 ```

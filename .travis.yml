@@ -8,7 +8,8 @@ before_install:
   - docker build -t aiida_cp2k_test .
 
 script:
-  - docker run --init aiida_cp2k_test
+  - docker run aiida_cp2k_test /bin/bash -c "pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )"
+  - docker run aiida_cp2k_test /bin/bash -c "reentry scan && sudo service rabbitmq-server start && pytest -vv"
 
 git:
   depth: 3

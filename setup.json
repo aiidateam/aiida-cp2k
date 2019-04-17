@@ -34,7 +34,7 @@
         "pre-commit":[
             "pre-commit==1.14.4"
         ],
-        "test": [
+        "testing": [
             "pytest==4.4.1",
             "pgtest==1.2.0"
         ]

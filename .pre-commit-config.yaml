@@ -21,3 +21,10 @@
   hooks:
   - id: flake8
     language_version: "python3"
+- repo: local
+  hooks:
+  - id: check_version
+    name: Check for consistent version numbers
+    language: system
+    entry: python .ci/check_version.py
+    files: ^(setup.json|aiida_cp2k/__init__.py)$

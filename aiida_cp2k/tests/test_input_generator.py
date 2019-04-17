@@ -58,6 +58,14 @@ FOO bar""".format(
     )
 
 
+def test_add_keyword_invariant_input():
+    param = {"FOO": "bar"}
+    inp = Cp2kInput(param)
+    inp.add_keyword("BAR", "boo")
+    assert inp.to_string() == "{inp.DISCLAIMER}\nBAR boo\nFOO bar".format(inp=inp)
+    assert param == {"FOO": "bar"}
+
+
 def test_multiple_force_eval():
     inp = Cp2kInput({"FORCE_EVAL": [{"FOO": "bar"}, {"FOO": "bar"}, {"FOO": "bar"}]})
     assert (

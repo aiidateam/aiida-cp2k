@@ -9,6 +9,7 @@
 
 from __future__ import absolute_import
 from itertools import chain
+from copy import deepcopy
 
 import six
 
@@ -22,7 +23,9 @@ class Cp2kInput:
         if not params:
             self._params = {}
         else:
-            self._params = params
+            # always make a full copy to avoid that add_keyword() changes the
+            # passed-in dictionary
+            self._params = deepcopy(params)
 
     def add_keyword(self, kwpath, value):
         """

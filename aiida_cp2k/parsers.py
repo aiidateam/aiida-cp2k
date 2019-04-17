@@ -11,7 +11,6 @@ from __future__ import absolute_import
 import io
 import os
 import re
-from re import DOTALL
 import math
 from six.moves import map
 
@@ -19,22 +18,18 @@ import ase
 import numpy as np
 
 from aiida.parsers import Parser
-from aiida.orm import Dict, StructureData
-from aiida.common import OutputParsingError
+from aiida.common import OutputParsingError, NotExistent
+from aiida.engine import ExitCode
 
 
 class Cp2kParser(Parser):
     """Parser for the output of CP2K."""
 
-    # --------------------------------------------------------------------------
     def parse(self, **kwargs):
         """
         Receives in input a dictionary of retrieved nodes.
         Does all the logic here.
         """
-        from aiida.engine import ExitCode
-        from aiida.common import NotExistent
-
         try:
             out_folder = self.retrieved
         except NotExistent:
@@ -50,9 +45,11 @@ class Cp2kParser(Parser):
 
         return ExitCode(0)
 
-    # --------------------------------------------------------------------------
     def _parse_stdout(self, out_folder):
         """CP2K output parser"""
+
+        from aiida.orm import BandsData, Dict
+
         fname = (
             self.node.process_class._DEFAULT_OUTPUT_FILE
         )  # pylint: disable=protected-access
@@ -76,8 +73,6 @@ class Cp2kParser(Parser):
                 if "exceeded requested execution time" in line:
                     result_dict["exceeded_walltime"] = True
                 if "KPOINTS| Band Structure Calculation" in line:
-                    from aiida.orm import BandsData
-
                     bnds = BandsData()
                     kpoints, labels, bands = self._parse_bands(lines, i_line)
                     bnds.set_kpoints(kpoints)
@@ -90,7 +85,6 @@ class Cp2kParser(Parser):
 
         self.out("output_parameters", Dict(dict=result_dict))
 
-    # --------------------------------------------------------------------------
     @staticmethod
     def _parse_bands(lines, n_start):
         """Parse band structure from cp2k output"""
@@ -136,11 +130,14 @@ class Cp2kParser(Parser):
             bands = [bands_s1, bands_s2]
         else:
             bands = bands_s1
+
         return np.array(kpoints), labels, np.array(bands)
 
-    # --------------------------------------------------------------------------
     def _parse_trajectory(self, out_folder):
         """CP2K trajectory parser"""
+
+        from aiida.orm import StructureData
+
         fname = (
             self.node.process_class._DEFAULT_RESTART_FILE_NAME
         )  # pylint: disable=protected-access
@@ -157,7 +154,7 @@ class Cp2kParser(Parser):
             content = fobj.read()
 
         # parse coordinate section
-        match = re.search(r"\n\s*&COORD\n(.*?)\n\s*&END COORD\n", content, DOTALL)
+        match = re.search(r"\n\s*&COORD\n(.*?)\n\s*&END COORD\n", content, re.DOTALL)
         coord_lines = [line.strip().split() for line in match.group(1).splitlines()]
         symbols = [line[0] for line in coord_lines]
         positions_str = [line[1:] for line in coord_lines]
@@ -171,7 +168,5 @@ class Cp2kParser(Parser):
 
         # create StructureData
         atoms = ase.Atoms(symbols=symbols, positions=positions, cell=cell)
+
         return StructureData(ase=atoms)
-
-
-# EOF

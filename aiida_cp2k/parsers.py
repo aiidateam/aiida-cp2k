@@ -7,12 +7,12 @@
 ###############################################################################
 """AiiDA-CP2K output parser"""
 from __future__ import absolute_import
+from __future__ import division
 
 import io
 import os
 import re
 import math
-from six.moves import map
 
 import ase
 import numpy as np
@@ -99,26 +99,24 @@ class Cp2kParser(Parser):
         for current_line, line in enumerate(selected_lines):
             splitted = line.split()
             if "KPOINTS| Special K-Point" in line:
-                kpoint = tuple(map(float, splitted[-3:]))
+                kpoint = tuple(float(p) for p in splitted[-3:])
                 if " ".join(splitted[-5:-3]) != "not specified":
                     label = splitted[-4]
                     known_kpoints[kpoint] = label
             elif pattern.match(line):
                 spin = int(splitted[3])
-                kpoint = tuple(map(float, splitted[-3:]))
+                kpoint = tuple(float(p) for p in splitted[-3:])
                 kpoint_n_lines = int(
-                    math.ceil(int(selected_lines[current_line + 1]) / 4.0)
+                    math.ceil(int(selected_lines[current_line + 1]) / 4)
                 )
-                band = list(
-                    map(
-                        float,
-                        " ".join(
-                            selected_lines[
-                                current_line + 2 : current_line + 2 + kpoint_n_lines
-                            ]
-                        ).split(),
-                    )
-                )
+                band = [
+                    float(v)
+                    for v in " ".join(
+                        selected_lines[
+                            current_line + 2 : current_line + 2 + kpoint_n_lines
+                        ]
+                    ).split()
+                ]
                 if spin == 1:
                     if kpoint in known_kpoints:
                         labels.append((len(kpoints), known_kpoints[kpoint]))

@@ -13,6 +13,11 @@ from copy import deepcopy
 
 import six
 
+if six.PY2:
+    from collections import Mapping, Sequence
+else:
+    from collections.abc import Mapping, Sequence
+
 
 class Cp2kInput:
     """Transforms dictionary into CP2K input"""
@@ -58,7 +63,31 @@ class Cp2kInput:
     def _add_keyword(kwpath, value, params):
         """Add keyword in given nested dictionary"""
 
+        if isinstance(params, Sequence):
+            for seq in params:
+                Cp2kInput._add_keyword(kwpath, value, seq)
+            return
+
         if len(kwpath) == 1:  # key/value for the current level
+            if kwpath[0] in params:
+                if isinstance(params[kwpath[0]], Mapping) != isinstance(value, Mapping):
+                    # only allow overwriting sections with other sections
+                    raise ValueError(
+                        "Overwriting a section with a bare key (resp. vice-versa) is not supported"
+                    )
+                if (
+                    isinstance(params[kwpath[0]], Sequence)
+                    and not isinstance(params[kwpath[0]], six.string_types)
+                ) != (
+                    isinstance(value, Sequence)
+                    and not isinstance(value, six.string_types)
+                ):
+                    # only allow overwriting sequences (repeated sections) with other sequences,
+                    # need to explicitly check for (seq,string), resp (string,seq) since strings are also sequences
+                    raise ValueError(
+                        "Overwriting repeated sections with a bare key (resp. vice-versa) is not supported"
+                    )
+
             params[kwpath[0]] = value
             return
 
@@ -99,11 +128,6 @@ class Cp2kInput:
                      ELEMENT  O
                   &END KIND
         """
-
-        if six.PY2:
-            from collections import Mapping, Sequence
-        else:
-            from collections.abc import Mapping, Sequence
 
         for key, val in sorted(params.items()):
             # the `_` is reserved for section params and evaluated in the prior call

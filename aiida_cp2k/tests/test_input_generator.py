@@ -66,8 +66,51 @@ def test_add_keyword_invariant_input():
     assert param == {"FOO": "bar"}
 
 
-def test_multiple_force_eval():
-    inp = Cp2kInput({"FORCE_EVAL": [{"FOO": "bar"}, {"FOO": "bar"}, {"FOO": "bar"}]})
+def test_add_keyword_for_list_expansion():
+    param = {"KIND": [{"_": "H"}, {"_": "O"}]}
+    inp = Cp2kInput(param)
+
+    with pytest.raises(ValueError):
+        inp.add_keyword(
+            "KIND", "bar"
+        ), "overwriting repeated section with string is possible while it should not"
+
+    with pytest.raises(ValueError):
+        inp.add_keyword(
+            "KIND", {"BAR": "boo"}
+        ), "overwriting repeated section with section is possible while it should not"
+
+    # overwriting a repeated section with another repeated section (list) should work:
+    inp.add_keyword("KIND", [{"_": "C"}, {"_": "O"}])
+    assert (
+        inp.to_string()
+        == """{inp.DISCLAIMER}
+&KIND C
+&END KIND
+&KIND O
+&END KIND""".format(
+            inp=inp
+        )
+    )
+
+    # this adds the keyword to all repeated sections
+    inp.add_keyword("KIND/FOO", "bar")
+    assert (
+        inp.to_string()
+        == """{inp.DISCLAIMER}
+&KIND C
+   FOO bar
+&END KIND
+&KIND O
+   FOO bar
+&END KIND""".format(
+            inp=inp
+        )
+    )
+
+
+def test_repeated_sections():
+    inp = Cp2kInput({"FORCE_EVAL": [{"FOO": "bar"}, {"FOO": "baz"}, {"FOO": "boo"}]})
     assert (
         inp.to_string()
         == """{inp.DISCLAIMER}
@@ -75,10 +118,10 @@ def test_multiple_force_eval():
    FOO bar
 &END FORCE_EVAL
 &FORCE_EVAL
-   FOO bar
+   FOO baz
 &END FORCE_EVAL
 &FORCE_EVAL
-   FOO bar
+   FOO boo
 &END FORCE_EVAL""".format(
             inp=inp
         )

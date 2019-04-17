@@ -49,12 +49,16 @@ class Cp2kParser(Parser):
         """CP2K output parser"""
 
         from aiida.orm import BandsData, Dict
-        fname = self.node.process_class._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
-        if fname not in out_folder._repository.list_object_names():  # pylint: disable=protected-access
+
+        # pylint: disable=protected-access
+
+        fname = self.node.process_class._DEFAULT_OUTPUT_FILE
+        if fname not in out_folder._repository.list_object_names():
             raise OutputParsingError("Cp2k output file not retrieved")
 
-        result_dict = {'exceeded_walltime': False}
-        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
+        result_dict = {"exceeded_walltime": False}
+        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)
+
         with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
             lines = fobj.readlines()
             for i_line, line in enumerate(lines):
@@ -120,12 +124,19 @@ class Cp2kParser(Parser):
         """CP2K trajectory parser"""
 
         from aiida.orm import StructureData
-        fname = self.node.process_class._DEFAULT_RESTART_FILE_NAME  # pylint: disable=protected-access
-        if fname not in out_folder._repository.list_object_names():  # pylint: disable=protected-access
-            raise Exception  # not every run type produces a trajectory
+
+        # pylint: disable=protected-access
+
+        fname = self.node.process_class._DEFAULT_RESTART_FILE_NAME
+
+        if fname not in out_folder._repository.list_object_names():
+            raise Exception(
+                "parsing trajectory requested, but no trajectory file available"
+            )
 
         # read restart file
-        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
+        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)
+
         with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
             content = fobj.read()
 

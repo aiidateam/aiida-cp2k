@@ -45,3 +45,77 @@ def test_condnum():
     ]
 
     assert np.allclose(expected, results)
+
+
+def test_mulliken_rks():
+    from io import StringIO
+
+    with io.open(path.join(TEST_DIR, "files/cp2k_condnum_test01.out"), "r") as fobj:
+        data = parse_cp2k_output(fobj)
+
+    assert "mulliken_population_analysis" in data
+
+    expected_pa = StringIO(
+        u"""
+1         11.999203                              0.000797
+1         11.999971                              0.000029
+1         12.000244                             -0.000244
+1         11.999971                              0.000029
+1         12.000244                             -0.000244
+1         11.999971                              0.000029
+1         12.001289                             -0.001289
+1         11.999971                              0.000029
+1         11.998769                              0.001231
+1         11.999970                              0.000030
+1         11.999813                              0.000187
+1         11.999970                              0.000030
+1         11.999813                              0.000187
+1         11.999971                              0.000029
+1         12.000859                             -0.000859
+1         11.999971                              0.000029
+    """
+    )
+
+    expected_pa = np.genfromtxt(expected_pa)
+
+    expected_total = [192.000000, 0.000000]
+
+    results = data["mulliken_population_analysis"]
+
+    fields = ("kind", "population", "charge")
+    assert np.allclose(expected_total, [results["total"][f] for f in fields[1:]])
+    assert np.allclose(
+        expected_pa, [[line[f] for f in fields] for line in results["per-atom"]]
+    )
+    assert set(l["element"] for l in results["per-atom"]) == {"Hg"}
+
+
+def test_mulliken_uks():
+    from io import StringIO
+
+    with io.open(
+        path.join(TEST_DIR, "files/cp2k_mulliken_uks_test01.out"), "r"
+    ) as fobj:
+        data = parse_cp2k_output(fobj)
+
+    assert "mulliken_population_analysis" in data
+
+    expected_pa = StringIO(
+        u"""
+1         9.069583     6.930417     0.000000     2.139166
+1         9.069582     6.930418    -0.000000     2.139164
+"""
+    )
+
+    expected_pa = np.genfromtxt(expected_pa)
+
+    expected_total = [18.139165, 13.860835, 0.000000, 4.278330]
+
+    results = data["mulliken_population_analysis"]
+
+    fields = ("kind", "population_alpha", "population_beta", "charge", "spin")
+    assert np.allclose(expected_total, [results["total"][f] for f in fields[1:]])
+    assert np.allclose(
+        expected_pa, [[line[f] for f in fields] for line in results["per-atom"]]
+    )
+    assert set(l["element"] for l in results["per-atom"]) == {"Fe"}

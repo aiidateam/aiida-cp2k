@@ -12,10 +12,10 @@ from __future__ import division
 
 from itertools import chain
 from copy import deepcopy
-import re
 import math
 
 import six
+import regex as re
 
 
 class Cp2kInput:
@@ -187,6 +187,50 @@ CP2K_CONDITION_NUMBER_MATCH = re.compile(
 )
 
 
+CP2K_MULLIKEN_MATCH = re.compile(
+    r"""
+(?(DEFINE)(?P<fp>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?))
+# anchor to indicate beginning of the Mulliken Population Analysis
+^[ \t]* Mulliken\ Population\ Analysis [ \t]* \n
+ [ \t]* \n
+ [ \t]* \#  [\w \t\,\(\)]+\n  # match the header
+(
+  ^
+  [ \t]*
+  (?P<atom>\d+) [ \t]+
+  (?P<element>\w+) [ \t]+
+  (?P<kind>\d+) [ \t]+
+  (
+    ( # spin unrestricted case:
+      (?P<population_alpha>(?&fp)) [ \t]+ (?P<population_beta>(?&fp)) [ \t]+
+      (?P<charge>(?&fp)) [ \t]+ (?P<spin>(?&fp))
+    )
+    |
+    (
+      (?P<population>(?&fp)) [ \t]+
+      (?P<charge>(?&fp))
+    )
+  ) [ \t]*
+  \n
+)+
+^ [ \t]* \#\ Total\ charge (\ and\ spin)? [ \t]+
+(
+  ( # spin unrestricted case:
+    (?P<total_population_alpha>(?&fp)) [ \t]+ (?P<total_population_beta>(?&fp)) [ \t]+
+    (?P<total_charge>(?&fp)) [ \t]+ (?P<total_spin>(?&fp))
+  )
+  |
+  (
+    (?P<total_population>(?&fp)) [ \t]+
+    (?P<total_charge>(?&fp))
+  )
+) [ \t]*
+\n
+""",
+    re.VERSION1 | re.MULTILINE | re.VERBOSE,
+)
+
+
 def parse_cp2k_output(fobj):
     content = fobj.read()
     lines = content.splitlines()
@@ -237,6 +281,53 @@ def parse_cp2k_output(fobj):
                 "Log(CN)": float(captures["norm2_diag_log"]),
             },
         }
+
+    match = CP2K_MULLIKEN_MATCH.search(content)
+    # for this one we needed the extended regex library https://pypi.python.org/pypi/regex
+    if match:
+        captures = match.capturesdict()
+        per_atom = []
+
+        if captures.get("population_alpha"):
+            for idx in range(len(captures["atom"])):
+                per_atom.append(
+                    {
+                        "element": captures["element"][idx],
+                        "kind": int(captures["kind"][idx]),
+                        "population_alpha": float(captures["population_alpha"][idx]),
+                        "population_beta": float(captures["population_beta"][idx]),
+                        "charge": float(captures["charge"][idx]),
+                        "spin": float(captures["spin"][idx]),
+                    }
+                )
+
+            result_dict["mulliken_population_analysis"] = {
+                "per-atom": per_atom,
+                "total": {
+                    "population_alpha": float(captures["total_population_alpha"][0]),
+                    "population_beta": float(captures["total_population_beta"][0]),
+                    "charge": float(captures["total_charge"][0]),
+                    "spin": float(captures["total_spin"][0]),
+                },
+            }
+        else:
+            for idx in range(len(captures["atom"])):
+                per_atom.append(
+                    {
+                        "element": captures["element"][idx],
+                        "kind": int(captures["kind"][idx]),
+                        "population": float(captures["population"][idx]),
+                        "charge": float(captures["charge"][idx]),
+                    }
+                )
+
+            result_dict["mulliken_population_analysis"] = {
+                "per-atom": per_atom,
+                "total": {
+                    "population": float(captures["total_population"][0]),
+                    "charge": float(captures["total_charge"][0]),
+                },
+            }
 
     return result_dict
 

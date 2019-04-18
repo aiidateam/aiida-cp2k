@@ -11,6 +11,7 @@
       - --write
       - --nobackups
       - --nofix=dict_six
+      - --nofix=xrange_six
 - repo: https://github.com/ambv/black
   rev: stable
   hooks:

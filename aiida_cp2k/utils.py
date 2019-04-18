@@ -150,40 +150,37 @@ class Cp2kInput:
                 yield "{ispace}{key} {val}".format(ispace=ispace, key=key, val=val)
 
 
-FP_EXPR = r"[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?"
-
 CP2K_CONDITION_NUMBER_MATCH = re.compile(
     r"""
+(?(DEFINE)(?P<fp>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?))
 # anchor to indicate beginning the overlap matrix condition number section
 ^[ \t]* OVERLAP\ MATRIX\ CONDITION\ NUMBER\ AT\ GAMMA\ POINT [ \t]* \n
  [ \t]* 1-Norm\ Condition\ Number\ \(Estimate\) [ \t]* \n
  [ \t]* CN\ :\ \|A\|\*\|A\^-1\|:
-   [ \t]* (?P<norm1_estimate_A>{fp})
+   [ \t]* (?P<norm1_estimate_A>(?&fp))
    [ \t]* \*
-   [ \t]* (?P<norm1_estimate_Ainv>{fp})
+   [ \t]* (?P<norm1_estimate_Ainv>(?&fp))
    [ \t]* =
-   [ \t]* (?P<norm1_estimate>{fp})
+   [ \t]* (?P<norm1_estimate>(?&fp))
    [ \t]* Log\(1-CN\):
-   [ \t]* (?P<norm1_estimate_log>{fp})
+   [ \t]* (?P<norm1_estimate_log>(?&fp))
    [ \t]* \n
 
  [ \t]* 1-Norm\ and\ 2-Norm\ Condition\ Numbers\ using\ Diagonalization [ \t]* \n
 
  [ \t]* CN\ :\ \|A\|\*\|A\^-1\|:
-   [ \t]* (?P<norm1_diag_A>{fp}) [ \t]* \* [ \t]* (?P<norm1_diag_Ainv>{fp})
+   [ \t]* (?P<norm1_diag_A>(?&fp)) [ \t]* \* [ \t]* (?P<norm1_diag_Ainv>(?&fp))
    [ \t]* =
-   [ \t]* (?P<norm1_diag>{fp}) [ \t]* Log\(1-CN\): [ \t]* (?P<norm1_diag_log>{fp})
+   [ \t]* (?P<norm1_diag>(?&fp)) [ \t]* Log\(1-CN\): [ \t]* (?P<norm1_diag_log>(?&fp))
    [ \t]* \n
 
  [ \t]* CN\ :\ max/min\ ev:
-   [ \t]* (?P<norm2_diag_max_ev>{fp}) [ \t]* / [ \t]* (?P<norm2_diag_min_ev>{fp})
+   [ \t]* (?P<norm2_diag_max_ev>(?&fp)) [ \t]* / [ \t]* (?P<norm2_diag_min_ev>(?&fp))
    [ \t]* =
-   [ \t]* (?P<norm2_diag>{fp}) [ \t]* Log\(2-CN\): [ \t]* (?P<norm2_diag_log>{fp})
+   [ \t]* (?P<norm2_diag>(?&fp)) [ \t]* Log\(2-CN\): [ \t]* (?P<norm2_diag_log>(?&fp))
    [ \t]* \n
-""".format(
-        fp=FP_EXPR
-    ),
-    re.MULTILINE | re.VERBOSE,
+""",
+    re.VERSION1 | re.MULTILINE | re.VERBOSE,
 )
 
 

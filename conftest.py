@@ -6,10 +6,9 @@ initialise a text database and profile
 from __future__ import absolute_import
 import tempfile
 import shutil
-import pytest
 import os
 
-from aiida.manage.fixtures import fixture_manager
+import pytest
 
 
 def get_backend_str():
@@ -35,6 +34,8 @@ def get_backend_str():
 @pytest.fixture(scope="session", autouse=True)
 def aiida_profile():
     """setup a test profile for the duration of the tests"""
+    from aiida.manage.fixtures import fixture_manager
+
     with fixture_manager() as fixture_mgr:
         yield fixture_mgr
 

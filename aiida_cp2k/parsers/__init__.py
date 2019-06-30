@@ -53,7 +53,7 @@ class Cp2kParser(Parser):
     # --------------------------------------------------------------------------
     def _parse_stdout(self, out_folder):
         """CP2K output parser"""
-        fname = self.node.load_process_class()._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
+        fname = self.node.process_class._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
         if fname not in out_folder._repository.list_object_names():  # pylint: disable=protected-access
             raise OutputParsingError("Cp2k output file not retrieved")
 
@@ -124,7 +124,7 @@ class Cp2kParser(Parser):
     # --------------------------------------------------------------------------
     def _parse_trajectory(self, out_folder):
         """CP2K trajectory parser"""
-        fname = self.node.load_process_class()._DEFAULT_RESTART_FILE_NAME  # pylint: disable=protected-access
+        fname = self.node.process_class._DEFAULT_RESTART_FILE_NAME  # pylint: disable=protected-access
         if fname not in out_folder._repository.list_object_names():  # pylint: disable=protected-access
             raise Exception  # not every run type produces a trajectory
 

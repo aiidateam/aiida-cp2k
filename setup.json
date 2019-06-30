@@ -14,7 +14,7 @@
         "Development Status :: 4 - Beta"
     ],
     "install_requires": [
-        "aiida-core==1.0.0b1",
+        "aiida-core==1.0.0b4",
         "ase"
     ],
     "entry_points": {

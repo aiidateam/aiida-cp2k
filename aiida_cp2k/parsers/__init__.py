@@ -59,11 +59,15 @@ class Cp2kParser(Parser):
 
         result_dict = {'exceeded_walltime': False}
         abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
+        line_is = None
+        energy = None
+        BOHR2ANG = 0.529177208590000
         with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
             lines = fobj.readlines()
             for i_line, line in enumerate(lines):
                 if line.startswith(' ENERGY| '):
-                    result_dict['energy'] = float(line.split()[8])
+                    energy = float(line.split()[8])
+                    result_dict['energy'] = energy
                     result_dict['energy_units'] = "a.u."
                 if 'The number of warnings for this run is' in line:
                     result_dict['nwarnings'] = int(line.split()[-1])
@@ -77,6 +81,148 @@ class Cp2kParser(Parser):
                     bnds.labels = labels
                     bnds.set_bands(bands, units='eV')
                     self.out('output_bands', bnds)
+
+                # now starting complex parsing (print level MEDIUM)
+                if line.startswith(' GLOBAL| Run type'):
+                    result_dict['run_type'] = line.split()[-1]
+
+                if line.startswith(' MD| Ensemble Type'):
+                    result_dict['run_type'] += '-'
+                    result_dict['run_type'] += line.split()[-1] #e.g., 'MD-NPT_F'
+
+                if line.startswith(' DFT| ') and not 'dft_type' in result_dict.keys():
+                    result_dict['dft_type'] = line.split()[-1] # RKS, UKS or ROKS
+
+                # read the number of electrons in the first step (it may change but it is not update)
+                if re.search('Number of electrons: ', line):
+                    if not 'init_nel_alpha' in result_dict.keys():
+                        result_dict['init_nel_alpha'] = int(line.split()[3])
+                    elif result_dict['dft_type'] == 'UKS' and not 'init_nel_beta' in result_dict.keys():
+                        result_dict['init_nel_beta'] = int(line.split()[3])
+
+                # Printed at every outer OT, and needed for understanding if something is going wrong (if !=0)
+                if re.search('Total charge density on r-space grids:', line):
+                    edens_rspace_grid = float(line.split()[-1])
+
+                if re.search('- Atoms: ', line):
+                    result_dict['natoms'] = int(line.split()[-1])
+
+                if re.search('Smear method', line):
+                    result_dict['smear_method'] = line.split()[-1]
+
+                if re.search("subspace spin", line):
+                    if int(line.split()[-1]) == 1:
+                        line_is = 'eigen_alpha'
+                        if not 'eigen_alpha' in result_dict.keys():
+                            result_dic['eigen_alpha'] = np.array([])
+                    elif int(line.split()[-1]) == 2:
+                        line_is = 'eigen_beta'
+                        if not 'eigen_alpha' in result_dict.keys():
+                            result_dic['eigen_beta'] = np.array([])
+
+                if line_is!=None:
+                    # Read eigenvalues as 4-columns row, then convert to float
+                    if line_is in ['eigen_alpha', 'eigen_beta']:
+                        if re.search("-------------", line) or re.search("Reached convergence", line):
+                            continue
+                        if len(line.split()) > 0 and len(line.split()) <= 4:
+                            result_dic[line_is] = np.append(info[read_eigen], line.split())
+                        else:
+                            result_dic[line_is] = result_dic[line_is].astype(np.float)
+                            line_is = None
+
+
+                if 'run_type' in result_dict.keys() and result_dict['run_type'] in ['ENERGY','ENERGY_FORCE','GEO_OPT','CELL_OPT','MD-NVT','MD-NPT_F']:
+                  # Initialization
+                  if not 'motion_step_info' in result_dict:
+                         result_dict['motion_step_info'] = { 'step' : [],
+                                                             'energy_au': [],
+                                                             'dispersion_energy_au': [],
+                                                             'pressure_bar': [],
+                                                             'cell_vol_angs3': [],
+                                                             'cell_a_angs': [],
+                                                             'cell_b_angs': [],
+                                                             'cell_c_angs': [],
+                                                             'cell_alp_deg': [],
+                                                             'cell_bet_deg': [],
+                                                             'cell_gam_deg': [],
+                                                             'max_step_au': [],
+                                                             'rms_step_au': [],
+                                                             'max_grad_au': [],
+                                                             'rms_grad_au': []
+                                                            }
+                         step = 0
+                         energy = None
+                         dispersion = None #Needed if no dispersions are included
+                         pressure = None
+                         max_step = None
+                         rms_step = None
+                         max_grad = None
+                         rms_grad = None
+
+                  print_now=False
+                  data= line.split()
+                  # Parse general info
+                  if line.startswith(' CELL|'):
+                     if re.search("Volume", line):    cell_vol=float(data[3])
+                     if re.search("Vector a", line):  cell_a=float(data[9])
+                     if re.search("Vector b", line):  cell_b=float(data[9])
+                     if re.search("Vector c", line):  cell_c=float(data[9])
+                     if re.search("alpha", line):     cell_alp=float(data[5])
+                     if re.search("beta", line):      cell_bet=float(data[5])
+                     if re.search("gamma", line):     cell_gam=float(data[5])
+
+                  if re.search("Dispersion energy", line):  dispersion=float(data[2])
+
+                  # Parse specific info
+                  if result_dict['run_type'] in ['ENERGY', 'ENERGY_FORCE']:
+                      if energy != None and len(result_dict['motion_step_info']['step'])==0 :
+                          print_now=True
+                  if result_dict['run_type'] in ['GEO_OPT','CELL_OPT']:
+                      if re.search("Informations at step", line):  	step=int(data[5])
+                      if re.search("Max. step size             =", line): max_step=float(data[-1])
+                      if re.search("RMS step size              =", line): rms_step=float(data[-1])
+                      if re.search("Max. gradient              =", line): max_grad=float(data[-1])
+                      if re.search("RMS gradient               =", line): rms_grad=float(data[-1])
+                      if len(data)==1 and data[0]=='---------------------------------------------------': print_now=True # 51('-')
+                      #Note: with CELL_OPT/LBFGS there is no "STEP 0", while there is with CELL_OPT/BFGS
+                  if result_dict['run_type']=='CELL_OPT':
+                      if re.search("Internal Pressure", line): pressure=float(data[4])
+                  if result_dict['run_type'] =='MD-NVT':
+                      if re.search("STEP NUMBER", line):           step=int(data[3])
+                      if re.search("INITIAL PRESSURE[bar]", line): pressure=float(data[3]); print_now=True
+                      if re.search("PRESSURE [bar]", line):        pressure=float(data[3]); print_now=True
+                  if result_dict['run_type']=='MD-NPT_F':
+                      if re.search("STEP NUMBER", line):           step=int(data[3])
+                      if re.search("INITIAL PRESSURE[bar]", line): pressure=float(data[3]); print_now=True
+                      if re.search("PRESSURE [bar]", line):        pressure=float(data[3]);
+                      if re.search("VOLUME[bohr^3]", line):        cell_vol=float(data[3])*(BOHR2ANG**3)
+                      if re.search("CELL LNTHS[bohr]", line):
+                                                                cell_a=float(data[3])*BOHR2ANG
+                                                                cell_b=float(data[4])*BOHR2ANG
+                                                                cell_c=float(data[5])*BOHR2ANG
+                      if re.search("CELL ANGLS[deg]", line):
+                                                                cell_alp=float(data[3])
+                                                                cell_bet=float(data[4])
+                                                                cell_gam=float(data[5])
+                                                                print_now=True
+
+                  if print_now and energy != None:
+                      result_dict['motion_step_info']['step'].append(step)
+                      result_dict['motion_step_info']['energy_au'].append(energy)
+                      result_dict['motion_step_info']['dispersion_energy_au'].append(dispersion)
+                      result_dict['motion_step_info']['pressure_bar'].append(pressure)
+                      result_dict['motion_step_info']['cell_vol_angs3'].append(cell_vol)
+                      result_dict['motion_step_info']['cell_a_angs'].append(cell_a)
+                      result_dict['motion_step_info']['cell_b_angs'].append(cell_b)
+                      result_dict['motion_step_info']['cell_c_angs'].append(cell_c)
+                      result_dict['motion_step_info']['cell_alp_deg'].append(cell_alp)
+                      result_dict['motion_step_info']['cell_bet_deg'].append(cell_bet)
+                      result_dict['motion_step_info']['cell_gam_deg'].append(cell_gam)
+                      result_dict['motion_step_info']['max_step_au'].append(max_step)
+                      result_dict['motion_step_info']['rms_step_au'].append(rms_step)
+                      result_dict['motion_step_info']['max_grad_au'].append(max_grad)
+                      result_dict['motion_step_info']['rms_grad_au'].append(rms_grad)
 
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")

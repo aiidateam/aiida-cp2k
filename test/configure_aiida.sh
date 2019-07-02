@@ -1,6 +1,5 @@
 #!/bin/bash -e
-###############################################################################
-# Copyright (c), The AiiDA-CP2K authors.                                      #
+############################################################################### # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
@@ -29,14 +28,14 @@ verdi setup                                       \
       --first-name Some                           \
       --last-name Body                            \
       --institution XYZ                           \
-      --backend django                            \
+      --db-backend django                         \
       --db-username aiida                         \
       --db-password aiida_db_passwd               \
       --db-name aiidadb                           \
       --db-host localhost                         \
       --db-port 5432                              \
       --repository /home/ubuntu/aiida_repository  \
-      default
+      --profile default
 
 #bash -c 'echo -e "y\nsome.body@xyz.com" | verdi daemon configureuser'
 verdi profile setdefault default
@@ -44,24 +43,24 @@ verdi profile setdefault default
 # setup local computer
 mkdir -p /home/ubuntu/aiida_run
 
-verdi computer setup               \
---non-interactive                  \
--L localhost                       \
--H localhost                       \
--T local                           \
--S direct                          \
---work-dir /home/ubuntu/aiida_run
+verdi computer setup                    \
+      --non-interactive                 \
+      --label localhost                 \
+      --hostname localhost              \
+      --transport local                 \
+      --scheduler direct                \
+      --work-dir /home/ubuntu/aiida_run
 
-verdi computer configure local localhost -n
+verdi computer configure local localhost --non-interactive --safe-interval 0.0
 verdi computer test localhost
 
 # setup code
-verdi code setup                \
---non-interactive               \
--L cp2k                         \
--Y localhost                    \
---remote-abs-path /usr/bin/cp2k \
---input-plugin cp2k             \
+verdi code setup                        \
+      --non-interactive                 \
+      --label cp2k                      \
+      --computer localhost              \
+      --remote-abs-path /usr/bin/cp2k   \
+      --input-plugin cp2k
 
 echo 'eval "$(verdi completioncommand)"' >> ~/.bashrc
 

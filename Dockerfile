@@ -33,7 +33,7 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
 # install aiida-cp2k
 COPY . /opt/aiida-cp2k
 WORKDIR /opt/aiida-cp2k/
-RUN pip install .[pre-commit]
+RUN pip install .[pre-commit,test]
 
 # create ubuntu user with sudo powers
 RUN adduser --disabled-password --gecos "" ubuntu \

@@ -13,6 +13,8 @@ set -o pipefail
 pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
 python check_version.py
 
+pytest --ignore=test_single_calculation/ ..
+
 # start the daemon
 sudo service postgresql start
 sudo service rabbitmq-server start

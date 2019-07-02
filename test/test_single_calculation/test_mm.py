@@ -52,14 +52,15 @@ O      0.000000  -0.152100     1.768200
 HBOND CUTHB 0.5
 
 END""")
-water_pot = SinglefileData(filepath="/tmp/water.pot")  # pylint: disable=no-value-for-parameter
+
+water_pot = SinglefileData(file="/tmp/water.pot")  # pylint: disable=no-value-for-parameter
 
 # structure using pdb format, because it also carries topology information
 atoms = ase.build.molecule('H2O')
 atoms.center(vacuum=10.0)
 atoms.write("/tmp/coords.pdb", format="proteindatabank")
 cell = atoms.cell
-coords_pdb = SinglefileData(filepath="/tmp/coords.pdb")  # pylint: disable=no-value-for-parameter
+coords_pdb = SinglefileData(file="/tmp/coords.pdb")  # pylint: disable=no-value-for-parameter
 
 # parameters
 # based on cp2k/tests/Fist/regtest-1-1/water_1.inp

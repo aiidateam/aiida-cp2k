@@ -13,7 +13,7 @@ set -o pipefail
 pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
 python check_version.py
 
-pytest --ignore=test_single_calculation/ ..
+pytest --ignore=test_single_calculation/ --ignore=test_workflow/ ..
 
 # start the daemon
 sudo service postgresql start

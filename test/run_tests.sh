@@ -32,6 +32,7 @@ verdi run ./test_single_calculation/test_failure.py             cp2k@localhost
 verdi run ./test_single_calculation/test_precision.py           cp2k@localhost
 
 #  run workflows
+verdi run ./test_workflow/test_base.py        cp2k@localhost
 
 # if all tests ran successfully
 echo "All tests have passed :-)"

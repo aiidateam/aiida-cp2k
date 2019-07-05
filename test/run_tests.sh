@@ -13,6 +13,8 @@ set -o pipefail
 pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
 python check_version.py
 
+pytest --ignore=test_single_calculation/ --ignore=test_workflow/ ..
+
 # start the daemon
 sudo service postgresql start
 sudo service rabbitmq-server start
@@ -29,6 +31,7 @@ verdi run ./test_single_calculation/test_failure.py   cp2k@localhost
 verdi run ./test_single_calculation/test_precision.py cp2k@localhost
 
 #  run workflows
+verdi run ./test_workflow/test_base.py        cp2k@localhost
 
 # if all tests ran successfully
 echo "All tests have passed :-)"

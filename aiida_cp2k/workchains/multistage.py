@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
 """Multistage workchain"""
 from __future__ import absolute_import
-import yaml
+import ruamel.yaml as yaml #does not convert OFF to False
 import os
 from copy import deepcopy
 
 from aiida.common import AttributeDict
 from aiida.engine import append_, while_, WorkChain, ToContext
 from aiida.engine import workfunction as wf
-from aiida.orm import Dict
+from aiida.orm import Dict, Int, Float, SinglefileData, Str, RemoteData
 from aiida.plugins import CalculationFactory
 
 from aiida_cp2k.workchains import Cp2kBaseWorkChain
 
 Cp2kCalculation = CalculationFactory('cp2k')  # pylint: disable=invalid-name
+
+
 
 def merge_dict(dct, merge_dct):
     """ Taken from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
@@ -74,49 +76,131 @@ class Cp2kMultistageWorkChain(WorkChain):
         # yapf: disable
         super(Cp2kMultistageWorkChain, cls).define(spec)
         spec.expose_inputs(Cp2kBaseWorkChain, namespace='base')
+        spec.input('protocol_tag', valid_type=Str, default=Str('standard'), required=False,
+            help='The tag of the protocol: to be read from the multistage_{tag}.yaml')
+        spec.input('protocol_yaml', valid_type=SinglefileData, required=False,
+            help='Specify a custom yaml file with the multistage settings')
+        spec.input('protocol_modify', valid_type=Dict, default=Dict(dict={}), required=False,
+            help='Specify custom settings that overvrite the yaml settings')
+        spec.input('starting_settings_idx', valid_type=Int, default=Int(0), required=False,
+            help='If idx>0 is chosen, the calculation jumps directly to overwriting settings_0 with settings_1')
+        spec.input('parent_calc_folder', valid_type=RemoteData, required=False,
+            help='Provide an initial parent folder that contains the wavefunction, to which restart')
 
         spec.outline(
             cls.setup_multistage,
-            cls.run_stage0
-        )
-        """
             while_(cls.should_run_stage0)(
+              cls.update_settings,
               cls.run_stage,
-              cls.inspect_settings,
+              cls.inspect_stage0_settings,
             ),
             cls.inspect_stage,
             while_(cls.should_run_stage)(
+                cls.update_stage,
                 cls.run_stage,
                 cls.inspect_stage,
             ),
             cls.results,
         )
-        """
-        spec.expose_outputs(Cp2kBaseWorkChain)
+        #spec.expose_outputs(Cp2kBaseWorkChain)
 
     def setup_multistage(self):
-        """
-        # Read the WorkChain inputs
-        self.ctx.inputs = AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'base'))
 
-        # Read yaml file
-        yamlfullpath = os.path.realpath(__file__)[:-3] + "_standard.yaml"
+        # Store the workchain inputs in context (to be modified later). ctx.base_inp = { base_settings, cp2k: { calculation_settings}}
+        self.ctx.base_inp = AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'base'))
+
+        #check if an input parent_calc_folder is provided
+        try:
+            self.ctx.parent_calc_folder = self.inputs.parent_calc_folder
+        except:
+            self.ctx.parent_calc_folder = None
+
+        # Read yaml file chosen with the tag and overwrite with custom modifications
+        dir = os.path.dirname(os.path.abspath(__file__))
+        yamlfullpath = '{}/multistage_{}.yaml'.format(dir, self.inputs.protocol_tag.value)
         with open(yamlfullpath, 'r') as stream:
-            input_yaml_dict = yaml.safe_load(stream)
+            self.ctx.parameters_yaml = yaml.safe_load(stream)
+        merge_dict(self.ctx.parameters_yaml,self.inputs.protocol_modify.get_dict())
 
         # Generate input parameters and store them
-        self.ctx.parameters = deepcopy(input_yaml_dict['settings_0'])
-        kinds = get_kinds_section(self.ctx.inputs['cp2k']['structure'], input_yaml_dict)
+        self.ctx.parameters = deepcopy(self.ctx.parameters_yaml['settings_0'])
+        kinds = get_kinds_section(self.ctx.base_inp['cp2k']['structure'], self.ctx.parameters_yaml)
         merge_dict(self.ctx.parameters,kinds)
-        multiplicity = get_input_multiplicity(self.ctx.inputs['cp2k']['structure'], input_yaml_dict)
+        multiplicity = get_input_multiplicity(self.ctx.base_inp['cp2k']['structure'], self.ctx.parameters_yaml)
         merge_dict(self.ctx.parameters,multiplicity)
-        merge_dict(self.ctx.parameters,input_yaml_dict['stage_0'])
-        merge_dict(self.ctx.parameters, self.ctx.inputs['cp2k']['parameters'].get_dict())
-        self.ctx.inputs['cp2k']['parameters'] = Dict(dict = self.ctx.parameters).store()
-        """
-        self.ctx.inputs = AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'base'))
+        merge_dict(self.ctx.parameters,self.ctx.parameters_yaml['stage_0'])
 
-    def run_stage0(self):
-        running_base = self.submit(Cp2kBaseWorkChain, **self.ctx.inputs)
-        self.report("submitted Cp2kBaseWorkChain<{}> for settings_0/stage_0".format(running_base.pk))
-        return ToContext(workchains=append_(running_base))
+        # Initialize
+        self.ctx.iteration_stage0 = 0
+        self.ctx.stage_tag = 'stage_0'
+        self.ctx.stage_idx = 0
+        self.ctx.settings_tag = 'settings_0'
+
+    def should_run_stage0(self):
+        self.ctx.iteration_stage0 += 1
+        if self.ctx.iteration_stage0 == 1 or not self.ctx.settings_ok:
+            return True
+        else:
+            return False
+
+    def update_settings(self):
+        # Update the settings idx and check if this is available
+        self.ctx.settings_idx = self.inputs.starting_settings_idx.value + (self.ctx.iteration_stage0-1)
+        if self.ctx.settings_idx>0:
+            self.ctx.settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
+            if  self.ctx.settings_tag in self.ctx.parameters_yaml.keys():
+                merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.settings_tag])
+            else:
+                return self.exit_codes(901,'ERROR_NO_MORE_SETTINGS','Stage0 did not converge but there are no more robust settings to try')
+
+    def run_stage(self):
+        """Check for restart, prepare input, submit and direct output to context"""
+
+        # Check if it is needed to restart the calculation and provide the parent folder
+        if self.ctx.parent_calc_folder:
+            self.ctx.base_inp['cp2k']['parent_calc_folder'] = self.ctx.parent_calc_folder
+            self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS'] = 'RESTART'
+        else:
+            self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS'] = 'ATOMIC'
+
+
+        # Overwrite the generated input with the custom cp2k/parameters and give a label to BaseWC
+        merge_dict(self.ctx.parameters, self.ctx.base_inp['cp2k']['parameters'].get_dict())
+        self.ctx.base_inp['cp2k']['parameters'] = Dict(dict = self.ctx.parameters).store()
+        #if not 'metadata' in self.ctx.base_inp.keys():
+        #    self.ctx.base_inp['metatdata'] = {}
+        self.ctx.base_inp['metadata']['label'] = 'base({}/{})'.format(self.ctx.settings_tag,self.ctx.stage_tag)
+
+        running_base = self.submit(Cp2kBaseWorkChain, **self.ctx.base_inp)
+        self.report("submitted Cp2kBaseWorkChain<{}> for {}/{}".format(running_base.pk,self.ctx.settings_tag,self.ctx.stage_tag))
+        return ToContext(stages=append_(running_base))
+
+
+    def inspect_stage0_settings(self):
+        # bandgap < 0.01ev
+        # base not converging
+        self.ctx.settings_ok = True
+
+    def inspect_stage(self):
+        """ Update geometry and parent folder """
+        stage = self.ctx.stages[-1]
+        self.ctx.base_inp['cp2k']['structure'] = stage.outputs.output_structure
+        self.ctx.base_inp['cp2k']['parent_calc_folder'] = stage.outputs.remote_folder
+        return
+
+    def should_run_stage(self):
+        """Update the stage idx and tage and check if the new stage is in the protocol,
+        if not the WorkChain is finished
+        """
+        self.ctx.stage_idx += 1
+        self.ctx.stage_tag = 'stage_{}'.format(self.ctx.stage_idx)
+        return self.ctx.stage_tag in self.ctx.parameters_yaml.keys()
+
+    def update_stage(self):
+        """ Update the (&MOTION) settings for the new stage """
+        merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.settings_tag])
+
+
+    def results(self):
+        """ Add final info """
+        return

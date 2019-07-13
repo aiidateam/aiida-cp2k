@@ -208,10 +208,9 @@ pseudopotential:
 
 # Defining input settings
 settings_0: # main settings exploiting OT
-  GENERAL:
+  FORCE_EVAL:
     METHOD:         QUICKSTEP
     STRESS_TENSOR:  ANALYTICAL
-  FORCE_EVAL:
     DFT:
       BASIS_SET_FILE_NAME:
         - BASIS_MOLOPT
@@ -221,53 +220,56 @@ settings_0: # main settings exploiting OT
       UKS:          False
       CHARGE:       0
       MULTIPLICITY: 0
-    MGRID:
-      CUTOFF:      600
-      REL_CUTOFF:  50
-      NGRIDS:      4
-    QS:
-      METHOD: GPW
-      EPS_DEFAULT:   1.0E-10
-      EXTRAPOLATION: ASPC
+      MGRID:
+        CUTOFF:      600
+        REL_CUTOFF:  50
+        NGRIDS:      4
+      QS:
+        METHOD: GPW
+        EPS_DEFAULT:   1.0E-10
+        EXTRAPOLATION: ASPC
 
-    SCF:
-      MAX_SCF:       50
-      EPS_SCF:       1.0E-7
-      MAX_ITER_LUMO: 10000         # for computing the Band gap
-      OUTER_SCF:
-        MAX_SCF:    10
-        EPS_SCF:   1.0E-7
-      OT:
-        PRECONDITIONER: FULL_KINETIC
-        MINIMIZER:      DIIS
+      SCF:
+        MAX_SCF:       50
+        EPS_SCF:       1.0E-7
+        MAX_ITER_LUMO: 10000         # for computing the Band gap
+        OUTER_SCF:
+          MAX_SCF:    10
+          EPS_SCF:   1.0E-7
+        OT:
+          PRECONDITIONER: FULL_KINETIC
+          MINIMIZER:      DIIS
 
-      MIXING:
-        METHOD: DIRECT_P_MIXING
-        ALPHA:  0.4
-        BETA:   0.5
-    XC:
-      XC_FUNCTIONAL:
-        PBE:
-          PARAMETRIZATION: ORIG
-      VDW_POTENTIAL:
-         POTENTIAL_TYPE:  PAIR_POTENTIAL
-         PAIR_POTENTIAL:
-            PARAMETER_FILE_NAME:   dftd3.dat
-            TYPE:                  DFTD3(BJ)
-            REFERENCE_FUNCTIONAL:   PBE
-    PRINT:
-      MO_CUBES:
-        WRITE_CUBE: F
-        EACH:
-          CELL_OPT: 0
-          GEO_OPT: 0
-          MD: 0
-        ADD_LAST: SYMBOLIC
-        NHOMO: 1  # all eigenvalues are dumped anyway
-        NLUMO: 1  # specified neigenvalues are dupmed
-      MULLIKEN: OFF
-      LOWDIN: OFF
-      HIRSHFELD: OFF
+        MIXING:
+          METHOD: DIRECT_P_MIXING
+          ALPHA:  0.4
+          BETA:   0.5
+      XC:
+        XC_FUNCTIONAL:
+          PBE:
+            PARAMETRIZATION: ORIG
+        VDW_POTENTIAL:
+           POTENTIAL_TYPE:  PAIR_POTENTIAL
+           PAIR_POTENTIAL:
+              PARAMETER_FILE_NAME:   dftd3.dat
+              TYPE:                  DFTD3(BJ)
+              REFERENCE_FUNCTIONAL:   PBE
+      PRINT:
+        MO_CUBES:
+          WRITE_CUBE: F
+          EACH:
+            CELL_OPT: 0
+            GEO_OPT: 0
+            MD: 0
+          ADD_LAST: SYMBOLIC
+          NHOMO: 1  # all eigenvalues are dumped anyway
+          NLUMO: 1  # specified neigenvalues are dupmed
+        MULLIKEN:
+          _: 'OFF'
+        LOWDIN:
+          _: 'OFF'
+        HIRSHFELD:
+          _: 'OFF'
 
   MOTION:
     PRINT:
@@ -301,7 +303,7 @@ settings_1: # alternative settings #1, using smearing+diagonalization
         MAX_SCF: 500
         ADDED_MOS: 1000
         SMEAR:
-          _:  ON,
+          _:  ON
           METHOD: FERMI_DIRAC
           ELECTRONIC_TEMPERATURE: '[K] 300'
         DIAGONALIZATION:
@@ -323,11 +325,11 @@ stage_0:
     GEO_OPT:
       TYPE: MINIMIZATION                     #default: MINIMIZATION
       OPTIMIZER: BFGS                        #default: BFGS
-      MAX_ITER:  3                           #default: 200
-      MAX_DR:    "[bohr] 0.0030"               #default: [bohr] 0.0030
-      RMS_DR:    "[bohr] 0.0015"               #default: [bohr] 0.0015
-      MAX_FORCE: "[bohr^-1*hartree] 0.00045"   #default: [bohr^-1*hartree] 0.00045
-      RMS_FORCE: "[bohr^-1*hartree] 0.00030"   #default: [bohr^-1*hartree] 0.00030
+      MAX_ITER:  2                           #default: 200
+      MAX_DR:    "[bohr] 0.0000001"             #default: [bohr] 0.0030
+      RMS_DR:    "[bohr] 0.0000001"             #default: [bohr] 0.0015
+      MAX_FORCE: "[bohr^-1*hartree] 0.0000001"  #default: [bohr^-1*hartree] 0.00045
+      RMS_FORCE: "[bohr^-1*hartree] 0.0000001"  #default: [bohr^-1*hartree] 0.00030
       BFGS:
           TRUST_RADIUS: "[angstrom] 0.25"      #default: [angstrom] 0.25
 

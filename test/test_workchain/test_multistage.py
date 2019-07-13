@@ -39,49 +39,13 @@ atoms.center(vacuum=2.0)
 structure = StructureData(ase=atoms)
 
 # lowering the settings for acheaper calculation
-parameters = Dict(
-    dict={
+parameters = Dict(dict={
         'FORCE_EVAL': {
-            'METHOD': 'Quickstep',
-            'DFT': {
-                'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-                'QS': {
-                    'EPS_DEFAULT': 1.0e-12,
-                    'WF_INTERPOLATION': 'ps',
-                    'EXTRAPOLATION_ORDER': 3,
-                },
-                'MGRID': {
-                    'NGRIDS': 4,
-                    'CUTOFF': 280,
-                    'REL_CUTOFF': 30,
-                },
-                'XC': {
-                    'XC_FUNCTIONAL': {
-                        '_': 'LDA',
-                    },
-                },
-                'POISSON': {
-                    'PERIODIC': 'none',
-                    'PSOLVER': 'MT',
-                },
-            },
-            'SUBSYS': {
-                'KIND': [
-                    {
-                        '_': 'O',
-                        'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                        'POTENTIAL': 'GTH-LDA-q6'
-                    },
-                    {
-                        '_': 'H',
-                        'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                        'POTENTIAL': 'GTH-LDA-q1'
-                    },
-                ],
-            },
-        }
-    })
-
+          'DFT': {
+            'MGRID': {
+              'CUTOFF': 280,
+              'REL_CUTOFF': 30,
+}}}})
 options = {
     "resources": {
         "num_machines": 1,

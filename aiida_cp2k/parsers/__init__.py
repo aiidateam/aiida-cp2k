@@ -65,6 +65,7 @@ class Cp2kParser(Parser):
         with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
             lines = fobj.readlines()
             for i_line, line in enumerate(lines):
+                #print(i_line, result_dict)
                 if line.startswith(' ENERGY| '):
                     energy = float(line.split()[8])
                     result_dict['energy'] = energy
@@ -114,11 +115,11 @@ class Cp2kParser(Parser):
                     if int(line.split()[-1]) == 1:
                         line_is = 'eigen_alpha'
                         if not 'eigen_alpha' in result_dict.keys():
-                            result_dic['eigen_alpha'] = np.array([])
+                            result_dict['eigen_alpha'] = np.array([])
                     elif int(line.split()[-1]) == 2:
                         line_is = 'eigen_beta'
                         if not 'eigen_alpha' in result_dict.keys():
-                            result_dic['eigen_beta'] = np.array([])
+                            result_dict['eigen_beta'] = np.array([])
 
                 if line_is!=None:
                     # Read eigenvalues as 4-columns row, then convert to float
@@ -126,9 +127,9 @@ class Cp2kParser(Parser):
                         if re.search("-------------", line) or re.search("Reached convergence", line):
                             continue
                         if len(line.split()) > 0 and len(line.split()) <= 4:
-                            result_dic[line_is] = np.append(info[read_eigen], line.split())
+                            result_dict[line_is] = np.append(info[read_eigen], line.split())
                         else:
-                            result_dic[line_is] = result_dic[line_is].astype(np.float)
+                            result_dict[line_is] = result_dict[line_is].astype(np.float)
                             line_is = None
 
 

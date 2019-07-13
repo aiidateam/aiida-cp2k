@@ -67,7 +67,8 @@ class Cp2kCalculation(CalcJob):
         spec.output('output_parameters', valid_type=Dict, required=True, help='the results of the calculation')
         spec.output('output_structure', valid_type=StructureData, required=False, help='optional relaxed structure')
         spec.output('output_bands', valid_type=BandsData, required=False, help='optional band structure')
-
+        spec.default_output_node = 'output_parameters'
+        
     # --------------------------------------------------------------------------
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.

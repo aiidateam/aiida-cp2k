@@ -208,6 +208,8 @@ pseudopotential:
 
 # Defining input settings
 settings_0: # main settings exploiting OT
+  GLOBAL:
+    PRINT_LEVEL: MEDIUM              #default: MEDIUM. Important to have the correct parsing
   FORCE_EVAL:
     METHOD:         QUICKSTEP
     STRESS_TENSOR:  ANALYTICAL
@@ -257,15 +259,20 @@ settings_0: # main settings exploiting OT
       PRINT:
         MO_CUBES:
           WRITE_CUBE: F
+          ADD_LAST: SYMBOLIC
           EACH:
             CELL_OPT: 0
             GEO_OPT: 0
             MD: 0
-          ADD_LAST: SYMBOLIC
           NHOMO: 1  # all eigenvalues are dumped anyway
           NLUMO: 1  # specified neigenvalues are dupmed
         MULLIKEN:
-          _: 'OFF'
+          _: 'ON'
+          ADD_LAST: SYMBOLIC
+          EACH:
+            CELL_OPT: 0
+            GEO_OPT: 0
+            MD: 0
         LOWDIN:
           _: 'OFF'
         HIRSHFELD:

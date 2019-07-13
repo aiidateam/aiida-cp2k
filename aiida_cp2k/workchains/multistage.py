@@ -135,6 +135,7 @@ class Cp2kMultistageWorkChain(WorkChain):
         self.ctx.stage_tag = 'stage_0'
         self.ctx.stage_idx = 0
         self.ctx.settings_tag = 'settings_0'
+        self.ctx.structure_new = None
 
     def should_run_stage0(self):
         self.ctx.iteration_stage0 += 1
@@ -156,23 +157,26 @@ class Cp2kMultistageWorkChain(WorkChain):
     def run_stage(self):
         """Check for restart, prepare input, submit and direct output to context"""
 
-        # Check if it is needed to restart the calculation and provide the parent folder
+        # Check if it is needed to restart the calculation and provide the parent folder and new structure
         if self.ctx.parent_calc_folder:
             self.ctx.base_inp['cp2k']['parent_calc_folder'] = self.ctx.parent_calc_folder
             self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS'] = 'RESTART'
+            self.ctx.parameters['FORCE_EVAL']['DFT']['WFN_RESTART_FILE_NAME'] = './parent_calc/aiida-RESTART.wfn'
+            if self.ctx.structure_new:
+                self.ctx.base_inp['cp2k']['structure'] = self.ctx.structure_new
         else:
             self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS'] = 'ATOMIC'
 
 
-        # Overwrite the generated input with the custom cp2k/parameters and give a label to BaseWC
-        merge_dict(self.ctx.parameters, self.ctx.base_inp['cp2k']['parameters'].get_dict())
+
+        # Overwrite the generated input with the custom cp2k/parameters and give a label to BaseWC and Cp2kCalc
+        merge_dict(self.ctx.parameters, AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'base')['cp2k']['parameters'].get_dict()))
         self.ctx.base_inp['cp2k']['parameters'] = Dict(dict = self.ctx.parameters).store()
-        #if not 'metadata' in self.ctx.base_inp.keys():
-        #    self.ctx.base_inp['metatdata'] = {}
-        self.ctx.base_inp['metadata']['label'] = 'base({}/{})'.format(self.ctx.settings_tag,self.ctx.stage_tag)
+        self.ctx.base_inp['metadata']['label'] = 'base({}/{})'.format(self.ctx.stage_tag,self.ctx.settings_tag,)
+        self.ctx.base_inp['cp2k']['metadata']['label'] = self.ctx.base_inp['cp2k']['parameters'].get_dict()['GLOBAL']['RUN_TYPE']
 
         running_base = self.submit(Cp2kBaseWorkChain, **self.ctx.base_inp)
-        self.report("submitted Cp2kBaseWorkChain<{}> for {}/{}".format(running_base.pk,self.ctx.settings_tag,self.ctx.stage_tag))
+        self.report("submitted Cp2kBaseWorkChain<{}> for {}/{}".format(running_base.pk,self.ctx.stage_tag,self.ctx.settings_tag))
         return ToContext(stages=append_(running_base))
 
 
@@ -184,8 +188,8 @@ class Cp2kMultistageWorkChain(WorkChain):
     def inspect_stage(self):
         """ Update geometry and parent folder """
         stage = self.ctx.stages[-1]
-        self.ctx.base_inp['cp2k']['structure'] = stage.outputs.output_structure
-        self.ctx.base_inp['cp2k']['parent_calc_folder'] = stage.outputs.remote_folder
+        self.ctx.structure_new = stage.outputs.output_structure
+        self.ctx.parent_calc_folder = stage.outputs.remote_folder
         return
 
     def should_run_stage(self):
@@ -198,7 +202,7 @@ class Cp2kMultistageWorkChain(WorkChain):
 
     def update_stage(self):
         """ Update the (&MOTION) settings for the new stage """
-        merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.settings_tag])
+        merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.stage_tag])
 
 
     def results(self):

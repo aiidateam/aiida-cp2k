@@ -42,6 +42,9 @@ structure = StructureData(ase=atoms)
 parameters = Dict(dict={
         'FORCE_EVAL': {
           'DFT': {
+            'UKS': True,
+            'MULTIPLICITY': 2,
+            'CHARGE': -1,
             'MGRID': {
               'CUTOFF': 280,
               'REL_CUTOFF': 30,

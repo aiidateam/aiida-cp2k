@@ -37,6 +37,7 @@ def merge_dict(dct, merge_dct):
 
 @wf
 def merge_Dict(p1, p2):
+    """ Overwrite the second Dict into the first Dict """
     p1_dict = p1.get_dict()
     p2_dict = p2.get_dict()
     merge_dict(p1_dict, p2_dict)

@@ -58,10 +58,11 @@ class Cp2kParser(Parser):
             raise OutputParsingError("Cp2k output file not retrieved")
 
         result_dict = {'exceeded_walltime': False}
-        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
         line_is = None
         energy = None
         BOHR2ANG = 0.529177208590000
+
+        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
         with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
             lines = fobj.readlines()
             for i_line, line in enumerate(lines):
@@ -113,23 +114,25 @@ class Cp2kParser(Parser):
 
                 if re.search("subspace spin", line):
                     if int(line.split()[-1]) == 1:
-                        line_is = 'eigen_alpha'
-                        if not 'eigen_alpha' in result_dict.keys():
-                            result_dict['eigen_alpha'] = np.array([])
+                        line_is = 'eigen_alpha_au'
+                        if not 'eigen_alpha_au' in result_dict.keys():
+                            result_dict['eigen_alpha_au'] = []
                     elif int(line.split()[-1]) == 2:
-                        line_is = 'eigen_beta'
-                        if not 'eigen_alpha' in result_dict.keys():
-                            result_dict['eigen_beta'] = np.array([])
+                        line_is = 'eigen_beta_au'
+                        if not 'eigen_beta_au' in result_dict.keys():
+                            result_dict['eigen_beta_au'] = []
+                    continue
 
+                # If a tag has been detected, now read the following line knowing what they are
                 if line_is!=None:
                     # Read eigenvalues as 4-columns row, then convert to float
-                    if line_is in ['eigen_alpha', 'eigen_beta']:
+                    if line_is in ['eigen_alpha_au', 'eigen_beta_au']:
                         if re.search("-------------", line) or re.search("Reached convergence", line):
                             continue
                         if len(line.split()) > 0 and len(line.split()) <= 4:
-                            result_dict[line_is] = np.append(info[read_eigen], line.split())
+                            for x in line.split():
+                                result_dict[line_is].append(float(x))
                         else:
-                            result_dict[line_is] = result_dict[line_is].astype(np.float)
                             line_is = None
 
 
@@ -227,6 +230,28 @@ class Cp2kParser(Parser):
 
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")
+
+        # Compute the bandgap for Alpha and Beta (works also with smearing!)
+        if result_dict['dft_type'] == "RKS":
+            lumo_alpha_idx = int(result_dict['init_nel_alpha']/2)
+            homo_alpha = result_dict['eigen_alpha_au'][lumo_alpha_idx-1]
+            lumo_alpha = result_dict['eigen_alpha_au'][lumo_alpha_idx]
+            result_dict['bandgap_alpha_au'] = lumo_alpha-homo_alpha
+        elif result_dict['dft_type'] == "UKS":
+            lumo_alpha_idx = result_dict['init_nel_alpha']
+            lumo_beta_idx = result_dict['init_nel_beta']
+            if (lumo_alpha_idx > len(result_dict['eigen_alpha_au'])-1) or \
+               (lumo_beta_idx > len(result_dict['eigen_beta_au'])-1):
+                #electrons jumped from alpha to beta (or opposite): assume last eigen is lumo
+                lumo_alpha_idx = len(result_dict['eigen_alpha_au'])-1
+                lumo_beta_idx = len(result_dict['eigen_beta_au'])-1
+            homo_alpha = result_dict['eigen_alpha_au'][lumo_alpha_idx-1]
+            homo_beta = result_dict['eigen_beta_au'][lumo_beta_idx-1]
+            lumo_alpha = result_dict['eigen_alpha_au'][lumo_alpha_idx]
+            lumo_beta = result_dict['eigen_beta_au'][lumo_beta_idx]
+            result_dict['bandgap_alpha_au'] = lumo_alpha-homo_alpha
+            result_dict['bandgap_beta_au'] = lumo_beta-homo_beta
+        #elif result_dict['dft_type'] == "ROKS": to be investigated and added
 
         self.out('output_parameters', Dict(dict=result_dict))
 

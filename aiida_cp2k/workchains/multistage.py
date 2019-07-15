@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Multistage workchain"""
 from __future__ import absolute_import
-import ruamel.yaml as yaml #does not convert OFF to False
 import os
 from copy import deepcopy
 
@@ -88,6 +87,58 @@ def min_bandgap_ev(cp2k_output):
         bandgap = min(cp2k_output["bandgap_alpha_au"],cp2k_output["bandgap_beta_au"])
     return bandgap*hartree2ev
 
+
+@wf
+def read_yaml(protocol_tag_Str):
+    """ Read the yaml protocol and returns it as Dict and the number
+    of stages as Float. Try first to read from a provided SinglefileData yaml
+    and then with the preconfigured one with tags. """
+    import ruamel.yaml as yaml #does not convert OFF to False
+    dir = os.path.dirname(os.path.abspath(__file__))
+    yamlfullpath = '{}/multistage_{}.yaml'.format(dir, protocol_tag_Str.value)
+    with open(yamlfullpath, 'r') as stream:
+        yaml_dict = yaml.safe_load(stream)
+
+    nstages = 0
+    while 'stage_{}'.format(nstages) in yaml_dict.keys():
+        nstages+=1
+
+    return Dict(dict=yaml_dict).store()
+
+
+@wf
+def count_nstages(parameters_yaml_Dict):
+    """ Count stages in the parameters_yaml"""
+    nstages = 0
+    while 'stage_{}'.format(nstages) in parameters_yaml_Dict.get_dict().keys():
+        nstages+=1
+    return Int(nstages).store()
+
+''' todo
+@wf
+def gather_results(nstages, **kwargs):
+            i = 0
+            istage_dict = {}
+            for istage in stage:
+                istage_dict[]
+
+                i+=1
+
+            output_dict = {}
+            output_dict['nstages'] =
+            output_dict['motion_opt_converged'] = []
+            for i in range(-output_dict['nstages'],0): # avoid the stage0 with failing settings
+                istage = [i]
+                output_dict['motion_opt_converged'].append(istage.outputs.output_parameters.get_dict()['motion_opt_converged'])
+
+            # Outputs from the last stage
+            output_dict['dft_type'] = istage.outputs.output_parameters.get_dict()['dft_type']
+            output_dict['bandgap_alpha_au'] = istage.outputs.output_parameters.get_dict()['bandgap_alpha_au']
+            if output_dict['dft_type'] == 'UKS':
+                output_dict['bandgap_beta_au'] = istage.outputs.output_parameters.get_dict()['bandgap_beta_au']
+    return Dict(dict=output_dict).store()
+'''
+
 class Cp2kMultistageWorkChain(WorkChain):
     """Workchain to submit GEO_OPT/CELL_OPT/MD workchains with iterative fashion
 
@@ -135,11 +186,14 @@ class Cp2kMultistageWorkChain(WorkChain):
             ),
             cls.results,
         )
-        #spec.expose_outputs(Cp2kBaseWorkChain)
         spec.exit_code(901,'ERROR_MISSING_INITIAL_SETTINGS',
             'Specified starting_settings_idx that is not existing, or any in between 0 and idx is missing.')
         spec.exit_code(902,'ERROR_NO_MORE_SETTINGS',
             'Settings for Stage0 are not ok but there are no more robust settings to try')
+        spec.expose_outputs(Cp2kBaseWorkChain, include=('output_structure','remote_folder'))
+        spec.output('last_input_parameters', valid_type=Dict, required=True)
+        #spec.output('output_parameters', valid_type=Dict, required=True)
+
 
     def setup_multistage(self):
 
@@ -153,11 +207,10 @@ class Cp2kMultistageWorkChain(WorkChain):
             self.ctx.parent_calc_folder = None
 
         # Read yaml file chosen with the tag and overwrite with custom modifications
-        dir = os.path.dirname(os.path.abspath(__file__))
-        yamlfullpath = '{}/multistage_{}.yaml'.format(dir, self.inputs.protocol_tag.value)
-        with open(yamlfullpath, 'r') as stream:
-            self.ctx.parameters_yaml = yaml.safe_load(stream)
-        merge_dict(self.ctx.parameters_yaml,self.inputs.protocol_modify.get_dict())
+        self.ctx.parameters_yaml = read_yaml(self.inputs.protocol_tag)
+        self.ctx.nstages = count_nstages(self.ctx.parameters_yaml)
+        merge_Dict(self.ctx.parameters_yaml,self.inputs.protocol_modify)
+
 
         # Initialize
         self.ctx.stage_idx = 0
@@ -244,13 +297,15 @@ class Cp2kMultistageWorkChain(WorkChain):
 
     def inspect_and_update_stage(self):
         """ Update geometry, parent folder and the new &MOTION settings"""
+        last_stage = self.ctx.stages[-1]
+        self.ctx.structure_new = last_stage.outputs.output_structure
+        self.ctx.parent_calc_folder = last_stage.outputs.remote_folder
+
         self.ctx.stage_idx += 1
         self.ctx.stage_tag = 'stage_{}'.format(self.ctx.stage_idx)
+
         if self.ctx.stage_tag in self.ctx.parameters_yaml.keys():
             self.ctx.next_stage_exists = True
-            last_stage = self.ctx.stages[-1]
-            self.ctx.structure_new = last_stage.outputs.output_structure
-            self.ctx.parent_calc_folder = last_stage.outputs.remote_folder
             merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.stage_tag])
         else:
             self.ctx.next_stage_exists = False
@@ -261,5 +316,9 @@ class Cp2kMultistageWorkChain(WorkChain):
         return self.ctx.next_stage_exists
 
     def results(self):
-        """ Add final info """
+        """ Gather final outputs of the workchain """
+        #self.out('output_parameters', gather_results(self.ctx.stage_idx, self.ctx.stages))
+        self.out('last_input_parameters',self.ctx.base_inp['cp2k']['parameters'])
+        self.out_many(self.exposed_outputs(self.ctx.stages[-1], Cp2kBaseWorkChain)) #(output_structure and remote_folder)
+
         return

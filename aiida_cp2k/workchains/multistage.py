@@ -15,8 +15,6 @@ from aiida_cp2k.workchains import Cp2kBaseWorkChain
 
 Cp2kCalculation = CalculationFactory('cp2k')  # pylint: disable=invalid-name
 
-
-
 def merge_dict(dct, merge_dct):
     """ Taken from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
     Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
@@ -57,6 +55,9 @@ def get_kinds_section(structure, multistage_settings):
     return { 'FORCE_EVAL': { 'SUBSYS': { 'KIND': kinds }}}
 
 def get_input_multiplicity(structure, multistage_settings):
+    """ Compute the total multiplicity of the structure,
+    by counting the atomic magnetizations
+    """
     multiplicity = 1
     all_atoms = structure.get_ase().get_chemical_symbols()
     for key, value in multistage_settings['initial_magnetization'].items():
@@ -67,8 +68,41 @@ def get_input_multiplicity(structure, multistage_settings):
         multiplicity_dict['FORCE_EVAL']['DFT']['UKS'] = True
     return multiplicity_dict
 
+def is_using_ot(cp2k_parameters):
+    """ Returns True if the parameters are switching on the OT """
+    list_true = [True, 'T', 't', '.TRUE.', 'True', 'true'] #add more?
+    try:
+      ot_settings = cp2k_parameters['FORCE_EVAL']['DFT']['SCF']['OT']
+      if ('_' not in ot_settings.keys()) or (ot_settings['_'] in list_true):
+          return True
+    except KeyError:
+        pass
+    return False
+
+def min_bandgap_ev(cp2k_output):
+    """ Returns the minimum bandgap between alpha and beta in eV """
+    hartree2ev = 27.2114
+    if cp2k_output["dft_type"] == "RKS":
+        bandgap = cp2k_output["bandgap_alpha_au"]
+    else: # UKS (and ROKS?)
+        bandgap = min(cp2k_output["bandgap_alpha_au"],cp2k_output["bandgap_beta_au"])
+    return bandgap*hartree2ev
+
 class Cp2kMultistageWorkChain(WorkChain):
-    """Workchain to submit GEO_OPT/CELL_OPT/MD workchains with iterative fashion"""
+    """Workchain to submit GEO_OPT/CELL_OPT/MD workchains with iterative fashion
+
+    NOTE:
+    1) There are different CP2K's input parameters that are updated in parallel:
+    - AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'base')) is the initial one
+      that contains the custom setting from the run.
+    - self.ctx.base_inp is a Dict that is copied from the previous one and updated.
+      It also contains metadata (e.g., labels) and can contain extra inputs for the base
+    - self.ctx.parameters is a dict that contains only cp2k parameters.
+      Just before the calculation it is merged into the previous one.
+    - self.ctx.parameters_yaml is a dict that contains the parameter from the protocol
+      and is used to update self.ctx.parameters et every change of settings/stage
+
+    """
 
     _calculation_class = Cp2kCalculation
 
@@ -84,16 +118,15 @@ class Cp2kMultistageWorkChain(WorkChain):
         spec.input('protocol_modify', valid_type=Dict, default=Dict(dict={}), required=False,
             help='Specify custom settings that overvrite the yaml settings')
         spec.input('starting_settings_idx', valid_type=Int, default=Int(0), required=False,
-            help='If idx>0 is chosen, the calculation jumps directly to overwriting settings_0 with settings_1')
+            help='If idx>0 is chosen, the calculation jumps directly to overwrite settings_0 with settings_{idx}')
         spec.input('parent_calc_folder', valid_type=RemoteData, required=False,
             help='Provide an initial parent folder that contains the wavefunction, to which restart')
 
         spec.outline(
             cls.setup_multistage,
             while_(cls.should_run_stage0)(
-              cls.update_settings,
               cls.run_stage,
-              cls.inspect_stage0_settings,
+              cls.inspect_and_update_settings_stage0,
             ),
             cls.inspect_stage,
             while_(cls.should_run_stage)(
@@ -104,6 +137,10 @@ class Cp2kMultistageWorkChain(WorkChain):
             cls.results,
         )
         #spec.expose_outputs(Cp2kBaseWorkChain)
+        spec.exit_code(901,'ERROR_MISSING_INITIAL_SETTINGS',
+            'Specified starting_settings_idx that is not existing, or any in between 0 and idx is missing.')
+        spec.exit_code(902,'ERROR_NO_MORE_SETTINGS',
+            'Settings for Stage0 are not ok but there are no more robust settings to try')
 
     def setup_multistage(self):
 
@@ -123,37 +160,35 @@ class Cp2kMultistageWorkChain(WorkChain):
             self.ctx.parameters_yaml = yaml.safe_load(stream)
         merge_dict(self.ctx.parameters_yaml,self.inputs.protocol_modify.get_dict())
 
+        # Initialize
+        self.ctx.stage_idx = 0
+        self.ctx.stage_tag = 'stage_{}'.format(self.ctx.stage_idx)
+        self.ctx.settings_idx = 0
+        self.ctx.settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
+        self.ctx.structure_new = None
+
         # Generate input parameters and store them
         self.ctx.parameters = deepcopy(self.ctx.parameters_yaml['settings_0'])
+        while self.inputs.starting_settings_idx != self.ctx.settings_idx:
+            # overwrite untill the desired starting setting are obtained
+            self.ctx.settings_idx += 1
+            self.ctx.settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
+            if  self.ctx.settings_tag in self.ctx.parameters_yaml.keys():
+                merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.settings_tag])
+            else:
+                return self.exit_codes.ERROR_MISSING_INITIAL_SETTINGS
         kinds = get_kinds_section(self.ctx.base_inp['cp2k']['structure'], self.ctx.parameters_yaml)
         merge_dict(self.ctx.parameters,kinds)
         multiplicity = get_input_multiplicity(self.ctx.base_inp['cp2k']['structure'], self.ctx.parameters_yaml)
         merge_dict(self.ctx.parameters,multiplicity)
         merge_dict(self.ctx.parameters,self.ctx.parameters_yaml['stage_0'])
 
-        # Initialize
-        self.ctx.iteration_stage0 = 0
-        self.ctx.stage_tag = 'stage_0'
-        self.ctx.stage_idx = 0
-        self.ctx.settings_tag = 'settings_0'
-        self.ctx.structure_new = None
-
     def should_run_stage0(self):
-        self.ctx.iteration_stage0 += 1
-        if self.ctx.iteration_stage0 == 1 or not self.ctx.settings_ok:
+        """ Returns True if it is the first iteration or the settings are not ok """
+        try:
+            return not self.ctx.settings_ok
+        except AttributeError:
             return True
-        else:
-            return False
-
-    def update_settings(self):
-        # Update the settings idx and check if this is available
-        self.ctx.settings_idx = self.inputs.starting_settings_idx.value + (self.ctx.iteration_stage0-1)
-        if self.ctx.settings_idx>0:
-            self.ctx.settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
-            if  self.ctx.settings_tag in self.ctx.parameters_yaml.keys():
-                merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.settings_tag])
-            else:
-                return self.exit_codes(901,'ERROR_NO_MORE_SETTINGS','Stage0 did not converge but there are no more robust settings to try')
 
     def run_stage(self):
         """Check for restart, prepare input, submit and direct output to context"""
@@ -168,8 +203,6 @@ class Cp2kMultistageWorkChain(WorkChain):
         else:
             self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS'] = 'ATOMIC'
 
-
-
         # Overwrite the generated input with the custom cp2k/parameters and give a label to BaseWC and Cp2kCalc
         merge_dict(self.ctx.parameters, AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'base')['cp2k']['parameters'].get_dict()))
         self.ctx.base_inp['cp2k']['parameters'] = Dict(dict = self.ctx.parameters).store()
@@ -181,10 +214,34 @@ class Cp2kMultistageWorkChain(WorkChain):
         return ToContext(stages=append_(running_base))
 
 
-    def inspect_stage0_settings(self):
-        # bandgap < 0.01ev
-        # base not converging
+    def inspect_and_update_settings_stage0(self):
+        """ Inspect the stage0/settings_{idx} calculation and check if it is
+        needed to update the settings and resubmint the calculation
+        """
         self.ctx.settings_ok = True
+
+        # Settings/structure bad: something very bad happened and the calculation is not doing even the scf cycles
+        # if base.is_ko
+        #
+
+        # Settings bad: base did not converge
+        # if base did not converge
+        #    self.ctx.settings_idx+=1
+
+        # Settings bad: OT and small (or negative!) bandgap
+        bandgap_ev = min_bandgap_ev(self.ctx.stages[-1].outputs.output_parameters)
+        if is_using_ot(self.ctx.parameters) and bandgap_ev < 0.1:
+            self.report("Calculation converged but bandgap {} < 0.1 eV found with OT}".format(bandgap_ev))
+            self.ctx.settings_ok = False
+            self.ctx.settings_idx += 1
+
+        # Update the settings tag, check if it is available and overwrite
+        if not self.ctx.settings_ok:
+            self.ctx.settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
+            if self.ctx.settings_tag in self.ctx.parameters_yaml.keys():
+                merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.settings_tag])
+            else:
+                return self.exit_codes.ERROR_NO_MORE_SETTINGS
 
     def inspect_stage(self):
         """ Update geometry and parent folder """

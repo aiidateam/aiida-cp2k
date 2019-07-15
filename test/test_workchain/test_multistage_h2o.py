@@ -31,7 +31,7 @@ except NotExistent:
     print("The code '{}' does not exist".format(codename))
     sys.exit(1)
 
-print("Testing CP2K multistage workchain on H2O (DFT)...")
+print("Testing CP2K multistage workchain on H2O (RKS, no need for smearing)...")
 
 # structure
 atoms = ase.build.molecule('H2O')
@@ -42,9 +42,6 @@ structure = StructureData(ase=atoms)
 parameters = Dict(dict={
         'FORCE_EVAL': {
           'DFT': {
-            'UKS': True,
-            'MULTIPLICITY': 2,
-            'CHARGE': -1,
             'MGRID': {
               'CUTOFF': 280,
               'REL_CUTOFF': 30,
@@ -69,5 +66,4 @@ inputs = {
     }
 }
 
-print("Submitted Multistage workchain...")
 run(Cp2kMultistageWorkChain, **inputs)

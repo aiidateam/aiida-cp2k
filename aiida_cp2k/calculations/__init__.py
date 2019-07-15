@@ -59,6 +59,9 @@ class Cp2kCalculation(CalcJob):
         spec.input(
             'metadata.options.parser_name', valid_type=six.string_types, default=cls._DEFAULT_PARSER, non_db=True)
 
+        # Use mpi by default
+        spec.input('metadata.options.withmpi', valid_type=bool, default=True)
+
         # Exit codes
         spec.exit_code(
             100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')

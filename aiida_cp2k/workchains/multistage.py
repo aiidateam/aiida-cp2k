@@ -128,11 +128,10 @@ class Cp2kMultistageWorkChain(WorkChain):
               cls.run_stage,
               cls.inspect_and_update_settings_stage0,
             ),
-            cls.inspect_stage,
+            cls.inspect_and_update_stage,
             while_(cls.should_run_stage)(
-                cls.update_stage,
                 cls.run_stage,
-                cls.inspect_stage,
+                cls.inspect_and_update_stage,
             ),
             cls.results,
         )
@@ -243,25 +242,23 @@ class Cp2kMultistageWorkChain(WorkChain):
             else:
                 return self.exit_codes.ERROR_NO_MORE_SETTINGS
 
-    def inspect_stage(self):
-        """ Update geometry and parent folder """
-        stage = self.ctx.stages[-1]
-        self.ctx.structure_new = stage.outputs.output_structure
-        self.ctx.parent_calc_folder = stage.outputs.remote_folder
-        return
-
-    def should_run_stage(self):
-        """Update the stage idx and tage and check if the new stage is in the protocol,
-        if not the WorkChain is finished
-        """
+    def inspect_and_update_stage(self):
+        """ Update geometry, parent folder and the new &MOTION settings"""
         self.ctx.stage_idx += 1
         self.ctx.stage_tag = 'stage_{}'.format(self.ctx.stage_idx)
-        return self.ctx.stage_tag in self.ctx.parameters_yaml.keys()
+        if self.ctx.stage_tag in self.ctx.parameters_yaml.keys():
+            self.ctx.next_stage_exists = True
+            last_stage = self.ctx.stages[-1]
+            self.ctx.structure_new = last_stage.outputs.output_structure
+            self.ctx.parent_calc_folder = last_stage.outputs.remote_folder
+            merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.stage_tag])
+        else:
+            self.ctx.next_stage_exists = False
+            self.report("All stages computed, finishing...")
 
-    def update_stage(self):
-        """ Update the (&MOTION) settings for the new stage """
-        merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.stage_tag])
-
+    def should_run_stage(self):
+        """ Return True if it exists a new stage to compute """
+        return self.ctx.next_stage_exists
 
     def results(self):
         """ Add final info """

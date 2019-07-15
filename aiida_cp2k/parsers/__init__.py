@@ -58,6 +58,7 @@ class Cp2kParser(Parser):
             raise OutputParsingError("Cp2k output file not retrieved")
 
         result_dict = {'exceeded_walltime': False}
+        result_dict['warnings'] = []
         line_is = None
         energy = None
         BOHR2ANG = 0.529177208590000
@@ -66,7 +67,6 @@ class Cp2kParser(Parser):
         with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
             lines = fobj.readlines()
             for i_line, line in enumerate(lines):
-                #print(i_line, result_dict)
                 if line.startswith(' ENERGY| '):
                     energy = float(line.split()[8])
                     result_dict['energy'] = energy
@@ -123,6 +123,14 @@ class Cp2kParser(Parser):
                             result_dict['eigen_beta_au'] = []
                     continue
 
+                # Parse warnings
+                if re.search("Using a non-square number of", line):
+                    result_dict['warnings'] = 'Using a non-square number of MPI ranks'
+                if re.search("SCF run NOT converged", line):
+                    warn = "One or more SCF run did not converge"
+                    if warn not in result_dict['warnings']:
+                        result_dict['warnings'] = warn
+
                 # If a tag has been detected, now read the following line knowing what they are
                 if line_is!=None:
                     # Read eigenvalues as 4-columns row, then convert to float
@@ -135,34 +143,40 @@ class Cp2kParser(Parser):
                         else:
                             line_is = None
 
-
+                ####################################################################
+                #  THIS SECTION PARSES THE PROPERTIES AT GOE_OPT/CELL_OPT/MD STEP  #
+                #  BC: it can be unstable!                                         #
+                ####################################################################
                 if 'run_type' in result_dict.keys() and result_dict['run_type'] in ['ENERGY','ENERGY_FORCE','GEO_OPT','CELL_OPT','MD-NVT','MD-NPT_F']:
                   # Initialization
                   if not 'motion_step_info' in result_dict:
-                         result_dict['motion_step_info'] = { 'step' : [],
-                                                             'energy_au': [],
-                                                             'dispersion_energy_au': [],
-                                                             'pressure_bar': [],
-                                                             'cell_vol_angs3': [],
-                                                             'cell_a_angs': [],
-                                                             'cell_b_angs': [],
-                                                             'cell_c_angs': [],
-                                                             'cell_alp_deg': [],
-                                                             'cell_bet_deg': [],
-                                                             'cell_gam_deg': [],
-                                                             'max_step_au': [],
-                                                             'rms_step_au': [],
-                                                             'max_grad_au': [],
-                                                             'rms_grad_au': []
-                                                            }
-                         step = 0
-                         energy = None
-                         dispersion = None #Needed if no dispersions are included
-                         pressure = None
-                         max_step = None
-                         rms_step = None
-                         max_grad = None
-                         rms_grad = None
+                     result_dict['motion_opt_converged'] = False
+                     result_dict['motion_step_info'] = { 'step' : [],
+                                                         'energy_au': [],
+                                                         'dispersion_energy_au': [],
+                                                         'pressure_bar': [],
+                                                         'cell_vol_angs3': [],
+                                                         'cell_a_angs': [],
+                                                         'cell_b_angs': [],
+                                                         'cell_c_angs': [],
+                                                         'cell_alp_deg': [],
+                                                         'cell_bet_deg': [],
+                                                         'cell_gam_deg': [],
+                                                         'max_step_au': [],
+                                                         'rms_step_au': [],
+                                                         'max_grad_au': [],
+                                                         'rms_grad_au': [],
+                                                         'scf_converged': [],
+                                                        }
+                     step = 0
+                     energy = None
+                     dispersion = None #Needed if no dispersions are included
+                     pressure = None
+                     max_step = None
+                     rms_step = None
+                     max_grad = None
+                     rms_grad = None
+                     scf_converged = True
 
                   print_now=False
                   data= line.split()
@@ -177,19 +191,23 @@ class Cp2kParser(Parser):
                      if re.search("gamma", line):     cell_gam=float(data[5])
 
                   if re.search("Dispersion energy", line):  dispersion=float(data[2])
+                  if re.search("SCF run NOT converged", line): scf_converged = False
 
                   # Parse specific info
                   if result_dict['run_type'] in ['ENERGY', 'ENERGY_FORCE']:
                       if energy != None and len(result_dict['motion_step_info']['step'])==0 :
                           print_now=True
                   if result_dict['run_type'] in ['GEO_OPT','CELL_OPT']:
+                      #Note: with CELL_OPT/LBFGS there is no "STEP 0", while there is with CELL_OPT/BFGS
                       if re.search("Informations at step", line):  	step=int(data[5])
                       if re.search("Max. step size             =", line): max_step=float(data[-1])
                       if re.search("RMS step size              =", line): rms_step=float(data[-1])
                       if re.search("Max. gradient              =", line): max_grad=float(data[-1])
                       if re.search("RMS gradient               =", line): rms_grad=float(data[-1])
                       if len(data)==1 and data[0]=='---------------------------------------------------': print_now=True # 51('-')
-                      #Note: with CELL_OPT/LBFGS there is no "STEP 0", while there is with CELL_OPT/BFGS
+                      if re.search("Reevaluating energy at the minimum", line): #not clear why it is doing a last one...
+                         result_dict['motion_opt_converged'] = True
+
                   if result_dict['run_type']=='CELL_OPT':
                       if re.search("Internal Pressure", line): pressure=float(data[4])
                   if result_dict['run_type'] =='MD-NVT':
@@ -227,7 +245,14 @@ class Cp2kParser(Parser):
                       result_dict['motion_step_info']['rms_step_au'].append(rms_step)
                       result_dict['motion_step_info']['max_grad_au'].append(max_grad)
                       result_dict['motion_step_info']['rms_grad_au'].append(rms_grad)
+                      result_dict['motion_step_info']['scf_converged'].append(scf_converged)
+                ####################################################################
+                #  END PARSING GEO_OPT/CELL_OPT/MD STEP                            #
+                ####################################################################
 
+        # After having parsed the out file
+
+        # nwarnings is the last thing to be printed: if it is not there, CP2K didn't finish properly
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")
 

@@ -138,8 +138,7 @@ class Cp2kParser(Parser):
                         if re.search("-------------", line) or re.search("Reached convergence", line):
                             continue
                         if len(line.split()) > 0 and len(line.split()) <= 4:
-                            for x in line.split():
-                                result_dict[line_is].append(float(x))
+                            result_dict[line_is] += [float(x) for x in line.split()]
                         else:
                             line_is = None
 
@@ -147,7 +146,7 @@ class Cp2kParser(Parser):
                 #  THIS SECTION PARSES THE PROPERTIES AT GOE_OPT/CELL_OPT/MD STEP  #
                 #  BC: it can be unstable!                                         #
                 ####################################################################
-                if 'run_type' in result_dict.keys() and result_dict['run_type'] in ['ENERGY','ENERGY_FORCE','GEO_OPT','CELL_OPT','MD-NVT','MD-NPT_F']:
+                if 'run_type' in result_dict.keys() and result_dict['run_type'] in ['ENERGY','ENERGY_FORCE','GEO_OPT','CELL_OPT','MD','MD-NVT','MD-NPT_F']:
                   # Initialization
                   if not 'motion_step_info' in result_dict:
                      result_dict['motion_opt_converged'] = False
@@ -210,20 +209,20 @@ class Cp2kParser(Parser):
 
                   if result_dict['run_type']=='CELL_OPT':
                       if re.search("Internal Pressure", line): pressure=float(data[4])
-                  if result_dict['run_type'] =='MD-NVT':
+                  if result_dict['run_type']=='MD-NVT':
                       if re.search("STEP NUMBER", line):           step=int(data[3])
-                      if re.search("INITIAL PRESSURE[bar]", line): pressure=float(data[3]); print_now=True
-                      if re.search("PRESSURE [bar]", line):        pressure=float(data[3]); print_now=True
+                      if re.search("INITIAL PRESSURE\[bar\]", line): pressure=float(data[3]); print_now=True
+                      if re.search("PRESSURE \[bar\]", line):        pressure=float(data[3]); print_now=True
                   if result_dict['run_type']=='MD-NPT_F':
                       if re.search("STEP NUMBER", line):           step=int(data[3])
-                      if re.search("INITIAL PRESSURE[bar]", line): pressure=float(data[3]); print_now=True
-                      if re.search("PRESSURE [bar]", line):        pressure=float(data[3]);
-                      if re.search("VOLUME[bohr^3]", line):        cell_vol=float(data[3])*(BOHR2ANG**3)
-                      if re.search("CELL LNTHS[bohr]", line):
+                      if re.search("INITIAL PRESSURE\[bar\]", line): pressure=float(data[3]); print_now=True
+                      if re.search("PRESSURE \[bar\]", line):        pressure=float(data[3]);
+                      if re.search("VOLUME\[bohr\^3\]", line):        cell_vol=float(data[3])*(BOHR2ANG**3)
+                      if re.search("CELL LNTHS\[bohr\]", line):
                                                                 cell_a=float(data[3])*BOHR2ANG
                                                                 cell_b=float(data[4])*BOHR2ANG
                                                                 cell_c=float(data[5])*BOHR2ANG
-                      if re.search("CELL ANGLS[deg]", line):
+                      if re.search("CELL ANGLS\[deg\]", line):
                                                                 cell_alp=float(data[3])
                                                                 cell_bet=float(data[4])
                                                                 cell_gam=float(data[5])

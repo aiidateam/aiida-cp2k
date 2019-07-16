@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Multistage workchain"""
 from __future__ import absolute_import
+import ruamel.yaml as yaml #does not convert OFF to False
 import os
 from copy import deepcopy
 
@@ -89,55 +90,50 @@ def min_bandgap_ev(cp2k_output):
 
 
 @wf
-def read_yaml(protocol_tag_Str):
-    """ Read the yaml protocol and returns it as Dict and the number
-    of stages as Float. Try first to read from a provided SinglefileData yaml
-    and then with the preconfigured one with tags. """
-    import ruamel.yaml as yaml #does not convert OFF to False
-    dir = os.path.dirname(os.path.abspath(__file__))
-    yamlfullpath = '{}/multistage_{}.yaml'.format(dir, protocol_tag_Str.value)
-    with open(yamlfullpath, 'r') as stream:
-        yaml_dict = yaml.safe_load(stream)
+def extract_results(**kwargs):
+    """ Extracts restults form the output_parameters of the single calculations
+    (i.e., scf-converged stages) into a single Dict output. kwargs contains all
+    the output_parameters for the stages and the extra initial change of settings
+    """
+    output_dict = {}
+    stages_arg = {}
+    nstages=0
+    for key, value in kwargs.items():
+        try: #only scf-converged stages have the label
+            stages_arg[value.label] = key
+            nstages+=1
+        except:
+            pass
+    output_dict['nstages'] = nstages
+    output_dict['last_stage_tag'] = 'stage_{}'.format(nstages-1)
+    output_dict['nruns_stage0'] = len(kwargs)
+    output_dict['stage_opt_converged'] = []
+    output_dict['stage_nsteps'] = []
+    output_dict['step_info'] = {}
+    step_info_list = ['step','energy_au','dispersion_energy_au','pressure_bar',
+                      'cell_vol_angs3','cell_a_angs','cell_b_angs','cell_c_angs',
+                      'cell_alp_deg','cell_bet_deg','cell_gam_deg',
+                      'max_step_au','rms_step_au','max_grad_au','rms_grad_au','scf_converged']
+    for step_info in step_info_list:
+        output_dict['step_info'][step_info]= []
+    for istage in range(nstages): # avoid the stage0 with failing settings
+        key = stages_arg['stage_{}'.format(istage)]
+        output_dict['stage_opt_converged'].append(kwargs[key].get_dict()['motion_opt_converged'])
+        nsteps = kwargs[key].get_dict()['motion_step_info']['step'][-1]
+        output_dict['stage_nsteps'].append(nsteps)
+        for istep in range(nsteps+1):
+            # Exclude redoundant zeroth calculations
+            if not (istage>0 and istep == 0):
+                for step_info in step_info_list:
+                    output_dict['step_info'][step_info].append(kwargs[key].get_dict()['motion_step_info'][step_info][istep])
 
-    nstages = 0
-    while 'stage_{}'.format(nstages) in yaml_dict.keys():
-        nstages+=1
+    # Outputs from the last stage only
+    output_dict['dft_type'] = kwargs[key].get_dict()['dft_type']
+    output_dict['bandgap_alpha_au'] = kwargs[key].get_dict()['bandgap_alpha_au']
+    if output_dict['dft_type'] == 'UKS':
+        output_dict['bandgap_beta_au'] = kwargs[key].get_dict()['bandgap_beta_au']
 
-    return Dict(dict=yaml_dict).store()
-
-
-@wf
-def count_nstages(parameters_yaml_Dict):
-    """ Count stages in the parameters_yaml"""
-    nstages = 0
-    while 'stage_{}'.format(nstages) in parameters_yaml_Dict.get_dict().keys():
-        nstages+=1
-    return Int(nstages).store()
-
-''' todo
-@wf
-def gather_results(nstages, **kwargs):
-            i = 0
-            istage_dict = {}
-            for istage in stage:
-                istage_dict[]
-
-                i+=1
-
-            output_dict = {}
-            output_dict['nstages'] =
-            output_dict['motion_opt_converged'] = []
-            for i in range(-output_dict['nstages'],0): # avoid the stage0 with failing settings
-                istage = [i]
-                output_dict['motion_opt_converged'].append(istage.outputs.output_parameters.get_dict()['motion_opt_converged'])
-
-            # Outputs from the last stage
-            output_dict['dft_type'] = istage.outputs.output_parameters.get_dict()['dft_type']
-            output_dict['bandgap_alpha_au'] = istage.outputs.output_parameters.get_dict()['bandgap_alpha_au']
-            if output_dict['dft_type'] == 'UKS':
-                output_dict['bandgap_beta_au'] = istage.outputs.output_parameters.get_dict()['bandgap_beta_au']
     return Dict(dict=output_dict).store()
-'''
 
 class Cp2kMultistageWorkChain(WorkChain):
     """Workchain to submit GEO_OPT/CELL_OPT/MD workchains with iterative fashion
@@ -192,7 +188,7 @@ class Cp2kMultistageWorkChain(WorkChain):
             'Settings for Stage0 are not ok but there are no more robust settings to try')
         spec.expose_outputs(Cp2kBaseWorkChain, include=('output_structure','remote_folder'))
         spec.output('last_input_parameters', valid_type=Dict, required=True)
-        #spec.output('output_parameters', valid_type=Dict, required=True)
+        spec.output('output_parameters', valid_type=Dict, required=True)
 
 
     def setup_multistage(self):
@@ -207,10 +203,11 @@ class Cp2kMultistageWorkChain(WorkChain):
             self.ctx.parent_calc_folder = None
 
         # Read yaml file chosen with the tag and overwrite with custom modifications
-        self.ctx.parameters_yaml = read_yaml(self.inputs.protocol_tag)
-        self.ctx.nstages = count_nstages(self.ctx.parameters_yaml)
-        merge_Dict(self.ctx.parameters_yaml,self.inputs.protocol_modify)
-
+        dir = os.path.dirname(os.path.abspath(__file__))
+        yamlfullpath = '{}/multistage_{}.yaml'.format(dir, self.inputs.protocol_tag.value)
+        with open(yamlfullpath, 'r') as stream:
+            self.ctx.parameters_yaml = yaml.safe_load(stream)
+        merge_dict(self.ctx.parameters_yaml,self.inputs.protocol_modify.get_dict())
 
         # Initialize
         self.ctx.stage_idx = 0
@@ -300,6 +297,7 @@ class Cp2kMultistageWorkChain(WorkChain):
         last_stage = self.ctx.stages[-1]
         self.ctx.structure_new = last_stage.outputs.output_structure
         self.ctx.parent_calc_folder = last_stage.outputs.remote_folder
+        last_stage.outputs.output_parameters.label = self.ctx.stage_tag
 
         self.ctx.stage_idx += 1
         self.ctx.stage_tag = 'stage_{}'.format(self.ctx.stage_idx)
@@ -317,8 +315,14 @@ class Cp2kMultistageWorkChain(WorkChain):
 
     def results(self):
         """ Gather final outputs of the workchain """
-        #self.out('output_parameters', gather_results(self.ctx.stage_idx, self.ctx.stages))
+
+        all_output_parameters = {}
+        for i,stage in enumerate(self.ctx.stages):
+            all_output_parameters['arg{}'.format(i)] = stage.outputs.output_parameters
+
+        self.out('output_parameters', extract_results(**all_output_parameters))
         self.out('last_input_parameters',self.ctx.base_inp['cp2k']['parameters'])
         self.out_many(self.exposed_outputs(self.ctx.stages[-1], Cp2kBaseWorkChain)) #(output_structure and remote_folder)
+        self.report("Outputs: Dict<{}> and StructureData<{}>".format(self.outputs['output_parameters'].pk,self.outputs['output_structure'].pk))
 
         return

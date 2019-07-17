@@ -15,6 +15,8 @@ from aiida_cp2k.workchains import Cp2kBaseWorkChain
 
 Cp2kCalculation = CalculationFactory('cp2k')  # pylint: disable=invalid-name
 
+hartree2ev = 27.2114
+
 def merge_dict(dct, merge_dct):
     """ Taken from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
     Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
@@ -68,31 +70,23 @@ def get_input_multiplicity(structure, protocol_settings):
         multiplicity_dict['FORCE_EVAL']['DFT']['UKS'] = True
     return multiplicity_dict
 
-def ot_has_small_bandgap(cp2k_parameters, bandgap_ev):
+def ot_has_small_bandgap(cp2k_input, cp2k_output):
     """ Returns True if the calculation used OT and had a smaller bandgap then
     the guess needed for the OT.
     NOTE: It has been observed also negative bandgap with OT in CP2K!
     """
     list_true = [True, 'T', 't', '.TRUE.', 'True', 'true'] #add more?
     try:
-      ot_settings = cp2k_parameters['FORCE_EVAL']['DFT']['SCF']['OT']
+      ot_settings = cp2k_input['FORCE_EVAL']['DFT']['SCF']['OT']
       if ('_' not in ot_settings.keys()) or (ot_settings['_'] in list_true):
           using_ot = True
       else:
           using_ot = False
     except KeyError:
         using_ot = False
-    is_bandgap_small = bandgap_ev < 0.1
+    min_bandgap_ev = min(cp2k_output["bandgap_spin1_au"],cp2k_output["bandgap_spin2_au"])*hartree2ev
+    is_bandgap_small = (min_bandgap_ev < 0.1)
     return (using_ot and is_bandgap_small)
-
-def min_bandgap_ev(cp2k_output):
-    """ Returns the minimum bandgap between alpha and beta in eV """
-    hartree2ev = 27.2114
-    if cp2k_output["dft_type"] == "RKS":
-        bandgap = cp2k_output["bandgap_alpha_au"]
-    else: # UKS (and ROKS?)
-        bandgap = min(cp2k_output["bandgap_alpha_au"],cp2k_output["bandgap_beta_au"])
-    return bandgap*hartree2ev
 
 @wf
 def extract_results(**kwargs):
@@ -104,7 +98,7 @@ def extract_results(**kwargs):
     stages_arg = {}
     nstages=0
     for key, value in kwargs.items():
-        if value.label != 'discarded_settings':
+        if value.label != 'from_discarded_settings':
             stages_arg[value.label] = key
             nstages+=1
     output_dict['nstages'] = nstages
@@ -133,9 +127,8 @@ def extract_results(**kwargs):
 
     # Outputs from the last stage only
     output_dict['dft_type'] = kwargs[key].get_dict()['dft_type']
-    output_dict['bandgap_alpha_au'] = kwargs[key].get_dict()['bandgap_alpha_au']
-    if output_dict['dft_type'] == 'UKS':
-        output_dict['bandgap_beta_au'] = kwargs[key].get_dict()['bandgap_beta_au']
+    output_dict['bandgap_spin1_au'] = kwargs[key].get_dict()['bandgap_spin1_au']
+    output_dict['bandgap_spin2_au'] = kwargs[key].get_dict()['bandgap_spin2_au']
 
     return Dict(dict=output_dict).store()
 
@@ -284,16 +277,18 @@ class Cp2kMultistageWorkChain(WorkChain):
             self.ctx.settings_idx += 1
 
         # Settings bad: OT and small (or negative!) bandgap
-        bandgap_ev = min_bandgap_ev(self.ctx.stages[-1].outputs.output_parameters)
-        self.report("The bandgap is: {:.3f} ev".format(bandgap_ev))
-        if ot_has_small_bandgap(self.ctx.parameters,bandgap_ev):
+        cp2k_inp = self.ctx.parameters
+        cp2k_out = self.ctx.stages[-1].outputs.output_parameters
+        self.report("Bandgaps spin1/spin2: {:.3f} and {:.3f} ev".format(
+            cp2k_out["bandgap_spin1_au"]*hartree2ev,cp2k_out["bandgap_spin2_au"]*hartree2ev))
+        if ot_has_small_bandgap(cp2k_inp,cp2k_out):
             self.report("BAD SETTINGS: band gap is < 0.1eV")
             self.ctx.settings_ok = False
             self.ctx.settings_idx += 1
 
         # Update the settings tag, check if it is available and overwrite
         if not self.ctx.settings_ok:
-            self.ctx.stages[-1].outputs.output_parameters.label = 'discarded_settings'
+            self.ctx.stages[-1].outputs.output_parameters.label = 'from_discarded_settings'
             self.ctx.settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
             if self.ctx.settings_tag in self.ctx.parameters_yaml.keys():
                 merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.settings_tag])

@@ -95,12 +95,15 @@ class Cp2kParser(Parser):
                 if line.startswith(' DFT| ') and not 'dft_type' in result_dict.keys():
                     result_dict['dft_type'] = line.split()[-1] # RKS, UKS or ROKS
 
-                # read the number of electrons in the first step (it may change but it is not update)
+                # read the number of electrons in the first scf (NOTE: it may change but it is not updated!)
                 if re.search('Number of electrons: ', line):
-                    if not 'init_nel_alpha' in result_dict.keys():
-                        result_dict['init_nel_alpha'] = int(line.split()[3])
-                    elif result_dict['dft_type'] == 'UKS' and not 'init_nel_beta' in result_dict.keys():
-                        result_dict['init_nel_beta'] = int(line.split()[3])
+                    if not 'init_nel_spin1' in result_dict.keys():
+                        result_dict['init_nel_spin1'] = int(line.split()[3])
+                        if result_dict['dft_type'] == 'RKS':
+                            result_dict['init_nel_spin1']//=2 #// returns an integer
+                            result_dict['init_nel_spin2'] = result_dict['init_nel_spin1']
+                    elif not 'init_nel_spin2' in result_dict.keys():
+                        result_dict['init_nel_spin2'] = int(line.split()[3])
 
                 # Printed at every outer OT, and needed for understanding if something is going wrong (if !=0)
                 if re.search('Total charge density on r-space grids:', line):
@@ -114,13 +117,13 @@ class Cp2kParser(Parser):
 
                 if re.search("subspace spin", line):
                     if int(line.split()[-1]) == 1:
-                        line_is = 'eigen_alpha_au'
-                        if not 'eigen_alpha_au' in result_dict.keys():
-                            result_dict['eigen_alpha_au'] = []
+                        line_is = 'eigen_spin1_au'
+                        if not 'eigen_spin1_au' in result_dict.keys():
+                            result_dict['eigen_spin1_au'] = []
                     elif int(line.split()[-1]) == 2:
-                        line_is = 'eigen_beta_au'
-                        if not 'eigen_beta_au' in result_dict.keys():
-                            result_dict['eigen_beta_au'] = []
+                        line_is = 'eigen_spin2_au'
+                        if not 'eigen_spin2_au' in result_dict.keys():
+                            result_dict['eigen_spin2_au'] = []
                     continue
 
                 # Parse warnings
@@ -134,7 +137,7 @@ class Cp2kParser(Parser):
                 # If a tag has been detected, now read the following line knowing what they are
                 if line_is!=None:
                     # Read eigenvalues as 4-columns row, then convert to float
-                    if line_is in ['eigen_alpha_au', 'eigen_beta_au']:
+                    if line_is in ['eigen_spin1_au', 'eigen_spin2_au']:
                         if re.search("-------------", line) or re.search("Reached convergence", line):
                             continue
                         if len(line.split()) > 0 and len(line.split()) <= 4:
@@ -255,27 +258,23 @@ class Cp2kParser(Parser):
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")
 
-        # Compute the bandgap for Alpha and Beta (works also with smearing!)
+        # Compute the bandgap for Spin1 and Spin2 (works also with smearing!)
         if result_dict['dft_type'] == "RKS":
-            lumo_alpha_idx = int(result_dict['init_nel_alpha']/2)
-            homo_alpha = result_dict['eigen_alpha_au'][lumo_alpha_idx-1]
-            lumo_alpha = result_dict['eigen_alpha_au'][lumo_alpha_idx]
-            result_dict['bandgap_alpha_au'] = lumo_alpha-homo_alpha
-        elif result_dict['dft_type'] == "UKS":
-            lumo_alpha_idx = result_dict['init_nel_alpha']
-            lumo_beta_idx = result_dict['init_nel_beta']
-            if (lumo_alpha_idx > len(result_dict['eigen_alpha_au'])-1) or \
-               (lumo_beta_idx > len(result_dict['eigen_beta_au'])-1):
-                #electrons jumped from alpha to beta (or opposite): assume last eigen is lumo
-                lumo_alpha_idx = len(result_dict['eigen_alpha_au'])-1
-                lumo_beta_idx = len(result_dict['eigen_beta_au'])-1
-            homo_alpha = result_dict['eigen_alpha_au'][lumo_alpha_idx-1]
-            homo_beta = result_dict['eigen_beta_au'][lumo_beta_idx-1]
-            lumo_alpha = result_dict['eigen_alpha_au'][lumo_alpha_idx]
-            lumo_beta = result_dict['eigen_beta_au'][lumo_beta_idx]
-            result_dict['bandgap_alpha_au'] = lumo_alpha-homo_alpha
-            result_dict['bandgap_beta_au'] = lumo_beta-homo_beta
-        #elif result_dict['dft_type'] == "ROKS": to be investigated and added
+            result_dict['eigen_spin2_au'] =  result_dict['eigen_spin1_au']
+
+        lumo_spin1_idx = result_dict['init_nel_spin1']
+        lumo_spin2_idx = result_dict['init_nel_spin2']
+        if (lumo_spin1_idx > len(result_dict['eigen_spin1_au'])-1) or \
+           (lumo_spin2_idx > len(result_dict['eigen_spin2_au'])-1):
+            #electrons jumped from spin1 to spin2 (or opposite): assume last eigen is lumo
+            lumo_spin1_idx = len(result_dict['eigen_spin1_au'])-1
+            lumo_spin2_idx = len(result_dict['eigen_spin2_au'])-1
+        homo_spin1 = result_dict['eigen_spin1_au'][lumo_spin1_idx-1]
+        homo_spin2 = result_dict['eigen_spin2_au'][lumo_spin2_idx-1]
+        lumo_spin1 = result_dict['eigen_spin1_au'][lumo_spin1_idx]
+        lumo_spin2 = result_dict['eigen_spin2_au'][lumo_spin2_idx]
+        result_dict['bandgap_spin1_au'] = lumo_spin1-homo_spin1
+        result_dict['bandgap_spin2_au'] = lumo_spin2-homo_spin2
 
         self.out('output_parameters', Dict(dict=result_dict))
 

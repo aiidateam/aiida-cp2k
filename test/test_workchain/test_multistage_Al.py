@@ -30,24 +30,33 @@ except NotExistent:
     print("The code '{}' does not exist".format(codename))
     sys.exit(1)
 
-print("Testing CP2K multistage workchain on H2O- (UKS, no need for smearing)...")
+print("Testing CP2K multistage workchain on Al (RKS, needs smearing)...")
+print("EXPECTED: the OT (settings_0) will converge to a negative bandgap, then we switch to SMEARING (settings_1)")
 
 # structure
-atoms = ase.build.molecule('H2O')
-atoms.center(vacuum=2.0)
-structure = StructureData(ase=atoms)
+structure = StructureData(ase=ase.io.read('../data/Al.cif'))
 
 # lowering the settings for acheaper calculation
 parameters = Dict(dict={
         'FORCE_EVAL': {
           'DFT': {
-            'UKS': True,
-            'MULTIPLICITY': 2,
-            'CHARGE': -1,
             'MGRID': {
               'CUTOFF': 280,
               'REL_CUTOFF': 30,
 }}}})
+
+protocol_mod = Dict(dict= {
+    'initial_magnetization': {
+        'Al': 0
+        },
+    'settings_0': {
+        'FORCE_EVAL': {
+            'DFT': {
+                'SCF': {
+                    'OUTER_SCF': {
+                        'MAX_SCF': 5,
+}}}}}})
+
 options = {
     "resources": {
         "num_machines": 1,
@@ -56,6 +65,8 @@ options = {
     "max_wallclock_seconds": 1 * 3 * 60,
 }
 inputs = {
+    'starting_settings_idx': Int(0),
+    'protocol_modify': protocol_mod,
     'base': {
         'cp2k': {
             'structure': structure,

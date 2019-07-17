@@ -41,26 +41,26 @@ def merge_Dict(p1, p2):
     merge_dict(p1_dict, p2_dict)
     return Dict(dict=p1_dict).store()
 
-def get_kinds_section(structure, multistage_settings):
+def get_kinds_section(structure, protocol_settings):
     """ Write the &KIND sections given the structure and the settings_dict"""
     kinds = []
     all_atoms = set(structure.get_ase().get_chemical_symbols())
     for a in all_atoms:
         kinds.append({
             '_': a,
-            'BASIS_SET': multistage_settings['basis_set'][a],
-            'POTENTIAL': multistage_settings['pseudopotential'][a],
-            'MAGNETIZATION': multistage_settings['initial_magnetization'][a],
+            'BASIS_SET': protocol_settings['basis_set'][a],
+            'POTENTIAL': protocol_settings['pseudopotential'][a],
+            'MAGNETIZATION': protocol_settings['initial_magnetization'][a],
             })
     return { 'FORCE_EVAL': { 'SUBSYS': { 'KIND': kinds }}}
 
-def get_input_multiplicity(structure, multistage_settings):
+def get_input_multiplicity(structure, protocol_settings):
     """ Compute the total multiplicity of the structure,
-    by counting the atomic magnetizations
+    by counting the atomic magnetizations.
     """
     multiplicity = 1
     all_atoms = structure.get_ase().get_chemical_symbols()
-    for key, value in multistage_settings['initial_magnetization'].items():
+    for key, value in protocol_settings['initial_magnetization'].items():
         multiplicity += all_atoms.count(key) * value
     multiplicity = int(round(multiplicity))
     multiplicity_dict = {'FORCE_EVAL': {'DFT': {'MULTIPLICITY' :multiplicity}}}
@@ -68,16 +68,22 @@ def get_input_multiplicity(structure, multistage_settings):
         multiplicity_dict['FORCE_EVAL']['DFT']['UKS'] = True
     return multiplicity_dict
 
-def is_using_ot(cp2k_parameters):
-    """ Returns True if the parameters are switching on the OT """
+def ot_has_small_bandgap(cp2k_parameters, bandgap_ev):
+    """ Returns True if the calculation used OT and had a smaller bandgap then
+    the guess needed for the OT.
+    NOTE: It has been observed also negative bandgap with OT in CP2K!
+    """
     list_true = [True, 'T', 't', '.TRUE.', 'True', 'true'] #add more?
     try:
       ot_settings = cp2k_parameters['FORCE_EVAL']['DFT']['SCF']['OT']
       if ('_' not in ot_settings.keys()) or (ot_settings['_'] in list_true):
-          return True
+          using_ot = True
+      else:
+          using_ot = False
     except KeyError:
-        pass
-    return False
+        using_ot = False
+    is_bandgap_small = bandgap_ev < 0.1
+    return (using_ot and is_bandgap_small)
 
 def min_bandgap_ev(cp2k_output):
     """ Returns the minimum bandgap between alpha and beta in eV """
@@ -87,7 +93,6 @@ def min_bandgap_ev(cp2k_output):
     else: # UKS (and ROKS?)
         bandgap = min(cp2k_output["bandgap_alpha_au"],cp2k_output["bandgap_beta_au"])
     return bandgap*hartree2ev
-
 
 @wf
 def extract_results(**kwargs):
@@ -99,11 +104,9 @@ def extract_results(**kwargs):
     stages_arg = {}
     nstages=0
     for key, value in kwargs.items():
-        try: #only scf-converged stages have the label
+        if value.label != 'discarded_settings':
             stages_arg[value.label] = key
             nstages+=1
-        except:
-            pass
     output_dict['nstages'] = nstages
     output_dict['last_stage_tag'] = 'stage_{}'.format(nstages-1)
     output_dict['nruns_stage0'] = len(kwargs)
@@ -118,14 +121,15 @@ def extract_results(**kwargs):
         output_dict['step_info'][step_info]= []
     for istage in range(nstages): # avoid the stage0 with failing settings
         key = stages_arg['stage_{}'.format(istage)]
-        output_dict['stage_opt_converged'].append(kwargs[key].get_dict()['motion_opt_converged'])
-        nsteps = kwargs[key].get_dict()['motion_step_info']['step'][-1]
+        kwarg = kwargs[key].get_dict()
+        output_dict['stage_opt_converged'].append(kwarg['motion_opt_converged'])
+        nsteps = kwarg['motion_step_info']['step'][-1]
         output_dict['stage_nsteps'].append(nsteps)
-        for istep in range(nsteps+1):
-            # Exclude redoundant zeroth calculations
-            if not (istage>0 and istep == 0):
+        for istep,step in enumerate(kwarg['motion_step_info']['step']):
+            # Exclude redoundant zeroth calculations but remember that LBFGS starts from 1!
+            if not (istage>0 and step==0):
                 for step_info in step_info_list:
-                    output_dict['step_info'][step_info].append(kwargs[key].get_dict()['motion_step_info'][step_info][istep])
+                    output_dict['step_info'][step_info].append(kwarg['motion_step_info'][step_info][istep])
 
     # Outputs from the last stage only
     output_dict['dft_type'] = kwargs[key].get_dict()['dft_type']
@@ -159,15 +163,15 @@ class Cp2kMultistageWorkChain(WorkChain):
         super(Cp2kMultistageWorkChain, cls).define(spec)
         spec.expose_inputs(Cp2kBaseWorkChain, namespace='base')
         spec.input('protocol_tag', valid_type=Str, default=Str('standard'), required=False,
-            help='The tag of the protocol: to be read from the multistage_{tag}.yaml')
+                     help='The tag of the protocol: to be read from the multistage_{tag}.yaml')
         spec.input('protocol_yaml', valid_type=SinglefileData, required=False,
-            help='Specify a custom yaml file with the multistage settings')
+                     help='Specify a custom yaml file with the multistage settings')
         spec.input('protocol_modify', valid_type=Dict, default=Dict(dict={}), required=False,
-            help='Specify custom settings that overvrite the yaml settings')
+                     help='Specify custom settings that overvrite the yaml settings')
         spec.input('starting_settings_idx', valid_type=Int, default=Int(0), required=False,
-            help='If idx>0 is chosen, the calculation jumps directly to overwrite settings_0 with settings_{idx}')
+                     help='If idx>0 is chosen, the calculation jumps directly to overwrite settings_0 with settings_{idx}')
         spec.input('parent_calc_folder', valid_type=RemoteData, required=False,
-            help='Provide an initial parent folder that contains the wavefunction, to which restart')
+                     help='Provide an initial parent folder that contains the wavefunction, to which restart')
 
         spec.outline(
             cls.setup_multistage,
@@ -274,18 +278,22 @@ class Cp2kMultistageWorkChain(WorkChain):
         #
 
         # Settings bad: base did not converge
-        # if base did not converge
-        #    self.ctx.settings_idx+=1
+        if not self.ctx.stages[-1].outputs.output_parameters["motion_step_info"]["scf_converged"][-1]:
+            self.report("BAD SETTINGS: the SCF did not converge")
+            self.ctx.settings_ok = False
+            self.ctx.settings_idx += 1
 
         # Settings bad: OT and small (or negative!) bandgap
         bandgap_ev = min_bandgap_ev(self.ctx.stages[-1].outputs.output_parameters)
-        if is_using_ot(self.ctx.parameters) and bandgap_ev < 0.1:
-            self.report("Calculation converged but bandgap {} < 0.1 eV found with OT}".format(bandgap_ev))
+        self.report("The bandgap is: {:.3f} ev".format(bandgap_ev))
+        if ot_has_small_bandgap(self.ctx.parameters,bandgap_ev):
+            self.report("BAD SETTINGS: band gap is < 0.1eV")
             self.ctx.settings_ok = False
             self.ctx.settings_idx += 1
 
         # Update the settings tag, check if it is available and overwrite
         if not self.ctx.settings_ok:
+            self.ctx.stages[-1].outputs.output_parameters.label = 'discarded_settings'
             self.ctx.settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
             if self.ctx.settings_tag in self.ctx.parameters_yaml.keys():
                 merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.settings_tag])

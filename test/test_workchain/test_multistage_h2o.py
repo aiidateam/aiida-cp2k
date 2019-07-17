@@ -6,7 +6,6 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Run simple DFT calculation"""
 
 from __future__ import print_function
 from __future__ import absolute_import
@@ -21,7 +20,7 @@ from aiida_cp2k.workchains import Cp2kMultistageWorkChain
 
 # =============================================================================
 if len(sys.argv) != 2:
-    print("Usage: test_dft.py <code_name>")
+    print("Usage: test.py <code_name>")
     sys.exit(1)
 
 codename = sys.argv[1]

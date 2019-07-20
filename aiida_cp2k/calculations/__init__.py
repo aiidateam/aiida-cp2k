@@ -90,11 +90,14 @@ class Cp2kCalculation(CalcJob):
         inp.add_keyword("GLOBAL/PROJECT", self._DEFAULT_PROJECT_NAME)
         if 'structure' in self.inputs:
             for i, letter in enumerate('ABC'):
-                inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/' + letter,
-                                '{:<15} {:<15} {:<15}'.format(*self.inputs.structure.cell[i]))
+                inp.add_keyword(
+                    'FORCE_EVAL/SUBSYS/CELL/' + letter,
+                    '{:<15} {:<15} {:<15}'.format(*self.inputs.structure.cell[i]),
+                    override=False,
+                    conflicting_keys=['ABC', 'ALPHA_BETA_GAMMA', 'CELL_FILE_NAME'])
             topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
-            inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME)
-            inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ")
+            inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME, override=False)
+            inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ", override=False, conflicting_keys=['COORDINATE'])
 
         with io.open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8") as fobj:
             try:

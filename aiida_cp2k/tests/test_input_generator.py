@@ -47,6 +47,92 @@ BAR boo
 &END BOO
 FOO bar""".format(inp=inp)
 
+    inp.add_keyword("BOO/BII", "bzzzzzz", override=False)
+    assert inp.render() == """{inp.DISCLAIMER}
+BAR boo
+&BOO
+   BAZ boo
+   BII boo
+&END BOO
+FOO bar""".format(inp=inp)
+
+    inp.add_keyword("BOO/BII/BCC", "bcr", override=False)
+    assert inp.render() == """{inp.DISCLAIMER}
+BAR boo
+&BOO
+   BAZ boo
+   BII boo
+&END BOO
+FOO bar""".format(inp=inp)
+
+    inp.add_keyword("BOO/BII/BCC", "bcr")
+    assert inp.render() == """{inp.DISCLAIMER}
+BAR boo
+&BOO
+   BAZ boo
+   &BII
+      BCC bcr
+   &END BII
+&END BOO
+FOO bar""".format(inp=inp)
+
+    inp.add_keyword("BOO/BII", "boo", override=False)
+    assert inp.render() == """{inp.DISCLAIMER}
+BAR boo
+&BOO
+   BAZ boo
+   &BII
+      BCC bcr
+   &END BII
+&END BOO
+FOO bar""".format(inp=inp)
+
+    inp.add_keyword("BOO/BII", "boo", override=True)
+    assert inp.render() == """{inp.DISCLAIMER}
+BAR boo
+&BOO
+   BAZ boo
+   BII boo
+&END BOO
+FOO bar""".format(inp=inp)
+
+    inp.add_keyword("BOO/BII", "boo", override=True)
+    assert inp.render() == """{inp.DISCLAIMER}
+BAR boo
+&BOO
+   BAZ boo
+   BII boo
+&END BOO
+FOO bar""".format(inp=inp)
+
+    inp.add_keyword("BOO/BIP", "bzz", override=False, conflicting_keys=['BII'])
+    assert inp.render() == """{inp.DISCLAIMER}
+BAR boo
+&BOO
+   BAZ boo
+   BII boo
+&END BOO
+FOO bar""".format(inp=inp)
+
+    inp.add_keyword("BOO/BIP", "bzz", override=False, conflicting_keys=[])
+    assert inp.render() == """{inp.DISCLAIMER}
+BAR boo
+&BOO
+   BAZ boo
+   BII boo
+   BIP bzz
+&END BOO
+FOO bar""".format(inp=inp)
+
+    inp.add_keyword("BOO/BEE", "bee", override=True, conflicting_keys=['BAZ', 'BII'])
+    assert inp.render() == """{inp.DISCLAIMER}
+BAR boo
+&BOO
+   BEE bee
+   BIP bzz
+&END BOO
+FOO bar""".format(inp=inp)
+
 
 def test_add_keyword_invariant_inp():
     """Check that the input dictionary is not modified by add_keyword()"""

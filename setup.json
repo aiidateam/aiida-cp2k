@@ -14,8 +14,9 @@
         "Development Status :: 4 - Beta"
     ],
     "install_requires": [
-        "aiida-core>=1.0.0b4",
-        "ase"
+        "aiida-core>=1.0.0b5",
+        "ase==3.17.0; python_version<'3.0'",
+        "ase; python_version>='3.5'"
     ],
     "entry_points": {
         "aiida.calculations": [

@@ -21,14 +21,15 @@ sudo service rabbitmq-server start
 verdi daemon start
 
 # run single calculation tests
-verdi run ./test_single_calculation/test_mm.py        cp2k@localhost
-verdi run ./test_single_calculation/test_dft.py       cp2k@localhost
-verdi run ./test_single_calculation/test_bands.py     cp2k@localhost
-verdi run ./test_single_calculation/test_geopt.py     cp2k@localhost
-verdi run ./test_single_calculation/test_no_struct.py cp2k@localhost
-verdi run ./test_single_calculation/test_restart.py   cp2k@localhost
-verdi run ./test_single_calculation/test_failure.py   cp2k@localhost
-verdi run ./test_single_calculation/test_precision.py cp2k@localhost
+verdi run ./test_single_calculation/test_mm.py                  cp2k@localhost
+verdi run ./test_single_calculation/test_dft.py                 cp2k@localhost
+verdi run ./test_single_calculation/test_multiple_force_eval.py cp2k@localhost
+verdi run ./test_single_calculation/test_bands.py               cp2k@localhost
+verdi run ./test_single_calculation/test_geopt.py               cp2k@localhost
+verdi run ./test_single_calculation/test_no_struct.py           cp2k@localhost
+verdi run ./test_single_calculation/test_restart.py             cp2k@localhost
+verdi run ./test_single_calculation/test_failure.py             cp2k@localhost
+verdi run ./test_single_calculation/test_precision.py           cp2k@localhost
 
 #  run workflows
 

@@ -45,8 +45,8 @@ class Cp2kParser(Parser):
         try:
             structure = self._parse_trajectory(out_folder)
             self.out('output_structure', structure)
-        except Exception:  # pylint: disable=broad-except
-            pass
+        except IOError:  # pylint: disable=broad-except
+            self.logger.info("The output geometry was not produced")
 
         return ExitCode(0)
 
@@ -126,7 +126,8 @@ class Cp2kParser(Parser):
         """CP2K trajectory parser"""
         fname = self.node.process_class._DEFAULT_RESTART_FILE_NAME  # pylint: disable=protected-access
         if fname not in out_folder._repository.list_object_names():  # pylint: disable=protected-access
-            raise Exception  # not every run type produces a trajectory
+            raise IOError  # not every run type produces a trajectory
+            # when Python2 support will be dropped, replace with FileNotFoundError
 
         # read restart file
         abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)  # pylint: disable=protected-access
@@ -136,7 +137,19 @@ class Cp2kParser(Parser):
         # parse coordinate section
         match = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, DOTALL)
         coord_lines = [line.strip().split() for line in match.group(1).splitlines()]
-        symbols = [line[0] for line in coord_lines]
+
+        # splitting element name and the tag (if present)
+        symbols = []
+        tags = []
+        for atomic_kind in [l[0] for l in coord_lines]:
+            symbols.append(''.join([s for s in atomic_kind if not s.isdigit()]))
+            try:
+                tag = int(''.join([s for s in atomic_kind if s.isdigit()]))
+            except ValueError:
+                tag = 0
+            tags.append(tag)
+
+        # get positions
         positions_str = [line[1:] for line in coord_lines]
         positions = np.array(positions_str, np.float64)
 
@@ -147,8 +160,7 @@ class Cp2kParser(Parser):
         cell = np.array(cell_str, np.float64)
 
         # create StructureData
-        atoms = ase.Atoms(symbols=symbols, positions=positions, cell=cell)
-        return StructureData(ase=atoms)
+        return StructureData(ase=ase.Atoms(symbols=symbols, positions=positions, cell=cell, tags=tags))
 
 
 # EOF

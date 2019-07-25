@@ -24,6 +24,7 @@ verdi daemon start
 verdi run ./test_single_calculation/test_mm.py                  cp2k@localhost
 verdi run ./test_single_calculation/test_dft.py                 cp2k@localhost
 verdi run ./test_single_calculation/test_multiple_force_eval.py cp2k@localhost
+verdi run ./test_single_calculation/test_dft_atomic_kinds.py    cp2k@localhost
 verdi run ./test_single_calculation/test_bands.py               cp2k@localhost
 verdi run ./test_single_calculation/test_geopt.py               cp2k@localhost
 verdi run ./test_single_calculation/test_no_struct.py           cp2k@localhost

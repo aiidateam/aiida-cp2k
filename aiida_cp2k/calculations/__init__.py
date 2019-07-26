@@ -11,6 +11,8 @@ from __future__ import absolute_import
 
 import io
 import six
+from six.moves import map
+
 from aiida.engine import CalcJob
 from aiida.orm import Dict, SinglefileData, StructureData, RemoteData, BandsData
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
@@ -83,7 +85,9 @@ class Cp2kCalculation(CalcJob):
 
         # create input structure
         if 'structure' in self.inputs:
-            self.inputs.structure.export(folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME), fileformat="xyz")
+            # As far as I understand self.inputs.structure can't deal with tags
+            # self.inputs.structure.export(folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME), fileformat="xyz")
+            self.write_structure(folder)
 
         # create cp2k input file
         inp = Cp2kInput(self.inputs.parameters.get_dict())
@@ -119,7 +123,6 @@ class Cp2kCalculation(CalcJob):
 
         # create calc info
         calcinfo = CalcInfo()
-        calcinfo.stdin_name = self._DEFAULT_INPUT_FILE
         calcinfo.uuid = self.uuid
         calcinfo.cmdline_params = codeinfo.cmdline_params
         calcinfo.stdin_name = self._DEFAULT_INPUT_FILE
@@ -151,3 +154,14 @@ class Cp2kCalculation(CalcJob):
                                        ",".join(settings.keys()))
 
         return calcinfo
+
+    def write_structure(self, folder):
+        """Function that writes a structure and takes care of element tags"""
+        from operator import add
+        s_ase = self.inputs.structure.get_ase()
+        elem_tags = ['' if t == 0 else str(t) for t in s_ase.get_tags()]
+        elem_symbols = list(map(add, s_ase.get_chemical_symbols(), elem_tags))
+        elem_coords = ['{:20.16f} {:20.16f} {:20.16f}'.format(p[0], p[1], p[2]) for p in s_ase.get_positions()]
+        with io.open(folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME), mode="w", encoding="utf-8") as fobj:
+            fobj.write(u'{}\n\n'.format(len(elem_coords)))
+            fobj.write(u'\n'.join(map(add, elem_symbols, elem_coords)))

@@ -14,7 +14,7 @@ import sys
 import ase.build
 
 from aiida.engine import run
-from aiida.orm import (Code, Dict, StructureData)
+from aiida.orm import Code, Dict, StructureData, Float
 from aiida.common import NotExistent
 from aiida_cp2k.workchains import Cp2kMultistageWorkChain
 
@@ -53,6 +53,8 @@ options = {
     "max_wallclock_seconds": 1 * 3 * 60,
 }
 inputs = {
+    #'min_cell_size': Float(4.1),
+    'protocol_tag': 'test',
     'base': {
         'cp2k': {
             'structure': structure,

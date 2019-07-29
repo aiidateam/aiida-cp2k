@@ -236,7 +236,7 @@ settings_0: # main settings exploiting OT
         EPS_SCF:       1.0E-7
         MAX_ITER_LUMO: 10000         # for computing the Band gap
         OUTER_SCF:
-          MAX_SCF:   4               # not too many: it has 5 GEO_OPT to converge initially
+          MAX_SCF:   5
           EPS_SCF:   1.0E-7          # equal (or smaller for expert use) than SCF/EPS_SCF
         OT:
           PRECONDITIONER: FULL_ALL
@@ -309,7 +309,7 @@ settings_1: # alternative settings #1, using smearing+diagonalization
       QS:
         EXTRAPOLATION: USE_PREV_WF  #ASPC not good wioth smearing
       SCF:
-        MAX_SCF: 400                # not too many: it has 5 GEO_OPT to converge initially
+        MAX_SCF: 500
         ADDED_MOS: 1000
         SMEAR:
           _:  ON
@@ -334,7 +334,7 @@ stage_0:
     GEO_OPT:
       TYPE: MINIMIZATION                     #default: MINIMIZATION
       OPTIMIZER: BFGS                        #default: BFGS
-      MAX_ITER:  5                           #default: 200
+      MAX_ITER:  2                           #default: 200
       MAX_DR:    "[bohr] 0.0030"             #default: [bohr] 0.0030
       RMS_DR:    "[bohr] 0.0015"             #default: [bohr] 0.0015
       MAX_FORCE: "[bohr^-1*hartree] 0.00045"  #default: [bohr^-1*hartree] 0.00045
@@ -347,33 +347,45 @@ stage_1:
     RUN_TYPE: MD
   MOTION:
     MD:
-      ENSEMBLE:        NPT_F
-      STEPS:           50
-      TIMESTEP: "[fs]  0.5"
-      TEMPERATURE:     300
+      ENSEMBLE:        NVT
+      STEPS:           2
+      TIMESTEP: "[fs]  1.0"
+      TEMPERATURE:    300
       THERMOSTAT:
         TYPE: CSVR
         CSVR:
-          TIMECON: "[fs] 0.1"   ### SLing: 0.1 small time constant (strong coupling) for equilibration; change to 50~100 or bigger for production run
-      BAROSTAT:                 #by default the barosthat uses the same thermo as the partricles
-        PRESSURE': "[bar] 0.0"  #default: 0.0
-        TIMECON':  "[fs] 500"   #default: 1000, good for crystals
+          TIMECON: "[fs] 100"      ### SLing: 0.1 small time constant (strong coupling) for equilibration; change to 50~100 or bigger for production run
 
-stage_2:
+astage_2:
+  GLOBAL:
+    RUN_TYPE: GEO_OPT
+  MOTION:
+    GEO_OPT:
+      TYPE: MINIMIZATION                     #default: MINIMIZATION
+      OPTIMIZER: LBFGS                        #default: BFGS
+      MAX_ITER:  2                        #default: 200
+      MAX_DR:    "[bohr] 0.0030"             #default: [bohr] 0.0030
+      RMS_DR:    "[bohr] 0.0015"             #default: [bohr] 0.0015
+      MAX_FORCE: "[bohr^-1*hartree] 0.00045"  #default: [bohr^-1*hartree] 0.00045
+      RMS_FORCE: "[bohr^-1*hartree] 0.00030"  #default: [bohr^-1*hartree] 0.00030
+      LBFGS:
+          TRUST_RADIUS: "[angstrom] 0.5"
+
+bstage_2:
   GLOBAL:
     RUN_TYPE: CELL_OPT
   MOTION:
     CELL_OPT:
-      TYPE: DIRECT_CELL_OPT                   #default: DIRECT_CELL_OPT
-      EXTERNAL_PRESSURE:  "[bar] 0.0"
-      PRESSURE_TOLERANCE: "[bar] 100"         #default: 100
-      KEEP_ANGLES:   False
+      TYPE: DIRECT_CELL_OPT                  #default: DIRECT_CELL_OPT
+      EXTERNAL_PRESSURE: "[bar] 0.0"
+      PRESSURE_TOLERANCE: "[bar] 1000"        #default: 100
+      KEEP_ANGLES:   True
       KEEP_SYMMETRY: False
-      OPTIMIZER: LBFGS                        #default: BFGS
-      MAX_ITER:  1000                         #default: 200
-      MAX_DR:    "[bohr] 0.0030"              #default: [bohr] 0.0030
-      RMS_DR:    "[bohr] 0.0015"              #default: [bohr] 0.0015
-      MAX_FORCE: "[bohr^-1*hartree] 0.00045"  #default: [bohr^-1*hartree] 0.00045
-      RMS_FORCE: "[bohr^-1*hartree] 0.00030"  #default: [bohr^-1*hartree] 0.00030
-      LBFGS:
-        TRUST_RADIUS: "[angstrom] 0.5"
+      OPTIMIZER: BFGS                        #default: BFGS
+      MAX_ITER:  2                         #default: 200
+      MAX_DR:    "[bohr] 0.030"             #default: [bohr] 0.0030
+      RMS_DR:    "[bohr] 0.015"             #default: [bohr] 0.0015
+      MAX_FORCE: "[bohr^-1*hartree] 0.045"  #default: [bohr^-1*hartree] 0.00045
+      RMS_FORCE: "[bohr^-1*hartree] 0.030"  #default: [bohr^-1*hartree] 0.00030
+      BFGS:
+        TRUST_RADIUS: "[angstrom] 0.25"

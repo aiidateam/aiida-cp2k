@@ -8,7 +8,7 @@ from copy import deepcopy
 from aiida.common import AttributeDict
 from aiida.engine import append_, while_, WorkChain, ToContext
 from aiida.engine import workfunction as wf
-from aiida.orm import Dict, Int, Float, SinglefileData, Str, RemoteData
+from aiida.orm import Dict, Int, Float, SinglefileData, Str, RemoteData, StructureData
 from aiida.plugins import CalculationFactory
 
 from aiida_cp2k.workchains import Cp2kBaseWorkChain
@@ -89,6 +89,62 @@ def ot_has_small_bandgap(cp2k_input, cp2k_output):
     return (using_ot and is_bandgap_small)
 
 @wf
+def multiply_unit_cell(struct, threshold):
+    """Returns the multiplication factors (tuple of 3 int) for the cell vectors
+    to respect, in every direction: min(perpendicular_width) > threshold
+    """
+    from math import cos, sin, sqrt, pi, fabs, ceil
+    import numpy as np
+
+    # Parsing structure's cell
+    def angle(v1,v2):
+        return np.arccos(np.dot(v1,v2) / (np.linalg.norm(v1)*np.linalg.norm(v2)))
+
+    a = np.linalg.norm(struct.cell[0])
+    b = np.linalg.norm(struct.cell[1])
+    c = np.linalg.norm(struct.cell[2])
+
+    alpha = angle(struct.cell[1], struct.cell[2])
+    beta = angle(struct.cell[0], struct.cell[2])
+    gamma = angle(struct.cell[0], struct.cell[1])
+
+    # Computing triangular cell matrix
+    v = np.sqrt(1 - cos(alpha)**2 - cos(beta)**2 - cos(gamma)**2 +
+             2 * cos(alpha) * cos(beta) * cos(gamma))
+    cell = np.zeros((3, 3))
+    cell[0, :] = [a, 0, 0]
+    cell[1, :] = [b * cos(gamma), b * sin(gamma), 0]
+    cell[2, :] = [
+        c * cos(beta),
+        c * (cos(alpha) - cos(beta) * cos(gamma)) / (sin(gamma)),
+        c * v / sin(gamma)
+    ]
+    cell = np.array(cell)
+
+    # Computing perpendicular widths, as implemented in Raspa
+    # for the check (simplified for triangular cell matrix)
+    axc1 = cell[0,0] * cell[2,2]
+    axc2 = - cell[0,0] * cell[2,1]
+    bxc1 = cell[1,1] * cell[2,2]
+    bxc2 = - cell[1,0] * cell[2,2]
+    bxc3 = cell[1,0] * cell[2,1] - cell[1,1] * cell[2,0]
+    det = fabs(cell[0,0] * cell[1,1] * cell[2,2])
+    perpwidth = np.zeros(3)
+    perpwidth[0] = det / sqrt(bxc1**2 + bxc2**2 + bxc3**2)
+    perpwidth[1] = det / sqrt(axc1**2 + axc2**2)
+    perpwidth[2] = cell[2,2]
+
+    #prevent from crashing if threshold.value is zero
+    if threshold.value==0:
+        thr=0.1
+    else:
+        thr=threshold.value
+
+    multiply = tuple(int(ceil(thr / perpwidth[i])) for i in range(3))
+
+    return  StructureData(ase=struct.get_ase().repeat(multiply)).store()
+
+@wf
 def extract_results(**kwargs):
     """ Extracts restults form the output_parameters of the single calculations
     (i.e., scf-converged stages) into a single Dict output. kwargs contains all
@@ -163,8 +219,11 @@ class Cp2kMultistageWorkChain(WorkChain):
                      help='Specify custom settings that overvrite the yaml settings')
         spec.input('starting_settings_idx', valid_type=Int, default=Int(0), required=False,
                      help='If idx>0 is chosen, the calculation jumps directly to overwrite settings_0 with settings_{idx}')
+        spec.input('min_cell_size', valid_type=Float, default=Float(0.0), required=False,
+                     help='To avoid the use of k-points, extend the unic cell so that min(perpendicular_width)>min_cell_size')
         spec.input('parent_calc_folder', valid_type=RemoteData, required=False,
                      help='Provide an initial parent folder that contains the wavefunction, to which restart')
+
 
         spec.outline(
             cls.setup_multistage,
@@ -201,7 +260,7 @@ class Cp2kMultistageWorkChain(WorkChain):
 
         # Read yaml file chosen with the tag and overwrite with custom modifications
         dir = os.path.dirname(os.path.abspath(__file__))
-        yamlfullpath = '{}/multistage_{}.yaml'.format(dir, self.inputs.protocol_tag.value)
+        yamlfullpath = '{}/multistage_protocols/{}.yaml'.format(dir, self.inputs.protocol_tag.value)
         with open(yamlfullpath, 'r') as stream:
             self.ctx.parameters_yaml = yaml.safe_load(stream)
         merge_dict(self.ctx.parameters_yaml,self.inputs.protocol_modify.get_dict())
@@ -212,6 +271,9 @@ class Cp2kMultistageWorkChain(WorkChain):
         self.ctx.settings_idx = 0
         self.ctx.settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
         self.ctx.structure_new = None
+
+        #Multiply the unit cell if min(perp_with) < inputs.min_cell_size
+        self.ctx.base_inp['cp2k']['structure'] = multiply_unit_cell(self.ctx.base_inp['cp2k']['structure'], self.inputs.min_cell_size) #TEST if this recursive thing works
 
         # Generate input parameters and store them
         self.ctx.parameters = deepcopy(self.ctx.parameters_yaml['settings_0'])

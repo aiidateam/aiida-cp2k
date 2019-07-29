@@ -65,6 +65,7 @@ options = {
     "max_wallclock_seconds": 1 * 3 * 60,
 }
 inputs = {
+    'protocol_tag': 'test',
     'starting_settings_idx': Int(0),
     'protocol_modify': protocol_mod,
     'base': {

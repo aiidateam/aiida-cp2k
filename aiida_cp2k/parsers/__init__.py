@@ -133,6 +133,8 @@ class Cp2kParser(Parser):
                     warn = "One or more SCF run did not converge"
                     if warn not in result_dict['warnings']:
                         result_dict['warnings'] = warn
+                if re.search("Specific L-BFGS convergence criteria", line):
+                    result_dict["warnings"] = "LBFGS converged with specific criteria"
 
                 # If a tag has been detected, now read the following line knowing what they are
                 if line_is!=None:
@@ -184,16 +186,25 @@ class Cp2kParser(Parser):
                   data= line.split()
                   # Parse general info
                   if line.startswith(' CELL|'):
-                     if re.search("Volume", line):    cell_vol=float(data[3])
-                     if re.search("Vector a", line):  cell_a=float(data[9])
-                     if re.search("Vector b", line):  cell_b=float(data[9])
-                     if re.search("Vector c", line):  cell_c=float(data[9])
-                     if re.search("alpha", line):     cell_alp=float(data[5])
-                     if re.search("beta", line):      cell_bet=float(data[5])
-                     if re.search("gamma", line):     cell_gam=float(data[5])
+                     if re.search("Volume", line):
+                         cell_vol=float(data[3])
+                     if re.search("Vector a", line):
+                         cell_a=float(data[9])
+                     if re.search("Vector b", line):
+                         cell_b=float(data[9])
+                     if re.search("Vector c", line):
+                         cell_c=float(data[9])
+                     if re.search("alpha", line):
+                         cell_alp=float(data[5])
+                     if re.search("beta", line):
+                          cell_bet=float(data[5])
+                     if re.search("gamma", line):
+                         cell_gam=float(data[5])
 
-                  if re.search("Dispersion energy", line):  dispersion=float(data[2])
-                  if re.search("SCF run NOT converged", line): scf_converged = False
+                  if re.search("Dispersion energy", line):
+                      dispersion=float(data[2])
+                  if re.search("SCF run NOT converged", line):
+                      scf_converged = False
 
                   # Parse specific info
                   if result_dict['run_type'] in ['ENERGY', 'ENERGY_FORCE']:
@@ -217,19 +228,20 @@ class Cp2kParser(Parser):
                       if re.search("INITIAL PRESSURE\[bar\]", line): pressure=float(data[3]); print_now=True
                       if re.search("PRESSURE \[bar\]", line):        pressure=float(data[3]); print_now=True
                   if result_dict['run_type']=='MD-NPT_F':
-                      if re.search("STEP NUMBER", line):           step=int(data[3])
-                      if re.search("INITIAL PRESSURE\[bar\]", line): pressure=float(data[3]); print_now=True
-                      if re.search("PRESSURE \[bar\]", line):        pressure=float(data[3]);
-                      if re.search("VOLUME\[bohr\^3\]", line):        cell_vol=float(data[3])*(BOHR2ANG**3)
-                      if re.search("CELL LNTHS\[bohr\]", line):
-                                                                cell_a=float(data[3])*BOHR2ANG
-                                                                cell_b=float(data[4])*BOHR2ANG
-                                                                cell_c=float(data[5])*BOHR2ANG
-                      if re.search("CELL ANGLS\[deg\]", line):
-                                                                cell_alp=float(data[3])
-                                                                cell_bet=float(data[4])
-                                                                cell_gam=float(data[5])
-                                                                print_now=True
+                      if re.search("^ STEP NUMBER", line):
+                          step=int(data[3])
+                      if re.search("^ INITIAL PRESSURE\[bar\]", line): pressure=float(data[3]); print_now=True
+                      if re.search("^ PRESSURE \[bar\]", line):        pressure=float(data[3]);
+                      if re.search("^ VOLUME\[bohr\^3\]", line):        cell_vol=float(data[3])*(BOHR2ANG**3)
+                      if re.search("^ CELL LNTHS\[bohr\]", line):
+                          cell_a=float(data[3])*BOHR2ANG
+                          cell_b=float(data[4])*BOHR2ANG
+                          cell_c=float(data[5])*BOHR2ANG
+                      if re.search("^ CELL ANGLS\[deg\]", line):
+                          cell_alp=float(data[3])
+                          cell_bet=float(data[4])
+                          cell_gam=float(data[5])
+                          print_now=True
 
                   if print_now and energy != None:
                       result_dict['motion_step_info']['step'].append(step)

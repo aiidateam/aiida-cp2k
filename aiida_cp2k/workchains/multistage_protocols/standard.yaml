@@ -348,7 +348,7 @@ stage_1:
   MOTION:
     MD:
       ENSEMBLE:        NPT_F
-      STEPS:           50
+      STEPS:           100
       TIMESTEP: "[fs]  0.5"
       TEMPERATURE:     300
       THERMOSTAT:
@@ -356,8 +356,8 @@ stage_1:
         CSVR:
           TIMECON: "[fs] 0.1"   ### SLing: 0.1 small time constant (strong coupling) for equilibration; change to 50~100 or bigger for production run
       BAROSTAT:                 #by default the barosthat uses the same thermo as the partricles
-        PRESSURE': "[bar] 0.0"  #default: 0.0
-        TIMECON':  "[fs] 500"   #default: 1000, good for crystals
+        PRESSURE: "[bar] 0.0"  #default: 0.0
+        TIMECON:  "[fs] 500"   #default: 1000, good for crystals
 
 stage_2:
   GLOBAL:

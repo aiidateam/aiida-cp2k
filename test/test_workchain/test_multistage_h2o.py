@@ -14,7 +14,7 @@ import sys
 import ase.build
 
 from aiida.engine import run
-from aiida.orm import Code, Dict, StructureData, Float
+from aiida.orm import Code, Dict, StructureData, Float, Str
 from aiida.common import NotExistent
 from aiida_cp2k.workchains import Cp2kMultistageWorkChain
 
@@ -54,7 +54,7 @@ options = {
 }
 inputs = {
     #'min_cell_size': Float(4.1),
-    'protocol_tag': 'test',
+    'protocol_tag': Str('standard'),
     'base': {
         'cp2k': {
             'structure': structure,

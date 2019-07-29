@@ -56,7 +56,7 @@ options = {
     "max_wallclock_seconds": 1 * 3 * 60,
 }
 inputs = {
-    'protocol_tag': 'test',
+    'protocol_tag': Str('test'),
     'base': {
         'cp2k': {
             'structure': structure,

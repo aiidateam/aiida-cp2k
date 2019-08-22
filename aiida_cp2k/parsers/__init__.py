@@ -270,23 +270,24 @@ class Cp2kParser(Parser):
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")
 
-        # Compute the bandgap for Spin1 and Spin2 (works also with smearing!)
-        if result_dict['dft_type'] == "RKS":
-            result_dict['eigen_spin2_au'] =  result_dict['eigen_spin1_au']
+        # Compute the bandgap for Spin1 and Spin2 if eigen was parsed (works also with smearing!)
+        if 'eigen_spin1_au' in result_dict:
+            if result_dict['dft_type'] == "RKS":
+                result_dict['eigen_spin2_au'] =  result_dict['eigen_spin1_au']
 
-        lumo_spin1_idx = result_dict['init_nel_spin1']
-        lumo_spin2_idx = result_dict['init_nel_spin2']
-        if (lumo_spin1_idx > len(result_dict['eigen_spin1_au'])-1) or \
-           (lumo_spin2_idx > len(result_dict['eigen_spin2_au'])-1):
-            #electrons jumped from spin1 to spin2 (or opposite): assume last eigen is lumo
-            lumo_spin1_idx = len(result_dict['eigen_spin1_au'])-1
-            lumo_spin2_idx = len(result_dict['eigen_spin2_au'])-1
-        homo_spin1 = result_dict['eigen_spin1_au'][lumo_spin1_idx-1]
-        homo_spin2 = result_dict['eigen_spin2_au'][lumo_spin2_idx-1]
-        lumo_spin1 = result_dict['eigen_spin1_au'][lumo_spin1_idx]
-        lumo_spin2 = result_dict['eigen_spin2_au'][lumo_spin2_idx]
-        result_dict['bandgap_spin1_au'] = lumo_spin1-homo_spin1
-        result_dict['bandgap_spin2_au'] = lumo_spin2-homo_spin2
+            lumo_spin1_idx = result_dict['init_nel_spin1']
+            lumo_spin2_idx = result_dict['init_nel_spin2']
+            if (lumo_spin1_idx > len(result_dict['eigen_spin1_au'])-1) or \
+               (lumo_spin2_idx > len(result_dict['eigen_spin2_au'])-1):
+                #electrons jumped from spin1 to spin2 (or opposite): assume last eigen is lumo
+                lumo_spin1_idx = len(result_dict['eigen_spin1_au'])-1
+                lumo_spin2_idx = len(result_dict['eigen_spin2_au'])-1
+            homo_spin1 = result_dict['eigen_spin1_au'][lumo_spin1_idx-1]
+            homo_spin2 = result_dict['eigen_spin2_au'][lumo_spin2_idx-1]
+            lumo_spin1 = result_dict['eigen_spin1_au'][lumo_spin1_idx]
+            lumo_spin2 = result_dict['eigen_spin2_au'][lumo_spin2_idx]
+            result_dict['bandgap_spin1_au'] = lumo_spin1-homo_spin1
+            result_dict['bandgap_spin2_au'] = lumo_spin2-homo_spin2
 
         self.out('output_parameters', Dict(dict=result_dict))
 

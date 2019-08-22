@@ -223,8 +223,8 @@ settings_0: # main settings exploiting OT
       CHARGE:       0
       MULTIPLICITY: 0
       MGRID:
-        CUTOFF:      600
-        REL_CUTOFF:  50
+        CUTOFF:      300
+        REL_CUTOFF:  30
         NGRIDS:      4
       QS:
         METHOD: GPW
@@ -356,7 +356,8 @@ stage_1:
         CSVR:
           TIMECON: "[fs] 100"      ### SLing: 0.1 small time constant (strong coupling) for equilibration; change to 50~100 or bigger for production run
 
-astage_2:
+#excluded stages (to be activated for testing issues)
+excluded_stage_2alt:
   GLOBAL:
     RUN_TYPE: GEO_OPT
   MOTION:
@@ -371,7 +372,7 @@ astage_2:
       LBFGS:
           TRUST_RADIUS: "[angstrom] 0.5"
 
-bstage_2:
+excluded_stage_3:
   GLOBAL:
     RUN_TYPE: CELL_OPT
   MOTION:

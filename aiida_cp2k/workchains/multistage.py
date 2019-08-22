@@ -210,7 +210,7 @@ class Cp2kMultistageWorkChain(WorkChain):
     def define(cls, spec):
         # yapf: disable
         super(Cp2kMultistageWorkChain, cls).define(spec)
-        spec.expose_inputs(Cp2kBaseWorkChain, namespace='base')
+        spec.expose_inputs(Cp2kBaseWorkChain, namespace='cp2k_base', exclude=['parameters'])
         spec.input('protocol_tag', valid_type=Str, default=Str('standard'), required=False,
                      help='The tag of the protocol: to be read from the multistage_{tag}.yaml')
         spec.input('protocol_yaml', valid_type=SinglefileData, required=False,
@@ -250,7 +250,7 @@ class Cp2kMultistageWorkChain(WorkChain):
     def setup_multistage(self):
 
         # Store the workchain inputs in context (to be modified later). ctx.base_inp = { base_settings, cp2k: { calculation_settings}}
-        self.ctx.base_inp = AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'base'))
+        self.ctx.base_inp = AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'cp2k_base'))
 
         #check if an input parent_calc_folder is provided
         try:
@@ -312,7 +312,8 @@ class Cp2kMultistageWorkChain(WorkChain):
             self.ctx.parameters['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS'] = 'ATOMIC'
 
         # Overwrite the generated input with the custom cp2k/parameters and give a label to BaseWC and Cp2kCalc
-        merge_dict(self.ctx.parameters, AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'base')['cp2k']['parameters'].get_dict()))
+        if 'parameters' in self.exposed_inputs(Cp2kBaseWorkChain, 'cp2k_base')['cp2k']:
+            merge_dict(self.ctx.parameters, AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'base')['cp2k']['parameters'].get_dict()))
         self.ctx.base_inp['cp2k']['parameters'] = Dict(dict = self.ctx.parameters).store()
         self.ctx.base_inp['metadata']['label'] = 'base({}/{})'.format(self.ctx.stage_tag,self.ctx.settings_tag,)
         self.ctx.base_inp['cp2k']['metadata']['label'] = self.ctx.base_inp['cp2k']['parameters'].get_dict()['GLOBAL']['RUN_TYPE']

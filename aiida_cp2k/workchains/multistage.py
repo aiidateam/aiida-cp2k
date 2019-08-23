@@ -319,7 +319,7 @@ class Cp2kMultistageWorkChain(WorkChain):
         self.ctx.base_inp['cp2k']['metadata']['label'] = self.ctx.base_inp['cp2k']['parameters'].get_dict()['GLOBAL']['RUN_TYPE']
 
         running_base = self.submit(Cp2kBaseWorkChain, **self.ctx.base_inp)
-        self.report("submitted Cp2kBaseWorkChain<{}> for {}/{}".format(running_base.pk,self.ctx.stage_tag,self.ctx.settings_tag))
+        self.report("submitted Cp2kBaseWorkChain for {}/{}".format(self.ctx.stage_tag,self.ctx.settings_tag))
         return ToContext(stages=append_(running_base))
 
 

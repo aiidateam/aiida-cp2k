@@ -242,6 +242,8 @@ class Cp2kMultistageWorkChain(WorkChain):
             'Specified starting_settings_idx that is not existing, or any in between 0 and idx is missing.')
         spec.exit_code(902,'ERROR_NO_MORE_SETTINGS',
             'Settings for Stage0 are not ok but there are no more robust settings to try')
+        spec.exit_code(903,'ERROR_PARSING_OUTPUT',
+            'Something important was not printed correctly and the parsing failed.')
         spec.expose_outputs(Cp2kBaseWorkChain, include=('output_structure','remote_folder'))
         spec.output('last_input_parameters', valid_type=Dict, required=True)
         spec.output('output_parameters', valid_type=Dict, required=True)
@@ -313,7 +315,7 @@ class Cp2kMultistageWorkChain(WorkChain):
 
         # Overwrite the generated input with the custom cp2k/parameters and give a label to BaseWC and Cp2kCalc
         if 'parameters' in self.exposed_inputs(Cp2kBaseWorkChain, 'cp2k_base')['cp2k']:
-            merge_dict(self.ctx.parameters, AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'base')['cp2k']['parameters'].get_dict()))
+            merge_dict(self.ctx.parameters, AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'cp2k_base')['cp2k']['parameters'].get_dict()))
         self.ctx.base_inp['cp2k']['parameters'] = Dict(dict = self.ctx.parameters).store()
         self.ctx.base_inp['metadata']['label'] = 'base({}/{})'.format(self.ctx.stage_tag,self.ctx.settings_tag,)
         self.ctx.base_inp['cp2k']['metadata']['label'] = self.ctx.base_inp['cp2k']['parameters'].get_dict()['GLOBAL']['RUN_TYPE']
@@ -328,30 +330,34 @@ class Cp2kMultistageWorkChain(WorkChain):
         needed to update the settings and resubmint the calculation
         """
         self.ctx.settings_ok = True
+        cp2k_inp = self.ctx.parameters
+        cp2k_out = self.ctx.stages[-1].outputs.output_parameters
 
         # Settings/structure bad: something very bad happened and the calculation is not doing even the scf cycles
-        # if base.is_ko
+        #                         or one of the info was not parsed correctly. To add later!
+        # if base.is_ko:
+        #   return self.exit_codes.ERROR_PARSING_OUTPUT
         #
+        # At the moment, if something bad happens, Cp2kBase will fail: we need to make this more robust!
 
         # Settings bad: base did not converge
-        if not self.ctx.stages[-1].outputs.output_parameters["motion_step_info"]["scf_converged"][-1]:
+        if not cp2k_out["motion_step_info"]["scf_converged"][-1]:
             self.report("BAD SETTINGS: the SCF did not converge")
             self.ctx.settings_ok = False
             self.ctx.settings_idx += 1
+        else:
 
-        # Settings bad: OT and small (or negative!) bandgap
-        cp2k_inp = self.ctx.parameters
-        cp2k_out = self.ctx.stages[-1].outputs.output_parameters
-        self.report("Bandgaps spin1/spin2: {:.3f} and {:.3f} ev".format(
-            cp2k_out["bandgap_spin1_au"]*hartree2ev,cp2k_out["bandgap_spin2_au"]*hartree2ev))
-        if ot_has_small_bandgap(cp2k_inp,cp2k_out):
-            self.report("BAD SETTINGS: band gap is < 0.1eV")
-            self.ctx.settings_ok = False
-            self.ctx.settings_idx += 1
+            # Settings bad: base converged, but with OT and a small (or negative!) bandgap
+            self.report("Bandgaps spin1/spin2: {:.3f} and {:.3f} ev".format(
+                cp2k_out["bandgap_spin1_au"]*hartree2ev,cp2k_out["bandgap_spin2_au"]*hartree2ev))
+            if ot_has_small_bandgap(cp2k_inp,cp2k_out):
+                self.report("BAD SETTINGS: band gap is < 0.1eV")
+                self.ctx.settings_ok = False
+                self.ctx.settings_idx += 1
 
         # Update the settings tag, check if it is available and overwrite
         if not self.ctx.settings_ok:
-            self.ctx.stages[-1].outputs.output_parameters.label = 'from_discarded_settings'
+            cp2k_out.label = 'from_discarded_settings'
             self.ctx.settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
             if self.ctx.settings_tag in self.ctx.parameters_yaml.keys():
                 merge_dict(self.ctx.parameters,self.ctx.parameters_yaml[self.ctx.settings_tag])

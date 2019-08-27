@@ -33,7 +33,6 @@ def main(cp2k_code_string):
         "max_wallclock_seconds": 1 * 3 * 60,
     }
     inputs = {
-        #'min_cell_size': Float(4.1),
         'protocol_tag': Str('test'),
         'cp2k_base': {
             'cp2k': {

@@ -17,7 +17,11 @@ from aiida_cp2k.workchains import Cp2kMultistageWorkChain
 def main(cp2k_code_string):
     """Example usage: verdi run cp2k-5.1@localhost"""
 
-    print("Testing CP2K multistage workchain on H2O- (UKS, no need for smearing)...")
+    print("Testing CP2K multistage workchain on 2xH2O- (UKS, no need for smearing)...")
+    print("This is checking:")
+    print(" > unit cell resizing")
+    print(" > protocol modification")
+    print(" > cp2k calc modification")
 
     code = Code.get_from_string(cp2k_code_string)
 
@@ -25,12 +29,19 @@ def main(cp2k_code_string):
     atoms.center(vacuum=2.0)
     structure = StructureData(ase=atoms)
 
+    protocol_mod = Dict(dict= {
+        'settings_0': {
+            'FORCE_EVAL': {
+              'DFT': {
+                'MGRID': {
+                  'CUTOFF': 300,
+    }}}}})
     parameters = Dict(dict={
             'FORCE_EVAL': {
               'DFT': {
                 'UKS': True,
-                'MULTIPLICITY': 2,
-                'CHARGE': -1,
+                'MULTIPLICITY': 3,
+                'CHARGE': -2,
     }}})
     options = {
         "resources": {
@@ -40,7 +51,9 @@ def main(cp2k_code_string):
         "max_wallclock_seconds": 1 * 3 * 60,
     }
     inputs = {
+        'min_cell_size': Float(4.1), #this will make the cell expand in the x direction
         'protocol_tag': Str('test'),
+        'protocol_modify': protocol_mod,
         'cp2k_base': {
             'cp2k': {
                 'structure': structure,

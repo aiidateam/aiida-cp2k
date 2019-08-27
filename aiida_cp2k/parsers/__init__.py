@@ -128,13 +128,13 @@ class Cp2kParser(Parser):
 
                 # Parse warnings
                 if re.search("Using a non-square number of", line):
-                    result_dict['warnings'] = 'Using a non-square number of MPI ranks'
+                    result_dict['warnings'].append('Using a non-square number of MPI ranks')
                 if re.search("SCF run NOT converged", line):
                     warn = "One or more SCF run did not converge"
                     if warn not in result_dict['warnings']:
-                        result_dict['warnings'] = warn
+                        result_dict['warnings'].append(warn)
                 if re.search("Specific L-BFGS convergence criteria", line):
-                    result_dict["warnings"] = "LBFGS converged with specific criteria"
+                    result_dict["warnings"].append("LBFGS converged with specific criteria")
 
                 # If a tag has been detected, now read the following line knowing what they are
                 if line_is!=None:
@@ -260,6 +260,7 @@ class Cp2kParser(Parser):
                       result_dict['motion_step_info']['max_grad_au'].append(max_grad)
                       result_dict['motion_step_info']['rms_grad_au'].append(rms_grad)
                       result_dict['motion_step_info']['scf_converged'].append(scf_converged)
+                      scf_converged = True
                 ####################################################################
                 #  END PARSING GEO_OPT/CELL_OPT/MD STEP                            #
                 ####################################################################

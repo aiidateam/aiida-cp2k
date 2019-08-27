@@ -28,6 +28,7 @@ class Cp2kCalculation(CalcJob):
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
     _DEFAULT_PROJECT_NAME = 'aiida'
     _DEFAULT_RESTART_FILE_NAME = _DEFAULT_PROJECT_NAME + '-1.restart'
+    _DEFAULT_TRAJECT_FILE_NAME = _DEFAULT_PROJECT_NAME + '-pos-1.dcd'
     _DEFAULT_PARENT_CALC_FLDR_NAME = 'parent_calc/'
     _DEFAULT_COORDS_FILE_NAME = 'aiida.coords.xyz'
     _DEFAULT_PARSER = 'cp2k'
@@ -129,7 +130,9 @@ class Cp2kCalculation(CalcJob):
                 calcinfo.local_copy_list.append((fobj.uuid, fobj.filename, fobj.filename))
 
         calcinfo.remote_copy_list = []
-        calcinfo.retrieve_list = [self._DEFAULT_OUTPUT_FILE, self._DEFAULT_RESTART_FILE_NAME]
+        calcinfo.retrieve_list = [self._DEFAULT_OUTPUT_FILE,
+                                  self._DEFAULT_RESTART_FILE_NAME,
+                                  self._DEFAULT_TRAJECT_FILE_NAME]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
         # symlinks

@@ -89,9 +89,9 @@ def ot_has_small_bandgap(cp2k_input, cp2k_output):
     return (using_ot and is_bandgap_small)
 
 @wf
-def multiply_unit_cell(struct, threshold):
-    """Returns the multiplication factors (tuple of 3 int) for the cell vectors
-    to respect, in every direction: min(perpendicular_width) > threshold
+def check_resize_unit_cell(struct, threshold):
+    """Returns the multiplication factors for the cell vectors to respect, in every direction:
+    min(perpendicular_width) > threshold.
     """
     from math import cos, sin, sqrt, pi, fabs, ceil
     import numpy as np
@@ -140,9 +140,18 @@ def multiply_unit_cell(struct, threshold):
     else:
         thr=threshold.value
 
-    multiply = tuple(int(ceil(thr / perpwidth[i])) for i in range(3))
+    resize = {
+        'nx': int(ceil(thr / perpwidth[0])),
+        'ny': int(ceil(thr / perpwidth[1])),
+        'nz': int(ceil(thr / perpwidth[2]))
+    }
+    return  Dict(dict=resize).store()
 
-    return  StructureData(ase=struct.get_ase().repeat(multiply)).store()
+@wf
+def resize_unit_cell(struct, resize):
+    """Resize the StructureData according to the resize Dict"""
+    resize_tuple = tuple([resize[x] for x in ['nx','ny','nz']])
+    return StructureData(ase=struct.get_ase().repeat(resize_tuple)).store()
 
 @wf
 def extract_results(**kwargs):
@@ -274,8 +283,16 @@ class Cp2kMultistageWorkChain(WorkChain):
         self.ctx.settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
         self.ctx.structure_new = None
 
-        #Multiply the unit cell if min(perp_with) < inputs.min_cell_size
-        self.ctx.base_inp['cp2k']['structure'] = multiply_unit_cell(self.ctx.base_inp['cp2k']['structure'], self.inputs.min_cell_size) #TEST if this recursive thing works
+        #Resize the unit cell if min(perp_with) < inputs.min_cell_size
+        resize = check_resize_unit_cell(self.ctx.base_inp['cp2k']['structure'], self.inputs.min_cell_size) #Dict
+        resize_dict = resize.get_dict()
+        if resize_dict['nx']>1 or resize_dict['ny']>1 or resize_dict['nz']>1:
+            resized_struct = resize_unit_cell(self.ctx.base_inp['cp2k']['structure'], resize)
+            self.ctx.base_inp['cp2k']['structure'] = resized_struct
+            self.report("Unit cell resized by {}x{}x{} (StructureData<{}>)".format(
+                resize_dict['nx'],resize_dict['ny'],resize_dict['nz'],resized_struct.pk))
+        else:
+            self.report("Unit cell NOT resized")
 
         # Generate input parameters and store them
         self.ctx.parameters = deepcopy(self.ctx.parameters_yaml['settings_0'])

@@ -41,21 +41,3 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         """
         super(Cp2kBaseWorkChain, self).setup()
         self.ctx.inputs = AttributeDict(self.exposed_inputs(Cp2kCalculation, 'cp2k'))
-
-
-    # TODO: see if needed (taken from Carlo's workchains)    
-    def _check_prev_calc(self, prev_calc):
-        error = None
-        if prev_calc.get_state() != 'FINISHED':
-            error = "Previous calculation in state: "+prev_calc.get_state()
-        elif "aiida.out" not in prev_calc.out.retrieved.get_folder_list():
-            error = "Previous calculation did not retrive aiida.out"
-        else:
-            fn = prev_calc.out.retrieved.get_abs_path("aiida.out")
-            content = open(fn).read()
-            if "exceeded requested execution time" in content:
-                error = "Previous calculation's aiida.out exceeded walltime"
-        if error:
-            self.report("ERROR: "+error)
-            self.abort(msg=error)
-            raise Exception(error)

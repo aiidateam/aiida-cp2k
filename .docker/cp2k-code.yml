@@ -1,0 +1,8 @@
+label: cp2k
+computer: localhost
+description:
+input_plugin: cp2k
+on_computer: True
+remote_abs_path: /usr/bin/cp2k
+append_text:
+prepend_text:

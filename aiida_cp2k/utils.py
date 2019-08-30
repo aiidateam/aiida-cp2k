@@ -10,14 +10,13 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from itertools import chain
 from copy import deepcopy
 import re
 import math
 
 import six
 if six.PY2:
-    from collections import Mapping, Sequence
+    from collections import Mapping, Sequence  # pylint: disable=import-error, no-name-in-module
 else:
     from collections.abc import Mapping, Sequence  # pylint: disable=import-error, no-name-in-module
 
@@ -164,6 +163,7 @@ class Cp2kInput:  # pylint: disable=old-style-class
 
 
 def parse_cp2k_output(fobj):
+    """Parse CP2K output into a dictionary"""
     lines = fobj.readlines()
 
     result_dict = {"exceeded_walltime": False}
@@ -216,10 +216,7 @@ def _parse_bands(lines, n_start):
             kpoint = tuple(float(p) for p in splitted[-3:])
             kpoint_n_lines = int(math.ceil(int(selected_lines[current_line + 1]) / 4))
             band = [
-                float(v)
-                for v in " ".join(
-                    selected_lines[current_line + 2 : current_line + 2 + kpoint_n_lines]
-                ).split()
+                float(v) for v in " ".join(selected_lines[current_line + 2:current_line + 2 + kpoint_n_lines]).split()
             ]
 
             if spin == 1:

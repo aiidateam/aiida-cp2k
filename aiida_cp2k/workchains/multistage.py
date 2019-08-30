@@ -221,9 +221,9 @@ class Cp2kMultistageWorkChain(WorkChain):
         super(Cp2kMultistageWorkChain, cls).define(spec)
         spec.expose_inputs(Cp2kBaseWorkChain, namespace='cp2k_base', exclude=['parameters'])
         spec.input('protocol_tag', valid_type=Str, default=Str('standard'), required=False,
-                     help='The tag of the protocol: to be read from the multistage_{tag}.yaml')
+                     help='The tag of the protocol to be read from {tag}.yaml unless protocol_yaml input is specified')
         spec.input('protocol_yaml', valid_type=SinglefileData, required=False,
-                     help='Specify a custom yaml file with the multistage settings')
+                     help='Specify a custom yaml file with the multistage settings (and ignore protocol_tag)')
         spec.input('protocol_modify', valid_type=Dict, default=Dict(dict={}), required=False,
                      help='Specify custom settings that overvrite the yaml settings')
         spec.input('starting_settings_idx', valid_type=Int, default=Int(0), required=False,
@@ -232,7 +232,6 @@ class Cp2kMultistageWorkChain(WorkChain):
                      help='To avoid the use of k-points, extend the unic cell so that min(perpendicular_width)>min_cell_size')
         spec.input('parent_calc_folder', valid_type=RemoteData, required=False,
                      help='Provide an initial parent folder that contains the wavefunction, to which restart')
-
 
         spec.outline(
             cls.setup_multistage,
@@ -252,10 +251,15 @@ class Cp2kMultistageWorkChain(WorkChain):
         spec.exit_code(902,'ERROR_NO_MORE_SETTINGS',
             'Settings for Stage0 are not ok but there are no more robust settings to try')
         spec.exit_code(903,'ERROR_PARSING_OUTPUT',
-            'Something important was not printed correctly and the parsing failed.')
-        spec.expose_outputs(Cp2kBaseWorkChain, include=('output_structure','remote_folder'))
-        spec.output('last_input_parameters', valid_type=Dict, required=True)
-        spec.output('output_parameters', valid_type=Dict, required=True)
+            'Something important was not printed correctly and the parsing of the first calculation failed.')
+        spec.expose_outputs(Cp2kBaseWorkChain, include=['remote_folder'],)
+                        #help='Remote folder of the last CP2K calculation (e.g., to be used to restart the WFN)'
+        spec.output('output_structure', valid_type=StructureData, required=False,
+                        help='Processed structure (missing if only ENERGY calculation is performed)')
+        spec.output('last_input_parameters', valid_type=Dict, required=False,
+                        help='CP2K input parameters used (and possibly working) used in the last stage')
+        spec.output('output_parameters', valid_type=Dict, required=False,
+                        help='Output CP2K parameters of all the stages, merged together')
 
 
     def setup_multistage(self):
@@ -269,11 +273,14 @@ class Cp2kMultistageWorkChain(WorkChain):
         except:
             self.ctx.parent_calc_folder = None
 
-        # Read yaml file chosen with the tag and overwrite with custom modifications
-        dir = os.path.dirname(os.path.abspath(__file__))
-        yamlfullpath = '{}/multistage_protocols/{}.yaml'.format(dir, self.inputs.protocol_tag.value)
-        with open(yamlfullpath, 'r') as stream:
-            self.ctx.parameters_yaml = yaml.safe_load(stream)
+        # Read yaml file selected as SinglefileData or chosen with the tag, and overwrite with custom modifications
+        if 'protocol_yaml' in self.inputs:
+            self.ctx.parameters_yaml = yaml.safe_load(self.inputs.protocol_yaml.open())
+        else:
+            dir = os.path.dirname(os.path.abspath(__file__))
+            yamlfullpath = '{}/multistage_protocols/{}.yaml'.format(dir, self.inputs.protocol_tag.value)
+            with open(yamlfullpath, 'r') as stream:
+                self.ctx.parameters_yaml = yaml.safe_load(stream)
         merge_dict(self.ctx.parameters_yaml,self.inputs.protocol_modify.get_dict())
 
         # Initialize
@@ -348,14 +355,14 @@ class Cp2kMultistageWorkChain(WorkChain):
         """
         self.ctx.settings_ok = True
         cp2k_inp = self.ctx.parameters
-        cp2k_out = self.ctx.stages[-1].outputs.output_parameters
 
         # Settings/structure bad: something very bad happened and the calculation is not doing even the scf cycles
         #                         or one of the info was not parsed correctly. To add later!
-        # if base.is_ko:
-        #   return self.exit_codes.ERROR_PARSING_OUTPUT
-        #
-        # At the moment, if something bad happens, Cp2kBase will fail: we need to make this more robust!
+        if 'output_parameters' in self.ctx.stages[-1].outputs:
+            cp2k_out = self.ctx.stages[-1].outputs.output_parameters
+        else:
+            self.report('ERROR_PARSING_OUTPUT')
+            return self.exit_codes.ERROR_PARSING_OUTPUT
 
         # Settings bad: base did not converge
         if not cp2k_out["motion_step_info"]["scf_converged"][-1]:
@@ -384,7 +391,12 @@ class Cp2kMultistageWorkChain(WorkChain):
     def inspect_and_update_stage(self):
         """ Update geometry, parent folder and the new &MOTION settings"""
         last_stage = self.ctx.stages[-1]
-        self.ctx.structure_new = last_stage.outputs.output_structure
+        if 'output_structure' in last_stage.outputs:
+            self.ctx.structure_new = last_stage.outputs.output_structure
+            self.report('Structure updated for next stage')
+        else:
+            self.report('New structure NOT found and NOT updated for next stage')
+
         self.ctx.parent_calc_folder = last_stage.outputs.remote_folder
         last_stage.outputs.output_parameters.label = self.ctx.stage_tag
 
@@ -405,13 +417,21 @@ class Cp2kMultistageWorkChain(WorkChain):
     def results(self):
         """ Gather final outputs of the workchain """
 
+        # Gather all the ouput_parameters in a final Dict
         all_output_parameters = {}
         for i,stage in enumerate(self.ctx.stages):
             all_output_parameters['arg{}'.format(i)] = stage.outputs.output_parameters
-
         self.out('output_parameters', extract_results(**all_output_parameters))
+        # Output the final parameters that worked
         self.out('last_input_parameters',self.ctx.base_inp['cp2k']['parameters'])
-        self.out_many(self.exposed_outputs(self.ctx.stages[-1], Cp2kBaseWorkChain)) #(output_structure and remote_folder)
-        self.report("Outputs: Dict<{}> and StructureData<{}>".format(self.outputs['output_parameters'].pk,self.outputs['output_structure'].pk))
+        # Output the final structure only if it was modified (there is any MD or OPT stage)
+        # output remote folder of the last calculation
+        self.out_many(self.exposed_outputs(self.ctx.stages[-1], Cp2kBaseWorkChain)) # remote_folder
+        if 'output_structure' in self.ctx.stages[-1].outputs:
+            self.out('output_structure', self.ctx.stages[-1].outputs.output_structure)
+            self.report("Outputs: Dict<{}> and StructureData<{}>".format(self.outputs['output_parameters'].pk,
+                                                                         self.outputs['output_structure'].pk))
+        else:
+            self.report("Outputs: Dict<{}> and NO StructureData".format(self.outputs['output_parameters'].pk))
 
         return

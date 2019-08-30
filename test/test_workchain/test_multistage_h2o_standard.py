@@ -18,6 +18,7 @@ def main(cp2k_code_string):
     """Example usage: verdi run cp2k-5.1@localhost"""
 
     print("Testing CP2K multistage workchain on H2O (RKS, no need for smearing)...")
+    print(">>> Using 'standard' tag")
 
     code = Code.get_from_string(cp2k_code_string)
 

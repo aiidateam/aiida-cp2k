@@ -245,9 +245,21 @@ def parse_cp2k_trajectory(fobj):
     content = fobj.read()
 
     # parse coordinate section
-    match = re.search(r"\n\s*&COORD\n(.*?)\n\s*&END COORD\n", content, re.DOTALL)
+    match = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, re.DOTALL)
     coord_lines = [line.strip().split() for line in match.group(1).splitlines()]
-    symbols = [line[0] for line in coord_lines]
+
+    # splitting element name and the tag (if present)
+    symbols = []
+    tags = []
+    for atomic_kind in [l[0] for l in coord_lines]:
+        symbols.append(''.join([s for s in atomic_kind if not s.isdigit()]))
+        try:
+            tag = int(''.join([s for s in atomic_kind if s.isdigit()]))
+        except ValueError:
+            tag = 0
+        tags.append(tag)
+
+    # get positions
     positions_str = [line[1:] for line in coord_lines]
     positions = np.array(positions_str, np.float64)
 
@@ -257,4 +269,4 @@ def parse_cp2k_trajectory(fobj):
     cell_str = [line[1:] for line in cell_lines if line[0] in "ABC"]
     cell = np.array(cell_str, np.float64)
 
-    return {"symbols": symbols, "positions": positions, "cell": cell}
+    return {"symbols": symbols, "positions": positions, "cell": cell, "tags": tags}

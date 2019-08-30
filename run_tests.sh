@@ -19,6 +19,7 @@ pytest test
 # Run single calculation tests
 verdi run ./examples/single_calculations/test_mm.py                  cp2k@localhost
 verdi run ./examples/single_calculations/test_dft.py                 cp2k@localhost
+verdi run ./examples/single_calculations/test_dft_atomic_kinds.py    cp2k@localhost
 verdi run ./examples/single_calculations/test_multiple_force_eval.py cp2k@localhost
 # Cp2k fails to run band structure calculations
 #verdi run ./examples/single_calculations/test_bands.py               cp2k@localhost

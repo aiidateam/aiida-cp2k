@@ -16,12 +16,11 @@ from setuptools import setup, find_packages
 def run_setup():
     with open('setup.json', 'r') as info:
         kwargs = json.load(info)
-    setup(
-        include_package_data=True,
-        packages=find_packages(),
-        long_description=open('README.md').read(),
-        long_description_content_type='text/markdown',
-        **kwargs)
+    setup(include_package_data=True,
+          packages=find_packages(),
+          long_description=open('README.md').read(),
+          long_description_content_type='text/markdown',
+          **kwargs)
 
 
 if __name__ == '__main__':

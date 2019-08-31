@@ -44,29 +44,33 @@ class Cp2kCalculation(CalcJob):
         spec.input('settings', valid_type=Dict, required=False, help='additional input parameters')
         spec.input('resources', valid_type=dict, required=False, help='special settings')
         spec.input('parent_calc_folder', valid_type=RemoteData, required=False, help='remote folder used for restarts')
-        spec.input_namespace(
-            'file', valid_type=SinglefileData, required=False, help='additional input files', dynamic=True)
+        spec.input_namespace('file',
+                             valid_type=SinglefileData,
+                             required=False,
+                             help='additional input files',
+                             dynamic=True)
 
         # Default file names, parser, etc..
-        spec.input(
-            'metadata.options.input_filename',
-            valid_type=six.string_types,
-            default=cls._DEFAULT_INPUT_FILE,
-            non_db=True)
-        spec.input(
-            'metadata.options.output_filename',
-            valid_type=six.string_types,
-            default=cls._DEFAULT_OUTPUT_FILE,
-            non_db=True)
-        spec.input(
-            'metadata.options.parser_name', valid_type=six.string_types, default=cls._DEFAULT_PARSER, non_db=True)
+        spec.input('metadata.options.input_filename',
+                   valid_type=six.string_types,
+                   default=cls._DEFAULT_INPUT_FILE,
+                   non_db=True)
+        spec.input('metadata.options.output_filename',
+                   valid_type=six.string_types,
+                   default=cls._DEFAULT_OUTPUT_FILE,
+                   non_db=True)
+        spec.input('metadata.options.parser_name',
+                   valid_type=six.string_types,
+                   default=cls._DEFAULT_PARSER,
+                   non_db=True)
 
         # Use mpi by default
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
 
         # Exit codes
-        spec.exit_code(
-            100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(100,
+                       'ERROR_NO_RETRIEVED_FOLDER',
+                       message='The retrieved folder data node could not be accessed.')
 
         # Output parameters
         spec.output('output_parameters', valid_type=Dict, required=True, help='the results of the calculation')
@@ -94,11 +98,10 @@ class Cp2kCalculation(CalcJob):
         inp.add_keyword("GLOBAL/PROJECT", self._DEFAULT_PROJECT_NAME)
         if 'structure' in self.inputs:
             for i, letter in enumerate('ABC'):
-                inp.add_keyword(
-                    'FORCE_EVAL/SUBSYS/CELL/' + letter,
-                    '{:<15} {:<15} {:<15}'.format(*self.inputs.structure.cell[i]),
-                    override=False,
-                    conflicting_keys=['ABC', 'ALPHA_BETA_GAMMA', 'CELL_FILE_NAME'])
+                inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/' + letter,
+                                '{:<15} {:<15} {:<15}'.format(*self.inputs.structure.cell[i]),
+                                override=False,
+                                conflicting_keys=['ABC', 'ALPHA_BETA_GAMMA', 'CELL_FILE_NAME'])
             topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
             inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME, override=False)
             inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ", override=False, conflicting_keys=['COORDINATE'])

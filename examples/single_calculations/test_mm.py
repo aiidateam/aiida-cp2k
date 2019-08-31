@@ -12,149 +12,150 @@ from __future__ import absolute_import
 
 import sys
 import ase.build
+import click
 
 from aiida.orm import (Code, Dict, SinglefileData)
 from aiida.engine import run
 from aiida.common import NotExistent
 from aiida_cp2k.calculations import Cp2kCalculation
 
-# ==============================================================================
-if len(sys.argv) != 2:
-    print("Usage: test_mm.py <code_name>")
-    sys.exit(1)
 
-codename = sys.argv[1]
-try:
-    code = Code.get_from_string(codename)
-except NotExistent:
-    print("The code '{}' does not exist".format(codename))
-    sys.exit(1)
+@click.command('cli')
+@click.argument('codelabel')
+def main(codelabel):
+    """Run molecular mechanics calculation"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
 
-print("Testing CP2K ENERGY on H2O (MM) ...")
+    print("Testing CP2K ENERGY on H2O (MM) ...")
 
-# force field
-with open("/tmp/water.pot", "w") as f:
-    f.write("""BONDS
-H    H       0.000     1.5139
-O    H     450.000     0.9572
+    # force field
+    with open("/tmp/water.pot", "w") as f:
+        f.write("""BONDS
+    H    H       0.000     1.5139
+    O    H     450.000     0.9572
 
-ANGLES
-H    O    H      55.000   104.5200
+    ANGLES
+    H    O    H      55.000   104.5200
 
-DIHEDRALS
+    DIHEDRALS
 
-IMPROPER
+    IMPROPER
 
-NONBONDED
-H      0.000000  -0.046000     0.224500
-O      0.000000  -0.152100     1.768200
+    NONBONDED
+    H      0.000000  -0.046000     0.224500
+    O      0.000000  -0.152100     1.768200
 
-HBOND CUTHB 0.5
+    HBOND CUTHB 0.5
 
-END""")
+    END""")
 
-water_pot = SinglefileData(file="/tmp/water.pot")  # pylint: disable=no-value-for-parameter
+    water_pot = SinglefileData(file="/tmp/water.pot")  # pylint: disable=no-value-for-parameter
 
-# structure using pdb format, because it also carries topology information
-atoms = ase.build.molecule('H2O')
-atoms.center(vacuum=10.0)
-atoms.write("/tmp/coords.pdb", format="proteindatabank")
-cell = atoms.cell
-coords_pdb = SinglefileData(file="/tmp/coords.pdb")  # pylint: disable=no-value-for-parameter
+    # structure using pdb format, because it also carries topology information
+    atoms = ase.build.molecule('H2O')
+    atoms.center(vacuum=10.0)
+    atoms.write("/tmp/coords.pdb", format="proteindatabank")
+    coords_pdb = SinglefileData(file="/tmp/coords.pdb")  # pylint: disable=no-value-for-parameter
 
-# parameters
-# based on cp2k/tests/Fist/regtest-1-1/water_1.inp
-parameters = Dict(
-    dict={
-        'FORCE_EVAL': {
-            'METHOD': 'fist',
-            'MM': {
-                'FORCEFIELD': {
-                    'PARM_FILE_NAME': 'water.pot',
-                    'PARMTYPE': 'CHM',
-                    'CHARGE': [{
-                        'ATOM': 'O',
-                        'CHARGE': -0.8476
-                    }, {
-                        'ATOM': 'H',
-                        'CHARGE': 0.4238
-                    }]
-                },
-                'POISSON': {
-                    'EWALD': {
-                        'EWALD_TYPE': 'spme',
-                        'ALPHA': 0.44,
-                        'GMAX': 24,
-                        'O_SPLINE': 6
+    # parameters
+    # based on cp2k/tests/Fist/regtest-1-1/water_1.inp
+    parameters = Dict(
+        dict={
+            'FORCE_EVAL': {
+                'METHOD': 'fist',
+                'MM': {
+                    'FORCEFIELD': {
+                        'PARM_FILE_NAME': 'water.pot',
+                        'PARMTYPE': 'CHM',
+                        'CHARGE': [{
+                            'ATOM': 'O',
+                            'CHARGE': -0.8476
+                        }, {
+                            'ATOM': 'H',
+                            'CHARGE': 0.4238
+                        }]
+                    },
+                    'POISSON': {
+                        'EWALD': {
+                            'EWALD_TYPE': 'spme',
+                            'ALPHA': 0.44,
+                            'GMAX': 24,
+                            'O_SPLINE': 6
+                        }
                     }
-                }
-            },
-            'SUBSYS': {
-                'CELL': {
-                    'ABC': '%f  %f  %f' % tuple(atoms.cell.diagonal()),
                 },
-                'TOPOLOGY': {
-                    'COORD_FILE_NAME': 'coords.pdb',
-                    'COORD_FILE_FORMAT': 'PDB',
+                'SUBSYS': {
+                    'CELL': {
+                        'ABC': '%f  %f  %f' % tuple(atoms.cell.diagonal()),
+                    },
+                    'TOPOLOGY': {
+                        'COORD_FILE_NAME': 'coords.pdb',
+                        'COORD_FILE_FORMAT': 'PDB',
+                    },
                 },
             },
+            'GLOBAL': {
+                'CALLGRAPH': 'master',
+                'CALLGRAPH_FILE_NAME': 'runtime'
+            }
+        })
+
+    # settings
+    settings = Dict(dict={'additional_retrieve_list': ["runtime.callgraph"]})
+
+    # resources
+    options = {
+        "resources": {
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1,
         },
-        'GLOBAL': {
-            'CALLGRAPH': 'master',
-            'CALLGRAPH_FILE_NAME': 'runtime'
-        }
-    })
-
-# settings
-settings = Dict(dict={'additional_retrieve_list': ["runtime.callgraph"]})
-
-# resources
-options = {
-    "resources": {
-        "num_machines": 1,
-        "num_mpiprocs_per_machine": 1,
-    },
-    "max_wallclock_seconds": 1 * 3 * 60,  # 3 minutes
-}
-
-# collect all inputs
-inputs = {
-    'parameters': parameters,
-    'settings': settings,
-    'code': code,
-    'file': {
-        'water_pot': water_pot,
-        'coords_pdb': coords_pdb,
-    },
-    'metadata': {
-        'options': options,
+        "max_wallclock_seconds": 1 * 3 * 60,  # 3 minutes
     }
-}
 
-print("Submitted calculation...")
-calc = run(Cp2kCalculation, **inputs)
+    # collect all inputs
+    inputs = {
+        'parameters': parameters,
+        'settings': settings,
+        'code': code,
+        'file': {
+            'water_pot': water_pot,
+            'coords_pdb': coords_pdb,
+        },
+        'metadata': {
+            'options': options,
+        }
+    }
 
-# check warnings
-assert calc['output_parameters'].dict.nwarnings == 0
+    print("Submitted calculation...")
+    calc = run(Cp2kCalculation, **inputs)
 
-# check energy
-expected_energy = 0.146927412614e-3
-if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
-    print("OK, energy has the expected value")
-else:
-    print("ERROR!")
-    print("Expected energy value: {}".format(expected_energy))
-    print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
-    sys.exit(3)
+    # check warnings
+    assert calc['output_parameters'].dict.nwarnings == 0
 
-# check if callgraph is there
-if "runtime.callgraph" in calc['retrieved']._repository.list_object_names():  # pylint: disable=protected-access
-    print("OK, callgraph file was retrived")
-else:
-    print("ERROR!")
-    print("Callgraph file was not retrieved.")
-    sys.exit(3)
+    # check energy
+    expected_energy = 0.146927412614e-3
+    if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
+        print("OK, energy has the expected value")
+    else:
+        print("ERROR!")
+        print("Expected energy value: {}".format(expected_energy))
+        print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
+        sys.exit(3)
 
-sys.exit(0)
+    # check if callgraph is there
+    if "runtime.callgraph" in calc['retrieved']._repository.list_object_names():  # pylint: disable=protected-access
+        print("OK, callgraph file was retrived")
+    else:
+        print("ERROR!")
+        print("Callgraph file was not retrieved.")
+        sys.exit(3)
 
-# EOF
+    sys.exit(0)
+
+
+if __name__ == '__main__':
+    main()  # pylint: disable=no-value-for-parameter

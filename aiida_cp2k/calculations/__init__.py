@@ -94,7 +94,18 @@ class Cp2kCalculation(CalcJob):
         if 'structure' in self.inputs:
             # As far as I understand self.inputs.structure can't deal with tags
             # self.inputs.structure.export(folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME), fileformat="xyz")
-            self._write_structure(self.inputs.structure, folder, inp)
+            self._write_structure(self.inputs.structure, folder, self._DEFAULT_COORDS_FILE_NAME)
+
+            # modify the input dictionary accordingly
+            for i, letter in enumerate('ABC'):
+                inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/' + letter,
+                                '{:<15} {:<15} {:<15}'.format(*self.inputs.structure.cell[i]),
+                                override=False,
+                                conflicting_keys=['ABC', 'ALPHA_BETA_GAMMA', 'CELL_FILE_NAME'])
+
+            topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
+            inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME, override=False)
+            inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ", override=False, conflicting_keys=['COORDINATE'])
 
         with io.open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8") as fobj:
             try:
@@ -119,12 +130,15 @@ class Cp2kCalculation(CalcJob):
         calcinfo.stdout_name = self._DEFAULT_OUTPUT_FILE
         calcinfo.codes_info = [codeinfo]
 
-        # file lists
+        # files or additional structures
         calcinfo.remote_symlink_list = []
         if 'file' in self.inputs:
             calcinfo.local_copy_list = []
-            for fobj in self.inputs.file.values():
-                calcinfo.local_copy_list.append((fobj.uuid, fobj.filename, fobj.filename))
+            for name, obj in self.inputs.file.items():
+                if isinstance(obj, SinglefileData):
+                    calcinfo.local_copy_list.append((obj.uuid, obj.filename, obj.filename))
+                elif isinstance(obj, StructureData):
+                    self._write_structure(obj, folder, name + '.xyz')
 
         calcinfo.remote_copy_list = []
         calcinfo.retrieve_list = [self._DEFAULT_OUTPUT_FILE, self._DEFAULT_RESTART_FILE_NAME]
@@ -145,7 +159,8 @@ class Cp2kCalculation(CalcJob):
 
         return calcinfo
 
-    def _write_structure(self, structure, folder, inp_dict):
+    @staticmethod
+    def _write_structure(structure, folder, name):
         """Function that writes a structure and takes care of element tags"""
 
         # create file with the structure
@@ -154,16 +169,6 @@ class Cp2kCalculation(CalcJob):
         elem_tags = ['' if t == 0 else str(t) for t in s_ase.get_tags()]
         elem_symbols = list(map(add, s_ase.get_chemical_symbols(), elem_tags))
         elem_coords = ['{:20.16f} {:20.16f} {:20.16f}'.format(p[0], p[1], p[2]) for p in s_ase.get_positions()]
-        with io.open(folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME), mode="w", encoding="utf-8") as fobj:
+        with io.open(folder.get_abs_path(name), mode="w", encoding="utf-8") as fobj:
             fobj.write(u'{}\n\n'.format(len(elem_coords)))
             fobj.write(u'\n'.join(map(add, elem_symbols, elem_coords)))
-
-        # modify the input dictionary accordingly
-        for i, letter in enumerate('ABC'):
-            inp_dict.add_keyword('FORCE_EVAL/SUBSYS/CELL/' + letter,
-                                 '{:<15} {:<15} {:<15}'.format(*structure.cell[i]),
-                                 override=False,
-                                 conflicting_keys=['ABC', 'ALPHA_BETA_GAMMA', 'CELL_FILE_NAME'])
-        topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
-        inp_dict.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME, override=False)
-        inp_dict.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ", override=False, conflicting_keys=['COORDINATE'])

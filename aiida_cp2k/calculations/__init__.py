@@ -40,12 +40,12 @@ class Cp2kCalculation(CalcJob):
 
         # Input parameters
         spec.input('parameters', valid_type=Dict, help='the input parameters')
-        spec.input('structure', valid_type=StructureData, required=False, help='the input structure')
+        spec.input('structure', valid_type=StructureData, required=False, help='the main input structure')
         spec.input('settings', valid_type=Dict, required=False, help='additional input parameters')
         spec.input('resources', valid_type=dict, required=False, help='special settings')
         spec.input('parent_calc_folder', valid_type=RemoteData, required=False, help='remote folder used for restarts')
         spec.input_namespace('file',
-                             valid_type=SinglefileData,
+                             valid_type=(SinglefileData, StructureData),
                              required=False,
                              help='additional input files',
                              dynamic=True)
@@ -78,7 +78,6 @@ class Cp2kCalculation(CalcJob):
         spec.output('output_bands', valid_type=BandsData, required=False, help='optional band structure')
         spec.default_output_node = 'output_parameters'
 
-    # --------------------------------------------------------------------------
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
 
@@ -87,21 +86,23 @@ class Cp2kCalculation(CalcJob):
         """
         from aiida_cp2k.utils import Cp2kInput
 
-        # create input structure
-        if 'structure' in self.inputs:
-            # As far as I understand self.inputs.structure can't deal with tags
-            # self.inputs.structure.export(folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME), fileformat="xyz")
-            self.write_structure(folder)
-
         # create cp2k input file
         inp = Cp2kInput(self.inputs.parameters.get_dict())
         inp.add_keyword("GLOBAL/PROJECT", self._DEFAULT_PROJECT_NAME)
+
+        # create input structure(s)
         if 'structure' in self.inputs:
+            # As far as I understand self.inputs.structure can't deal with tags
+            # self.inputs.structure.export(folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME), fileformat="xyz")
+            self._write_structure(self.inputs.structure, folder, self._DEFAULT_COORDS_FILE_NAME)
+
+            # modify the input dictionary accordingly
             for i, letter in enumerate('ABC'):
                 inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/' + letter,
                                 '{:<15} {:<15} {:<15}'.format(*self.inputs.structure.cell[i]),
                                 override=False,
                                 conflicting_keys=['ABC', 'ALPHA_BETA_GAMMA', 'CELL_FILE_NAME'])
+
             topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
             inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME, override=False)
             inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ", override=False, conflicting_keys=['COORDINATE'])
@@ -112,10 +113,7 @@ class Cp2kCalculation(CalcJob):
             except ValueError as exc:
                 six.raise_from(InputValidationError("invalid keys or values in input parameters found"), exc)
 
-        if 'settings' in self.inputs:
-            settings = self.inputs.settings.get_dict()
-        else:
-            settings = {}
+        settings = self.inputs.settings.get_dict() if 'settings' in self.inputs else {}
 
         # create code info
         codeinfo = CodeInfo()
@@ -132,12 +130,15 @@ class Cp2kCalculation(CalcJob):
         calcinfo.stdout_name = self._DEFAULT_OUTPUT_FILE
         calcinfo.codes_info = [codeinfo]
 
-        # file lists
+        # files or additional structures
         calcinfo.remote_symlink_list = []
         if 'file' in self.inputs:
             calcinfo.local_copy_list = []
-            for fobj in self.inputs.file.values():
-                calcinfo.local_copy_list.append((fobj.uuid, fobj.filename, fobj.filename))
+            for name, obj in self.inputs.file.items():
+                if isinstance(obj, SinglefileData):
+                    calcinfo.local_copy_list.append((obj.uuid, obj.filename, obj.filename))
+                elif isinstance(obj, StructureData):
+                    self._write_structure(obj, folder, name + '.xyz')
 
         calcinfo.remote_copy_list = []
         calcinfo.retrieve_list = [self._DEFAULT_OUTPUT_FILE, self._DEFAULT_RESTART_FILE_NAME]
@@ -158,13 +159,16 @@ class Cp2kCalculation(CalcJob):
 
         return calcinfo
 
-    def write_structure(self, folder):
+    @staticmethod
+    def _write_structure(structure, folder, name):
         """Function that writes a structure and takes care of element tags"""
+
+        # create file with the structure
         from operator import add
-        s_ase = self.inputs.structure.get_ase()
+        s_ase = structure.get_ase()
         elem_tags = ['' if t == 0 else str(t) for t in s_ase.get_tags()]
         elem_symbols = list(map(add, s_ase.get_chemical_symbols(), elem_tags))
         elem_coords = ['{:20.16f} {:20.16f} {:20.16f}'.format(p[0], p[1], p[2]) for p in s_ase.get_positions()]
-        with io.open(folder.get_abs_path(self._DEFAULT_COORDS_FILE_NAME), mode="w", encoding="utf-8") as fobj:
+        with io.open(folder.get_abs_path(name), mode="w", encoding="utf-8") as fobj:
             fobj.write(u'{}\n\n'.format(len(elem_coords)))
             fobj.write(u'\n'.join(map(add, elem_symbols, elem_coords)))

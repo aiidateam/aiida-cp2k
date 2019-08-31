@@ -50,15 +50,7 @@ class Cp2kCalculation(CalcJob):
                              help='additional input files',
                              dynamic=True)
 
-        # Default file names, parser, etc..
-        spec.input('metadata.options.input_filename',
-                   valid_type=six.string_types,
-                   default=cls._DEFAULT_INPUT_FILE,
-                   non_db=True)
-        spec.input('metadata.options.output_filename',
-                   valid_type=six.string_types,
-                   default=cls._DEFAULT_OUTPUT_FILE,
-                   non_db=True)
+        # Specify default parser
         spec.input('metadata.options.parser_name',
                    valid_type=six.string_types,
                    default=cls._DEFAULT_PARSER,

@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0b2",
+    "version": "1.0.0b3",
     "name": "aiida_cp2k",
     "url": "https://github.com/aiidateam/aiida-cp2k",
     "license": "MIT License",
@@ -14,8 +14,9 @@
         "Development Status :: 4 - Beta"
     ],
     "install_requires": [
-        "aiida-core>=1.0.0b4",
-        "ase"
+        "aiida-core>=1.0.0b5",
+        "ase==3.17.0; python_version<'3.0'",
+        "ase; python_version>='3.5'"
     ],
     "entry_points": {
         "aiida.calculations": [
@@ -35,9 +36,9 @@
             "pytest==4.4.1"
 	],
 	"pre-commit":[
-	        "pre-commit==1.14.4",
-	        "yapf==0.26.0",
-	        "prospector==1.1.5",
+	        "pre-commit==1.16.1",
+	        "yapf==0.27.0",
+                "prospector==1.1.6.2",
 	        "pylint==1.9.4; python_version<'3.0'",
 	        "pylint==2.2.2; python_version>='3.0'"
 	]

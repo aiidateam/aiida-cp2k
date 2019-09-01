@@ -14,7 +14,7 @@ import six
 from six.moves import map
 
 from aiida.engine import CalcJob
-from aiida.orm import Dict, SinglefileData, StructureData, RemoteData, BandsData
+from aiida.orm import Computer, Dict, SinglefileData, StructureData, RemoteData, BandsData
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 
 
@@ -123,7 +123,6 @@ class Cp2kCalculation(CalcJob):
         calcinfo.codes_info = [codeinfo]
 
         # files or additional structures
-        calcinfo.remote_symlink_list = []
         if 'file' in self.inputs:
             calcinfo.local_copy_list = []
             for name, obj in self.inputs.file.items():
@@ -132,16 +131,21 @@ class Cp2kCalculation(CalcJob):
                 elif isinstance(obj, StructureData):
                     self._write_structure(obj, folder, name + '.xyz')
 
-        calcinfo.remote_copy_list = []
         calcinfo.retrieve_list = [self._DEFAULT_OUTPUT_FILE, self._DEFAULT_RESTART_FILE_NAME]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
         # symlinks
+        calcinfo.remote_symlink_list = []
+        calcinfo.remote_copy_list = []
         if 'parent_calc_folder' in self.inputs:
             comp_uuid = self.inputs.parent_calc_folder.computer.uuid
             remote_path = self.inputs.parent_calc_folder.get_remote_path()
-            symlink = (comp_uuid, remote_path, self._DEFAULT_PARENT_CALC_FLDR_NAME)
-            calcinfo.remote_symlink_list.append(symlink)
+            copy_info = (comp_uuid, remote_path, self._DEFAULT_PARENT_CALC_FLDR_NAME)
+            if self.inputs.code.computer.uuid == comp_uuid:  # if running on the same computer - make a symlink
+                # if not - copy the folder
+                calcinfo.remote_symlink_list.append(copy_info)
+            else:
+                calcinfo.remote_copy_list.append(copy_info)
 
         # check for left over settings
         if settings:

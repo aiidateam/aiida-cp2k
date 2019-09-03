@@ -15,12 +15,8 @@
     ],
     "install_requires": [
         "aiida-core>=1.0.0b5",
-<<<<<<< HEAD
-        "ase"
-=======
         "ase==3.17.0; python_version<'3.0'",
         "ase; python_version>='3.5'"
->>>>>>> d262ee03aad0b7dde2dedc1cf7b12420de6e5793
     ],
     "entry_points": {
         "aiida.calculations": [

@@ -132,7 +132,6 @@ class Cp2kCalculation(CalcJob):
                 elif isinstance(obj, StructureData):
                     self._write_structure(obj, folder, name + '.xyz')
 
-        calcinfo.remote_copy_list = []
         calcinfo.retrieve_list = [self._DEFAULT_OUTPUT_FILE,
                                   self._DEFAULT_RESTART_FILE_NAME,
                                   self._DEFAULT_TRAJECT_FILE_NAME]

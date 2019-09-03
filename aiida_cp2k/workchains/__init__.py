@@ -9,5 +9,3 @@
 
 from .base import Cp2kBaseWorkChain
 from .multistage import Cp2kMultistageWorkChain
-
-# EOF

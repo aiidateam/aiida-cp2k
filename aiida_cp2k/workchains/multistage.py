@@ -227,9 +227,9 @@ class Cp2kMultistageWorkChain(WorkChain):
         spec.input('protocol_modify', valid_type=Dict, default=Dict(dict={}), required=False,
                      help='Specify custom settings that overvrite the yaml settings')
         spec.input('starting_settings_idx', valid_type=Int, default=Int(0), required=False,
-                     help='If idx>0 is chosen, the calculation jumps directly to overwrite settings_0 with settings_{idx}')
+                     help='If idx>0 is chosen, jumps directly to overwrite settings_0 with settings_{idx}')
         spec.input('min_cell_size', valid_type=Float, default=Float(0.0), required=False,
-                     help='To avoid the use of k-points, extend the unic cell so that min(perpendicular_width)>min_cell_size')
+                     help='To avoid the use of k-points, extend the cell so that min(perp_width)>min_cell_size')
         spec.input('parent_calc_folder', valid_type=RemoteData, required=False,
                      help='Provide an initial parent folder that contains the wavefunction, to which restart')
 
@@ -339,10 +339,12 @@ class Cp2kMultistageWorkChain(WorkChain):
 
         # Overwrite the generated input with the custom cp2k/parameters and give a label to BaseWC and Cp2kCalc
         if 'parameters' in self.exposed_inputs(Cp2kBaseWorkChain, 'cp2k_base')['cp2k']:
-            merge_dict(self.ctx.parameters, AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'cp2k_base')['cp2k']['parameters'].get_dict()))
+            merge_dict(self.ctx.parameters, AttributeDict(
+                self.exposed_inputs(Cp2kBaseWorkChain, 'cp2k_base')['cp2k']['parameters'].get_dict()))
         self.ctx.base_inp['cp2k']['parameters'] = Dict(dict = self.ctx.parameters).store()
         self.ctx.base_inp['metadata']['label'] = 'base({}/{})'.format(self.ctx.stage_tag,self.ctx.settings_tag,)
-        self.ctx.base_inp['cp2k']['metadata']['label'] = self.ctx.base_inp['cp2k']['parameters'].get_dict()['GLOBAL']['RUN_TYPE']
+        self.ctx.base_inp['cp2k']['metadata']['label'] = \
+            self.ctx.base_inp['cp2k']['parameters'].get_dict()['GLOBAL']['RUN_TYPE']
 
         running_base = self.submit(Cp2kBaseWorkChain, **self.ctx.base_inp)
         self.report("submitted Cp2kBaseWorkChain for {}/{}".format(self.ctx.stage_tag,self.ctx.settings_tag))

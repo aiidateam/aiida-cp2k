@@ -43,13 +43,7 @@ def main(codelabel):
     }
 
     print("Submitted calculation...")
-    inputs = {
-        'parameters': parameters,
-        'code': code,
-        'metadata': {
-            'options': options,
-        }
-    }
+    inputs = {'parameters': parameters, 'code': code, 'metadata': {'options': options,}}
     try:
         run(Cp2kCalculation, **inputs)
         print("ERROR!")

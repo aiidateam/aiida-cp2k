@@ -92,13 +92,7 @@ def main(codelabel):
         "max_wallclock_seconds": 1 * 3 * 60,
     }
 
-    inputs = {
-        'parameters': parameters,
-        'code': code,
-        'metadata': {
-            'options': options,
-        }
-    }
+    inputs = {'parameters': parameters, 'code': code, 'metadata': {'options': options,}}
 
     print("submitted calculation...")
     calc = run(Cp2kCalculation, **inputs)

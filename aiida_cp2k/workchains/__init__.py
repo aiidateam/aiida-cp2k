@@ -8,5 +8,4 @@
 """AiiDA-CP2K workchains"""
 
 from .base import Cp2kBaseWorkChain
-
-# EOF
+from .multistage import Cp2kMultistageWorkChain

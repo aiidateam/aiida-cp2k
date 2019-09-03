@@ -23,7 +23,8 @@
             "cp2k = aiida_cp2k.calculations:Cp2kCalculation"
         ],
         "aiida.parsers": [
-            "cp2k = aiida_cp2k.parsers:Cp2kParser"
+            "cp2k_base_parser = aiida_cp2k.parsers:Cp2kBaseParser",
+            "cp2k_advanced_parser = aiida_cp2k.parsers:Cp2kAdvancedParser"
         ]
     },
     "setup_requires": ["reentry"],

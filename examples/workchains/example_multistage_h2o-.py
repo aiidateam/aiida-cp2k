@@ -5,19 +5,19 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import sys
 import click
 import ase.build
 
 from aiida.engine import run
 from aiida.orm import Code, Dict, StructureData, Float, Str
+from aiida.common import NotExistent
 from aiida.plugins import WorkflowFactory
 
 Cp2kMultistageWorkChain = WorkflowFactory('cp2k.multistage')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
+def example_multistage_h2o_minus(cp2k_code):
     """Example usage: verdi run thistest.py cp2k@localhost"""
 
     print("Testing CP2K multistage workchain on 2xH2O- (UKS, no need for smearing)...")
@@ -25,8 +25,6 @@ def main(codelabel):
     print(" > unit cell resizing")
     print(" > protocol modification")
     print(" > cp2k calc modification")
-
-    code = Code.get_from_string(codelabel)
 
     atoms = ase.build.molecule('H2O')
     atoms.center(vacuum=2.0)
@@ -55,7 +53,7 @@ def main(codelabel):
         'cp2k_base': {
             'cp2k': {
                 'parameters': parameters,
-                'code': code,
+                'code': cp2k_code,
                 'metadata': {
                     'options': options,
                 }
@@ -66,5 +64,17 @@ def main(codelabel):
     run(Cp2kMultistageWorkChain, **inputs)
 
 
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_multistage_h2o_minus(code)
+
+
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

@@ -11,29 +11,31 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 import sys
 import ase.build
 import click
 
 from aiida.engine import run
-from aiida.orm import (Code, Dict, StructureData)
+from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
 from aiida.plugins import WorkflowFactory
 
 Cp2kBaseWorkChain = WorkflowFactory('cp2k.base')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
+def example_base(cp2k_code):
     """Run simple DFT calculation through a workchain"""
-    try:
-        code = Code.get_from_string(codelabel)
-    except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
-        sys.exit(1)
+
+    pwd = os.path.dirname(os.path.realpath(__file__))
 
     print("Testing CP2K ENERGY on H2O (DFT) through a workchain...")
+
+    # basis set
+    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+
+    # pseudopotentials
+    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
 
     # structure
     atoms = ase.build.molecule('H2O')
@@ -47,6 +49,7 @@ def main(codelabel):
                 'METHOD': 'Quickstep',
                 'DFT': {
                     'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+                    'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
                     'QS': {
                         'EPS_DEFAULT': 1.0e-12,
                         'WF_INTERPOLATION': 'ps',
@@ -95,7 +98,11 @@ def main(codelabel):
         'cp2k': {
             'structure': structure,
             'parameters': parameters,
-            'code': code,
+            'code': cp2k_code,
+            'file': {
+                'basis': basis_file,
+                'pseudo': pseudo_file,
+            },
             'metadata': {
                 'options': options,
             }
@@ -106,5 +113,17 @@ def main(codelabel):
     run(Cp2kBaseWorkChain, **inputs)
 
 
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_base(code)
+
+
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

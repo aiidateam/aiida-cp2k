@@ -6,25 +6,23 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import os
+import sys
 import click
 import ase.build
 
 from aiida.engine import run
 from aiida.orm import Code, Dict, StructureData, Str, Int
+from aiida.common import NotExistent
 from aiida.plugins import WorkflowFactory
 
 Cp2kMultistageWorkChain = WorkflowFactory('cp2k.multistage')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
+def example_multistage_al(cp2k_code):
     """Example usage: verdi run thistest.py cp2k@localhost"""
 
     print("Testing CP2K multistage workchain on Al (RKS, needs smearing)...")
     print("EXPECTED: the OT (settings_0) will converge to a negative bandgap, then we switch to SMEARING (settings_1)")
-
-    code = Code.get_from_string(codelabel)
 
     thisdir = os.path.dirname(os.path.abspath(__file__))
     structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '../data/Al.cif')))
@@ -62,7 +60,7 @@ def main(codelabel):
         'cp2k_base': {
             'cp2k': {
                 'parameters': parameters,
-                'code': code,
+                'code': cp2k_code,
                 'metadata': {
                     'options': options,
                 }
@@ -73,5 +71,17 @@ def main(codelabel):
     run(Cp2kMultistageWorkChain, **inputs)
 
 
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_multistage_al(code)
+
+
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

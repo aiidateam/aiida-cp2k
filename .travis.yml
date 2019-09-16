@@ -7,12 +7,13 @@ before_install:
   - python .ci/check_travis_tag.py
   - docker build -t aiida_cp2k_test .
   - docker run -d aiida_cp2k_test
+  - sleep 30 # wait untill the container is launched
 
 script:
-  - sleep 30 # wait untill the container is launched
   - "export DOCKERID=`docker ps -qf 'ancestor=aiida_cp2k_test'`"
   - "echo \"Docker ID: $DOCKERID\""
-  - "docker exec -it --user aiida \"$DOCKERID\" /bin/bash -l -c 'cd code/aiida-cp2k/ && ./run_tests.sh'"
+  - "docker exec -it --user aiida \"$DOCKERID\" /bin/bash -l -c 'cd code/aiida-cp2k/ && pre-commit run --all-files || ( git status --short ; git diff ; exit 1 ) '"
+  - "docker exec -it --user aiida \"$DOCKERID\" /bin/bash -l -c 'cd code/aiida-cp2k/ && pytest --cov aiida_cp2k --cov-append .'"
 
 git:
   depth: 3

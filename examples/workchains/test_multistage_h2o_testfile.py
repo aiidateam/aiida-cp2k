@@ -11,7 +11,9 @@ import ase.build
 
 from aiida.engine import run
 from aiida.orm import Code, StructureData, SinglefileData
-from aiida_cp2k.workchains import Cp2kMultistageWorkChain
+from aiida.plugins import WorkflowFactory
+
+Cp2kMultistageWorkChain = WorkflowFactory('cp2k.multistage')
 
 
 @click.command('cli')

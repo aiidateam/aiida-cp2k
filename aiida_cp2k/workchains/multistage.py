@@ -6,26 +6,25 @@ from __future__ import absolute_import
 import os
 from copy import deepcopy
 import six
-import ruamel.yaml as yaml  #does not convert OFF to False
+import ruamel.yaml as yaml  # does not convert OFF to False
 
 from aiida.common import AttributeDict
 from aiida.engine import append_, while_, WorkChain, ToContext
 from aiida.engine import calcfunction
 from aiida.orm import Dict, Int, Float, SinglefileData, Str, RemoteData, StructureData
-from aiida.plugins import CalculationFactory
+from aiida.plugins import WorkflowFactory
 
-from aiida_cp2k.workchains import Cp2kBaseWorkChain
 from aiida_cp2k.utils import merge_dict
 from aiida_cp2k.utils import get_kinds_section, get_input_multiplicity, ot_has_small_bandgap
 from aiida_cp2k.utils import check_resize_unit_cell, resize_unit_cell
 from aiida_cp2k.utils import HARTREE2EV
 
-Cp2kCalculation = CalculationFactory('cp2k')  # pylint: disable=invalid-name
+Cp2kBaseWorkChain = WorkflowFactory('cp2k.base')  # pylint: disable=invalid-name
 
 
 @calcfunction
 def extract_results(resize, **kwargs):
-    """ Extracts restults form the output_parameters of the single calculations (i.e., scf-converged stages)
+    """Extracts restults form the output_parameters of the single calculations (i.e., scf-converged stages)
     into a single Dict output.
     - resize (Dict) contains the unit cell resizing values
     - kwargs contains all the output_parameters for the stages and the extra initial change of settings, e.g.:
@@ -33,24 +32,22 @@ def extract_results(resize, **kwargs):
       'out_1': cp2k's output_parameters with Dict.label = 'settings_1_stage_0_valid'
       'out_2': cp2k's output_parameters with Dict.label = 'settings_1_stage_0_valid'
       'out_3': cp2k's output_parameters with Dict.label = 'settings_1_stage_0_valid'
-      This will be read as: output_dict = {'nstages_valid': 3, 'nsettings_discarded': 1}
-    """
+      This will be read as: output_dict = {'nstages_valid': 3, 'nsettings_discarded': 1}."""
+
     output_dict = {}
-    nstages_valid = 0
-    nsettings_discarded = 0
-    for item in kwargs.items():
-        value = item[1]
-        if value.label.split('_')[-1] == 'valid':
-            nstages_valid += 1
-        else:
-            nsettings_discarded += 1
+
+    # Sort the stages by key and cound the number of valid and descarded stages
+    sorted_values = [v for key, v in sorted(kwargs.items(), key=lambda k: int(k[0][4:]))]
+    nstages_valid = sum(value.label.split('_')[-1] == 'valid' for value in sorted_values)
+    nsettings_discarded = len(sorted_values) - nstages_valid
+
     # General info
     output_dict['nstages_valid'] = nstages_valid
     output_dict['nsettings_discarded'] = nsettings_discarded
-    output_dict['last_tag'] = value.label.split()[-1]
-    resize_dict = resize.get_dict()
-    output_dict['cell_resized'] = '{}x{}x{}'.format(resize_dict['nx'], resize_dict['ny'], resize_dict['nz'])
-    # Create stage_info and step_info dictionaries
+    output_dict['last_tag'] = sorted_values[-1].label.split()[-1]
+    output_dict['cell_resized'] = '{}x{}x{}'.format(resize['nx'], resize['ny'], resize['nz'])
+
+    # Create stage_info dictionary
     output_dict['stage_info'] = {
         'nsteps': [],
         'opt_converged': [],
@@ -58,6 +55,8 @@ def extract_results(resize, **kwargs):
         'bandgap_spin1_au': [],
         'bandgap_spin2_au': [],
     }
+
+    # Create step_info dictionary
     step_info_list = [
         'step', 'energy_au', 'dispersion_energy_au', 'pressure_bar', 'cell_vol_angs3', 'cell_a_angs', 'cell_b_angs',
         'cell_c_angs', 'cell_alp_deg', 'cell_bet_deg', 'cell_gam_deg', 'max_step_au', 'rms_step_au', 'max_grad_au',
@@ -66,9 +65,10 @@ def extract_results(resize, **kwargs):
     output_dict['step_info'] = {}
     for step_info in step_info_list:
         output_dict['step_info'][step_info] = []
-    # Fill  stage_info and step_info with results (skip stage0 with discarded settings)
+
+    # Fill stage_info and step_info with the results (skip all stage0 attempts with discarded settings)
     for i in six.moves.range(nsettings_discarded, len(kwargs)):  #
-        kwarg = kwargs['out_{}'.format(i)].get_dict()
+        kwarg = kwargs['out_{}'.format(i)]
         output_dict['stage_info']['nsteps'].append(kwarg['motion_step_info']['step'][-1])
         output_dict['stage_info']['opt_converged'].append(kwarg['motion_opt_converged'])
         output_dict['stage_info']['final_edens_rspace'].append(kwarg['motion_step_info']['edens_rspace'][-1])
@@ -80,6 +80,7 @@ def extract_results(resize, **kwargs):
             if not (step == 0 and output_dict['step_info']['step']):
                 for step_info in step_info_list:
                     output_dict['step_info'][step_info].append(kwarg['motion_step_info'][step_info][istep])
+
     # Outputs from the last stage only
     output_dict['natoms'] = kwarg['natoms']
     output_dict['dft_type'] = kwarg['dft_type']
@@ -90,14 +91,11 @@ def extract_results(resize, **kwargs):
 
 
 class Cp2kMultistageWorkChain(WorkChain):
-    """Workchain to submit GEO_OPT/CELL_OPT/MD workchains with iterative fashion.
+    """Submits Cp2kBase workchains for ENERGY, GEO_OPT, CELL_OPT and MD jobs iteratively
 
     The protocol_yaml file contains a series of settings_x and stage_x:
-    the workchains starts running the settings_0/stage_0 calculation, and in case of failure changes the settings
-    untill the SCF of stage_0 converges. then it uses the same settings to run the next stages (i.e., stage_1, etc.).
-    """
-
-    _calculation_class = Cp2kCalculation
+    the workchains starts running the settings_0/stage_0 calculation, and, in case of a failure, changes the settings
+    untill the SCF of stage_0 converges. Then it uses the same settings to run the next stages (i.e., stage_1, etc.)."""
 
     @classmethod
     def define(cls, spec):
@@ -135,11 +133,12 @@ class Cp2kMultistageWorkChain(WorkChain):
         spec.input('parent_calc_folder',
                    valid_type=RemoteData,
                    required=False,
-                   help='Provide an initial parent folder that contains the wavefunction, to which restart')
-        spec.input('cp2k_base.cp2k.parameters',
-                   valid_type=Dict,
-                   required=False,
-                   help='Specify custom CP2K settings that will be overwritten just before submitting the CalcJob')
+                   help='Provide an initial parent folder that contains the wavefunction for restart')
+        spec.input(
+            'cp2k_base.cp2k.parameters',
+            valid_type=Dict,
+            required=False,
+            help='Specify custom CP2K settings to overwrite the input dictionary just before submitting the CalcJob')
         spec.input('cp2k_base.cp2k.metadata.options.parser_name',
                    valid_type=six.string_types,
                    default='cp2k_advanced_parser',
@@ -185,7 +184,7 @@ class Cp2kMultistageWorkChain(WorkChain):
                     help='Output CP2K parameters of all the stages, merged together')
 
     def setup_multistage(self):
-        """ Setup initial parameters """
+        """Setup initial parameters."""
 
         # Store the workchain inputs in context (to be modified later)
         self.ctx.base_inp = AttributeDict(self.exposed_inputs(Cp2kBaseWorkChain, 'cp2k_base'))
@@ -207,6 +206,7 @@ class Cp2kMultistageWorkChain(WorkChain):
         merge_dict(self.ctx.protocol, self.inputs.protocol_modify.get_dict())
 
         # Initialize
+        self.ctx.settings_ok = False
         self.ctx.stage_idx = 0
         self.ctx.stage_tag = 'stage_{}'.format(self.ctx.stage_idx)
         self.ctx.settings_idx = 0
@@ -214,27 +214,27 @@ class Cp2kMultistageWorkChain(WorkChain):
         self.ctx.structure = self.inputs.structure
 
         # Resize the unit cell if min(perp_with) < inputs.min_cell_size
-        self.ctx.resize = check_resize_unit_cell(self.ctx.structure, self.inputs.min_cell_size)  #Dict
-        resize_dict = self.ctx.resize.get_dict()
-        if resize_dict['nx'] > 1 or resize_dict['ny'] > 1 or resize_dict['nz'] > 1:
+        self.ctx.resize = check_resize_unit_cell(self.ctx.structure, self.inputs.min_cell_size)  # Dict
+        if self.ctx.resize['nx'] > 1 or self.ctx.resize['ny'] > 1 or self.ctx.resize['nz'] > 1:
             resized_struct = resize_unit_cell(self.ctx.structure, self.ctx.resize)
             self.ctx.structure = resized_struct
-            self.report("Unit cell resized by {}x{}x{} (StructureData<{}>)".format(resize_dict['nx'], resize_dict['ny'],
-                                                                                   resize_dict['nz'],
+            self.report("Unit cell resized by {}x{}x{} (StructureData<{}>)".format(self.ctx.resize['nx'],
+                                                                                   self.ctx.resize['ny'],
+                                                                                   self.ctx.resize['nz'],
                                                                                    resized_struct.pk))
         else:
-            self.report("Unit cell NOT resized")
+            self.report("Unit cell was NOT resized")
 
         # Generate input parameters and store them
         self.ctx.cp2k_param = deepcopy(self.ctx.protocol['settings_0'])
-        while self.inputs.starting_settings_idx != self.ctx.settings_idx:
+        while self.inputs.starting_settings_idx < self.ctx.settings_idx:
             # overwrite untill the desired starting setting are obtained
             self.ctx.settings_idx += 1
             self.ctx.settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
-            if self.ctx.settings_tag in self.ctx.protocol.keys():
+            if self.ctx.settings_tag in self.ctx.protocol:
                 merge_dict(self.ctx.cp2k_param, self.ctx.protocol[self.ctx.settings_tag])
             else:
-                return self.exit_codes.ERROR_MISSING_INITIAL_SETTINGS  #pylint: disable=no-member
+                return self.exit_codes.ERROR_MISSING_INITIAL_SETTINGS  # pylint: disable=no-member
         kinds = get_kinds_section(self.ctx.structure, self.ctx.protocol)
         merge_dict(self.ctx.cp2k_param, kinds)
         multiplicity = get_input_multiplicity(self.ctx.structure, self.ctx.protocol)
@@ -242,14 +242,11 @@ class Cp2kMultistageWorkChain(WorkChain):
         merge_dict(self.ctx.cp2k_param, self.ctx.protocol['stage_0'])
 
     def should_run_stage0(self):
-        """ Returns True if it is the first iteration or the settings are not ok """
-        try:
-            return not self.ctx.settings_ok
-        except AttributeError:
-            return True
+        """Returns True if it is the first iteration or the settings are not ok."""
+        return not self.ctx.settings_ok
 
     def run_stage(self):
-        """Check for restart, prepare input, submit and direct output to context"""
+        """Check for restart, prepare input, submit and direct output to context."""
 
         # Update structure
         self.ctx.base_inp['cp2k']['structure'] = self.ctx.structure
@@ -281,27 +278,26 @@ class Cp2kMultistageWorkChain(WorkChain):
         self.report("submitted Cp2kBaseWorkChain for {}/{}".format(self.ctx.stage_tag, self.ctx.settings_tag))
         return ToContext(stages=append_(running_base))
 
-    def inspect_and_update_settings_stage0(self):  #pylint: disable=inconsistent-return-statements
-        """ Inspect the stage0/settings_{idx} calculation and check if it is
-        needed to update the settings and resubmint the calculation
-        """
+    def inspect_and_update_settings_stage0(self):  # pylint: disable=inconsistent-return-statements
+        """Inspect the stage0/settings_{idx} calculation and check if it is
+        needed to update the settings and resubmint the calculation."""
         self.ctx.settings_ok = True
 
-        # Settings/structure bad: something very bad happened, there are problems in parsing the output
-        #                        and probably the calculation is not even starting  the scf cycles
+        # Settings/structure are bad: there are problems in parsing the output file
+        # and, most probably, the calculation didn't even start the scf cycles
         if 'output_parameters' in self.ctx.stages[-1].outputs:
             cp2k_out = self.ctx.stages[-1].outputs.output_parameters
         else:
             self.report('ERROR_PARSING_OUTPUT')
-            return self.exit_codes.ERROR_PARSING_OUTPUT  #pylint: disable=no-member
+            return self.exit_codes.ERROR_PARSING_OUTPUT  # pylint: disable=no-member
 
-        # Settings bad: the SCF did not converge in the final step
+        # Settings are bad: the SCF did not converge in the final step
         if not cp2k_out["motion_step_info"]["scf_converged"][-1]:
             self.report("BAD SETTINGS: the SCF did not converge")
             self.ctx.settings_ok = False
             self.ctx.settings_idx += 1
         else:
-            # Settings bad: SCF converged, but with OT and a small (or negative!) bandgap
+            # SCF converged, but the computed bandgap needs to be checked
             self.report("Bandgaps spin1/spin2: {:.3f} and {:.3f} ev".format(cp2k_out["bandgap_spin1_au"] * HARTREE2EV,
                                                                             cp2k_out["bandgap_spin2_au"] * HARTREE2EV))
             bandgap_thr_ev = self.ctx.protocol['bandgap_thr_ev']
@@ -314,14 +310,14 @@ class Cp2kMultistageWorkChain(WorkChain):
         if not self.ctx.settings_ok:
             cp2k_out.label = '{}_{}_discard'.format(self.ctx.stage_tag, self.ctx.settings_tag)
             next_settings_tag = 'settings_{}'.format(self.ctx.settings_idx)
-            if next_settings_tag in self.ctx.protocol.keys():
+            if next_settings_tag in self.ctx.protocol:
                 self.ctx.settings_tag = next_settings_tag
                 merge_dict(self.ctx.cp2k_param, self.ctx.protocol[self.ctx.settings_tag])
             else:
-                return self.exit_codes.ERROR_NO_MORE_SETTINGS  #pylint: disable=no-member
+                return self.exit_codes.ERROR_NO_MORE_SETTINGS  # pylint: disable=no-member
 
     def inspect_and_update_stage(self):
-        """ Update geometry, parent folder and the new &MOTION settings"""
+        """Update geometry, parent folder and the new &MOTION settings."""
         last_stage = self.ctx.stages[-1]
 
         if 'output_structure' in last_stage.outputs:
@@ -336,7 +332,7 @@ class Cp2kMultistageWorkChain(WorkChain):
         self.ctx.stage_idx += 1
         next_stage_tag = 'stage_{}'.format(self.ctx.stage_idx)
 
-        if next_stage_tag in self.ctx.protocol.keys():
+        if next_stage_tag in self.ctx.protocol:
             self.ctx.stage_tag = next_stage_tag
             self.ctx.next_stage_exists = True
             merge_dict(self.ctx.cp2k_param, self.ctx.protocol[self.ctx.stage_tag])
@@ -345,11 +341,11 @@ class Cp2kMultistageWorkChain(WorkChain):
             self.report("All stages computed, finishing...")
 
     def should_run_stage(self):
-        """ Return True if it exists a new stage to compute """
+        """Return True if it exists a new stage to compute."""
         return self.ctx.next_stage_exists
 
     def results(self):
-        """ Gather final outputs of the workchain """
+        """Gather final outputs of the workchain."""
 
         # Gather all the ouput_parameters in a final Dict
         all_output_parameters = {}

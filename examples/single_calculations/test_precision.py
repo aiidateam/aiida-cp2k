@@ -18,7 +18,9 @@ import numpy as np
 from aiida.orm import (Code, Dict, StructureData)
 from aiida.engine import run
 from aiida.common import NotExistent
-from aiida_cp2k.calculations import Cp2kCalculation
+from aiida.plugins import CalculationFactory
+
+Cp2kCalculation = CalculationFactory('cp2k')
 
 
 @click.command('cli')

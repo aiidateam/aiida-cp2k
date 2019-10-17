@@ -207,6 +207,8 @@ pseudopotential:
    Rn: GTH-PBE-q8
 
 # Defining input settings
+bandgap_thr_ev: 0.1 #bandgap threshold minimum under which the OT is not considered as valid
+
 settings_0: # main settings exploiting OT
   GLOBAL:
     PRINT_LEVEL: MEDIUM              #default: MEDIUM. Important to have the correct parsing

@@ -18,7 +18,9 @@ import click
 from aiida.engine import run
 from aiida.orm import (Code, Dict, StructureData)
 from aiida.common import NotExistent
-from aiida_cp2k.workchains import Cp2kBaseWorkChain
+from aiida.plugins import WorkflowFactory
+
+Cp2kBaseWorkChain = WorkflowFactory('cp2k.base')
 
 
 @click.command('cli')

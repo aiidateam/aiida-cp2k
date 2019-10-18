@@ -30,9 +30,10 @@ class Cp2kCalculation(CalcJob):
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
     _DEFAULT_PROJECT_NAME = 'aiida'
     _DEFAULT_RESTART_FILE_NAME = _DEFAULT_PROJECT_NAME + '-1.restart'
+    _DEFAULT_TRAJECT_FILE_NAME = _DEFAULT_PROJECT_NAME + '-pos-1.dcd'
     _DEFAULT_PARENT_CALC_FLDR_NAME = 'parent_calc/'
     _DEFAULT_COORDS_FILE_NAME = 'aiida.coords.xyz'
-    _DEFAULT_PARSER = 'cp2k'
+    _DEFAULT_PARSER = 'cp2k_base_parser'
 
     @classmethod
     def define(cls, spec):
@@ -131,7 +132,9 @@ class Cp2kCalculation(CalcJob):
                 elif isinstance(obj, StructureData):
                     self._write_structure(obj, folder, name + '.xyz')
 
-        calcinfo.retrieve_list = [self._DEFAULT_OUTPUT_FILE, self._DEFAULT_RESTART_FILE_NAME]
+        calcinfo.retrieve_list = [
+            self._DEFAULT_OUTPUT_FILE, self._DEFAULT_RESTART_FILE_NAME, self._DEFAULT_TRAJECT_FILE_NAME
+        ]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
         # symlinks

@@ -23,7 +23,12 @@
             "cp2k = aiida_cp2k.calculations:Cp2kCalculation"
         ],
         "aiida.parsers": [
-            "cp2k = aiida_cp2k.parsers:Cp2kParser"
+            "cp2k_base_parser = aiida_cp2k.parsers:Cp2kBaseParser",
+            "cp2k_advanced_parser = aiida_cp2k.parsers:Cp2kAdvancedParser"
+        ],
+        "aiida.workflows": [
+            "cp2k.base = aiida_cp2k.workchains:Cp2kBaseWorkChain",
+            "cp2k.multistage= aiida_cp2k.workchains:Cp2kMultistageWorkChain"
         ]
     },
     "setup_requires": ["reentry"],
@@ -32,15 +37,15 @@
         [".", ["setup.json"]]
     ],
     "extras_require": {
-	"test": [
+    "test": [
             "pytest==4.4.1"
-	],
-	"pre-commit":[
-	        "pre-commit==1.16.1",
-	        "yapf==0.27.0",
-                "prospector==1.1.6.2",
-	        "pylint==1.9.4; python_version<'3.0'",
-	        "pylint==2.2.2; python_version>='3.0'"
-	]
+    ],
+    "pre-commit":[
+            "pre-commit==1.17.0",
+            "yapf==0.28.0",
+            "prospector==1.1.7",
+            "pylint==1.9.4; python_version<'3.0'",
+            "pylint==2.3.1; python_version>='3.0'"
+    ]
     }
 }

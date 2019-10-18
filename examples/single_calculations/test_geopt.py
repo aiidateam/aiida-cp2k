@@ -17,7 +17,9 @@ import ase.build
 from aiida.orm import (Code, Dict, StructureData)
 from aiida.engine import run
 from aiida.common import NotExistent
-from aiida_cp2k.calculations import Cp2kCalculation
+from aiida.plugins import CalculationFactory
+
+Cp2kCalculation = CalculationFactory('cp2k')
 
 
 @click.command('cli')
@@ -91,14 +93,7 @@ def main(codelabel):
         },
         "max_wallclock_seconds": 1 * 3 * 60,
     }
-    inputs = {
-        'structure': structure,
-        'parameters': parameters,
-        'code': code,
-        'metadata': {
-            'options': options,
-        }
-    }
+    inputs = {'structure': structure, 'parameters': parameters, 'code': code, 'metadata': {'options': options,}}
 
     print("Submitted calculation...")
     calc = run(Cp2kCalculation, **inputs)

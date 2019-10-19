@@ -30,9 +30,10 @@ class Cp2kCalculation(CalcJob):
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
     _DEFAULT_PROJECT_NAME = 'aiida'
     _DEFAULT_RESTART_FILE_NAME = _DEFAULT_PROJECT_NAME + '-1.restart'
+    _DEFAULT_TRAJECT_FILE_NAME = _DEFAULT_PROJECT_NAME + '-pos-1.dcd'
     _DEFAULT_PARENT_CALC_FLDR_NAME = 'parent_calc/'
     _DEFAULT_COORDS_FILE_NAME = 'aiida.coords.xyz'
-    _DEFAULT_PARSER = 'cp2k'
+    _DEFAULT_PARSER = 'cp2k_base_parser'
 
     @classmethod
     def define(cls, spec):
@@ -131,7 +132,9 @@ class Cp2kCalculation(CalcJob):
                 elif isinstance(obj, StructureData):
                     self._write_structure(obj, folder, name + '.xyz')
 
-        calcinfo.retrieve_list = [self._DEFAULT_OUTPUT_FILE, self._DEFAULT_RESTART_FILE_NAME]
+        calcinfo.retrieve_list = [
+            self._DEFAULT_OUTPUT_FILE, self._DEFAULT_RESTART_FILE_NAME, self._DEFAULT_TRAJECT_FILE_NAME
+        ]
         calcinfo.retrieve_list += settings.pop('additional_retrieve_list', [])
 
         # symlinks
@@ -164,7 +167,7 @@ class Cp2kCalculation(CalcJob):
         s_ase = structure.get_ase()
         elem_tags = ['' if t == 0 else str(t) for t in s_ase.get_tags()]
         elem_symbols = list(map(add, s_ase.get_chemical_symbols(), elem_tags))
-        elem_coords = ['{:20.16f} {:20.16f} {:20.16f}'.format(p[0], p[1], p[2]) for p in s_ase.get_positions()]
+        elem_coords = ['{:25.16f} {:25.16f} {:25.16f}'.format(p[0], p[1], p[2]) for p in s_ase.get_positions()]
         with io.open(folder.get_abs_path(name), mode="w", encoding="utf-8") as fobj:
             fobj.write(u'{}\n\n'.format(len(elem_coords)))
             fobj.write(u'\n'.join(map(add, elem_symbols, elem_coords)))

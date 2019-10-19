@@ -17,7 +17,9 @@ from aiida.orm import (Code, Dict)
 from aiida.common import NotExistent
 from aiida.engine import run
 from aiida.common.exceptions import OutputParsingError
-from aiida_cp2k.calculations import Cp2kCalculation
+from aiida.plugins import CalculationFactory
+
+Cp2kCalculation = CalculationFactory('cp2k')
 
 
 @click.command('cli')
@@ -43,13 +45,7 @@ def main(codelabel):
     }
 
     print("Submitted calculation...")
-    inputs = {
-        'parameters': parameters,
-        'code': code,
-        'metadata': {
-            'options': options,
-        }
-    }
+    inputs = {'parameters': parameters, 'code': code, 'metadata': {'options': options,}}
     try:
         run(Cp2kCalculation, **inputs)
         print("ERROR!")

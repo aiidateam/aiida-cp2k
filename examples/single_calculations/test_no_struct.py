@@ -17,7 +17,9 @@ import click
 from aiida.orm import (Code, Dict)
 from aiida.engine import run
 from aiida.common import NotExistent
-from aiida_cp2k.calculations import Cp2kCalculation
+from aiida.plugins import CalculationFactory
+
+Cp2kCalculation = CalculationFactory('cp2k')
 
 
 @click.command('cli')
@@ -92,13 +94,7 @@ def main(codelabel):
         "max_wallclock_seconds": 1 * 3 * 60,
     }
 
-    inputs = {
-        'parameters': parameters,
-        'code': code,
-        'metadata': {
-            'options': options,
-        }
-    }
+    inputs = {'parameters': parameters, 'code': code, 'metadata': {'options': options,}}
 
     print("submitted calculation...")
     calc = run(Cp2kCalculation, **inputs)

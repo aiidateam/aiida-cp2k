@@ -10,4 +10,13 @@ from __future__ import absolute_import
 
 from .input_generator import Cp2kInput
 from .parser import parse_cp2k_output
+from .parser import parse_cp2k_output_advanced
 from .parser import parse_cp2k_trajectory
+from .workchains import merge_dict
+from .workchains import merge_Dict
+from .workchains import get_kinds_section
+from .workchains import get_input_multiplicity
+from .workchains import ot_has_small_bandgap
+from .workchains import check_resize_unit_cell
+from .workchains import resize_unit_cell
+from .workchains import HARTREE2EV

@@ -19,7 +19,7 @@ pytest test
 # Run single calculation tests
 verdi run ./examples/single_calculations/test_mm.py                      cp2k@localhost
 verdi run ./examples/single_calculations/test_dft.py                     cp2k@localhost
-verdi run examples/single_calculations/test_structure_through_file.py    cp2k@localhost   
+verdi run examples/single_calculations/test_structure_through_file.py    cp2k@localhost
 verdi run ./examples/single_calculations/test_dft_atomic_kinds.py        cp2k@localhost
 verdi run ./examples/single_calculations/test_multiple_force_eval.py     cp2k@localhost
 # Cp2k on Ubuntu 18.xx fails to run band structure calculations
@@ -30,8 +30,14 @@ verdi run ./examples/single_calculations/test_restart.py                 cp2k@lo
 verdi run ./examples/single_calculations/test_failure.py                 cp2k@localhost
 verdi run ./examples/single_calculations/test_precision.py               cp2k@localhost
 
-# Run workflows
+# Run workchains
 verdi run ./examples/workchains/test_base.py                             cp2k@localhost
+verdi run ./examples/workchains/test_multistage_Al.py                    cp2k@localhost
+verdi run ./examples/workchains/test_multistage_h2o_fail.py              cp2k@localhost
+verdi run ./examples/workchains/test_multistage_h2o-.py                  cp2k@localhost
+verdi run ./examples/workchains/test_multistage_h2o_singlepoint.py       cp2k@localhost
+verdi run ./examples/workchains/test_multistage_h2o.py                   cp2k@localhost
+verdi run ./examples/workchains/test_multistage_h2o_testfile.py          cp2k@localhost
 
 # If all tests ran successfully
 echo "All tests have passed :-)"

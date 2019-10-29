@@ -16,7 +16,8 @@
     "install_requires": [
         "aiida-core>=1.0.0b5",
         "ase==3.17.0; python_version<'3.0'",
-        "ase; python_version>='3.5'"
+        "ase; python_version>='3.5'",
+        "ruamel.yaml>=0.16.5"
     ],
     "entry_points": {
         "aiida.calculations": [

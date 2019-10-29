@@ -37,7 +37,7 @@ def extract_results(resize, **kwargs):
     output_dict = {}
 
     # Sort the stages by key and cound the number of valid and descarded stages
-    sorted_values = [v for key, v in sorted(kwargs.items(), key=lambda k: int(k[0][4:]))]
+    sorted_values = [key_val[1] for key_val in sorted(kwargs.items(), key=lambda k: int(k[0][4:]))]
     nstages_valid = sum(value.label.split('_')[-1] == 'valid' for value in sorted_values)
     nsettings_discarded = len(sorted_values) - nstages_valid
 

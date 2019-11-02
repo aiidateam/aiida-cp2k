@@ -4,6 +4,7 @@ services:
   - docker
 
 before_install:
+  - pip install --user coveralls
   - python .ci/check_travis_tag.py
   - docker build -t aiida_cp2k_test .
   - docker run -d aiida_cp2k_test
@@ -16,7 +17,7 @@ script:
   - "docker exec -it --user aiida \"$DOCKERID\" /bin/bash -l -c 'cd code/aiida-cp2k/ && py.test --cov aiida_cp2k --cov-append .'"
 
 after_success:
-  - coveralls
+  - "docker exec -e TRAVIS=\"$TRAVIS\" -e TRAVIS_JOB_ID=\"$TRAVIS_JOB_ID\" -e TRAVIS_BRANCH=\"$TRAVIS_BRANCH\" -it --user aiida \"$DOCKERID\" /bin/bash -l -c 'cd code/aiida-cp2k/ && coveralls'"
 
 git:
   depth: 3

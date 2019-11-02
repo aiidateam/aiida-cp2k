@@ -7,7 +7,7 @@ before_install:
   - python .ci/check_travis_tag.py
   - docker build -t aiida_cp2k_test .
   - docker run -d aiida_cp2k_test
-  - sleep 30 # wait untill the container is launched
+  - sleep 30 # wait until the container is launched
 
 script:
   - "export DOCKERID=`docker ps -qf 'ancestor=aiida_cp2k_test'`"

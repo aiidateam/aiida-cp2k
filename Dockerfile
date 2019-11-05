@@ -22,7 +22,7 @@ RUN chown -R aiida:aiida ${HOME}/code
 USER aiida
 ENV PATH="${HOME}/.local/bin:${PATH}"
 
-# Install aiida-cp2k plugin and it's dependencies
+# Install aiida-cp2k plugin and coveralls
 WORKDIR ${HOME}/code/aiida-cp2k
 RUN pip install --user .[pre-commit,test]
 RUN pip install --user coveralls

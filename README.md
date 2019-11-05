@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/aiidateam/aiida-cp2k.svg?branch=develop)](https://travis-ci.org/aiidateam/aiida-cp2k)
+[![Coverage Status](https://coveralls.io/repos/github/aiidateam/aiida-cp2k/badge.svg?branch=develop)](https://coveralls.io/github/aiidateam/aiida-cp2k?branch=develop)
+[![PyPI version](https://badge.fury.io/py/aiida-cp2k.svg)](https://badge.fury.io/py/aiida-cp2k)
+
 # AiiDA CP2K
 **The CP2K plugin for the AiiDA workflow and provenance engine.**
 

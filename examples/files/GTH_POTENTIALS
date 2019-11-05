@@ -1,0 +1,162 @@
+################################################################################
+#
+# Potential data base file for CP2K (Quickstep)
+#
+################################################################################
+#
+# Pseudopotentials of Goedecker, Teter and Hutter (GTH)
+# -----------------------------------------------------
+#
+# History:    - Creation (12.12.1999, Matthias Krack)
+#             - Electronic configurations added (11.05.2000,MK)
+#             - GTH-PP for first-row transition metal added (18.03.2003,MK)
+#             - Automatic update (16.12.2003,MK)
+#             - PBE GTH-PPs for the Lanthanides added (30.11.2012,MK)
+#             - Set default GTH PPs (12.08.2016,MK)
+#             - Last update (21.10.2016,MK)
+#
+# Literature: - S. Goedecker, M. Teter, and J. Hutter,
+#               Phys. Rev. B 54, 1703 (1996)
+#             - C. Hartwigsen, S. Goedecker, and J. Hutter,
+#               Phys. Rev. B 58, 3641 (1998)
+#             - M. Krack,
+#               Theor. Chem. Acc. 114, 145 (2005)
+#
+# GTH-potential format:
+#
+# Element symbol  Name of the potential  Alias names
+# n_elec(s)  n_elec(p)  n_elec(d)  ...
+# r_loc   nexp_ppl        cexp_ppl(1) ... cexp_ppl(nexp_ppl)
+# nprj
+# r(1)    nprj_ppnl(1)    ((hprj_ppnl(1,i,j),j=i,nprj_ppnl(1)),i=1,nprj_ppnl(1))
+# r(2)    nprj_ppnl(2)    ((hprj_ppnl(2,i,j),j=i,nprj_ppnl(2)),i=1,nprj_ppnl(2))
+#  .       .               .
+#  .       .               .
+#  .       .               .
+# r(nprj) nprj_ppnl(nprj) ((hprj_ppnl(nprj,i,j),j=i,nprj_ppnl(nprj)),
+#                                               i=1,nprj_ppnl(nprj))
+#
+# n_elec   : Number of electrons for each angular momentum quantum number
+#            (electronic configuration -> s p d ...)
+# r_loc    : Radius for the local part defined by the Gaussian function
+#            exponent alpha_erf
+# nexp_ppl : Number of the local pseudopotential functions
+# cexp_ppl : Coefficients of the local pseudopotential functions
+# nprj     : Number of the non-local projectors => nprj = SIZE(nprj_ppnl(:))
+# r        : Radius of the non-local part for angular momentum quantum number l
+#            defined by the Gaussian function exponents alpha_prj_ppnl
+# nprj_ppnl: Number of the non-local projectors for the angular momentum
+#            quantum number l
+# hprj_ppnl: Coefficients of the non-local projector functions
+#
+################################################################################
+#
+# PADE functional
+#
+################################################################################
+#
+H GTH-PADE-q1 GTH-LDA-q1 GTH-PADE GTH-LDA
+    1
+     0.20000000    2    -4.18023680     0.72507482
+    0
+#
+O GTH-PADE-q6 GTH-LDA-q6 GTH-PADE GTH-LDA
+    2    4
+     0.24762086    2   -16.58031797     2.39570092
+    2
+     0.22178614    1    18.26691718
+     0.25682890    0
+#
+F GTH-PADE-q7 GTH-LDA-q7 GTH-PADE GTH-LDA
+    2    5
+     0.21852465    2   -21.30736112     3.07286942
+    2
+     0.19556721    1    23.58494211
+     0.17426832    0
+#
+Ne GTH-PADE-q8 GTH-LDA-q8 GTH-PADE GTH-LDA
+    2    6
+     0.19000000    2   -27.69285182     4.00590585
+    2
+     0.17948804    2    28.50609828     0.41682800
+                                       -1.07624528
+     0.21491271    1    -0.00008991
+#
+Na GTH-PADE-q1 GTH-LDA-q1
+    1
+     0.88550938    1    -1.23886713
+    2
+     0.66110390    2     1.84727135    -0.22540903
+                                        0.58200362
+     0.85711928    1     0.47113258
+#
+Na GTH-PADE-q9 GTH-LDA-q9 GTH-PADE GTH-LDA
+    3    6
+     0.24631780    2    -7.54559253     1.12599671
+    2
+     0.14125125    1    36.55698653
+     0.13966840    1   -10.39208332
+#
+Mg GTH-PADE-q10 GTH-LDA-q10 GTH-PADE GTH-LDA
+    4    6
+     0.21094954    2   -19.41900751     2.87133099
+    2
+     0.14154696    1    40.31662629
+     0.10546902    1   -10.89111329
+#
+Mg GTH-PADE-q2 GTH-LDA-q2
+    2
+     0.65181169    1    -2.86429746
+    2
+     0.55647814    2     2.97095712    -0.51508390
+                                        1.32994091
+     0.67756881    1     1.04988101
+#
+Al GTH-PADE-q3 GTH-LDA-q3 GTH-PADE GTH-LDA
+    2    1
+     0.45000000    1    -8.49135116
+    2
+     0.46010427    2     5.08833953    -1.03784325
+                                        2.67969975
+     0.53674439    1     2.19343827
+#
+Si GTH-PADE-q4 GTH-LDA-q4 GTH-PADE GTH-LDA
+    2    2
+     0.44000000    1    -7.33610297
+    2
+     0.42273813    2     5.90692831    -1.26189397
+                                        3.25819622
+     0.48427842    1     2.72701346
+#
+P GTH-PADE-q5 GTH-LDA-q5 GTH-PADE GTH-LDA
+    2    3
+     0.43000000    1    -6.65421981
+    2
+     0.38980284    2     6.84213556    -1.49369090
+                                        3.85669332
+     0.44079585    1     3.28260592
+#
+S GTH-PADE-q6 GTH-LDA-q6 GTH-PADE GTH-LDA
+    2    4
+     0.42000000    1    -6.55449184
+    2
+     0.36175665    2     7.90530250    -1.73188130
+                                        4.47169830
+     0.40528502    1     3.86657900
+#
+Cl GTH-PADE-q7 GTH-LDA-q7 GTH-PADE GTH-LDA
+    2    5
+     0.41000000    1    -6.86475431
+    2
+     0.33820832    2     9.06223968    -1.96193036
+                                        5.06568240
+     0.37613709    1     4.46587640
+#
+Ar GTH-PADE-q8 GTH-LDA-q8 GTH-PADE GTH-LDA
+    2    6
+     0.40000000    1    -7.10000000
+    2
+     0.31738081    2    10.24948699    -2.16984522
+                                        5.60251627
+     0.35161921    1     4.97880101
+#

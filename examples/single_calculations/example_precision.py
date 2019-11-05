@@ -10,12 +10,13 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 import sys
 import ase.build
 import click
 import numpy as np
 
-from aiida.orm import (Code, Dict, StructureData)
+from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.engine import run
 from aiida.common import NotExistent
 from aiida.plugins import CalculationFactory
@@ -23,17 +24,12 @@ from aiida.plugins import CalculationFactory
 Cp2kCalculation = CalculationFactory('cp2k')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
+def example_precision(cp2k_code):
     """Test structure roundtrip precision ase->aiida->cp2k->aiida->ase"""
-    try:
-        code = Code.get_from_string(codelabel)
-    except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
-        sys.exit(1)
 
     print("Testing structure roundtrip precision ase->aiida->cp2k->aiida->ase...")
+
+    pwd = os.path.dirname(os.path.realpath(__file__))
 
     # structure
     epsilon = 1e-10  # expected precision in Angstrom
@@ -42,6 +38,12 @@ def main(codelabel):
     cell = np.diag([4, -4, 4 + epsilon])
     atoms = ase.Atoms('H2', positions=positions, cell=cell)
     structure = StructureData(ase=atoms)
+
+    # basis set
+    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+
+    # pseudopotentials
+    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
 
     # parameters
     parameters = Dict(
@@ -59,6 +61,7 @@ def main(codelabel):
                 'METHOD': 'Quickstep',
                 'DFT': {
                     'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+                    'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
                     'SCF': {
                         'MAX_SCF': 1,
                     },
@@ -87,7 +90,18 @@ def main(codelabel):
         "max_wallclock_seconds": 1 * 60 * 60,
     }
 
-    inputs = {'structure': structure, 'parameters': parameters, 'code': code, 'metadata': {'options': options,}}
+    inputs = {
+        'structure': structure,
+        'parameters': parameters,
+        'code': cp2k_code,
+        'file': {
+            'basis': basis_file,
+            'pseudo': pseudo_file,
+        },
+        'metadata': {
+            'options': options,
+        }
+    }
 
     print("submitted calculation...")
     calc = run(Cp2kCalculation, **inputs)
@@ -121,8 +135,18 @@ def main(codelabel):
         print("Cell changed by %e Angstrom" % cell_diff)
         sys.exit(3)
 
-    sys.exit(0)
+
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_precision(code)
 
 
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

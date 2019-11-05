@@ -6,39 +6,43 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Run simple DFT calculation"""
+"""Run DFT calculation with different atomic kinds"""
 
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 import sys
 import ase.build
 import click
 
 from aiida.engine import run
-from aiida.orm import (Code, Dict, StructureData)
+from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
 from aiida.plugins import CalculationFactory
 
 Cp2kCalculation = CalculationFactory('cp2k')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
-    """Run simple DFT calculation"""
-    try:
-        code = Code.get_from_string(codelabel)
-    except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
-        sys.exit(1)
+def example_dft_atomic_kinds(cp2k_code):
+    """Run DFT calculation with different atomic kinds"""
 
-    print("Testing CP2K ENERGY on H2O (DFT). Water molecule is provided through a file input...")
+    print("Testing CP2K GEOP_OPT on Si with different atomic kinds (DFT)...")
+
+    pwd = os.path.dirname(os.path.realpath(__file__))
 
     # structure
-    atoms = ase.build.molecule('H2O')
-    atoms.center(vacuum=2.0)
+    pos = [[0., 0., 0.], [1.90598, 1.10041807, 0.77811308]]
+    cell = [[3.81196, 0.0, 0.0], [1.90598, 3.3012541982101, 0.0], [1.90598, 1.10041806607, 3.1124523066333]]
+    tags = [0, 1]
+    atoms = ase.Atoms(symbols='Si2', pbc=True, cell=cell, positions=pos, tags=tags)
     structure = StructureData(ase=atoms)
+
+    # basis set
+    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+
+    # pseudopotentials
+    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
 
     # parameters
     parameters = Dict(
@@ -47,6 +51,7 @@ def main(codelabel):
                 'METHOD': 'Quickstep',
                 'DFT': {
                     'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+                    'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
                     'QS': {
                         'EPS_DEFAULT': 1.0e-12,
                         'WF_INTERPOLATION': 'ps',
@@ -68,26 +73,34 @@ def main(codelabel):
                     },
                 },
                 'SUBSYS': {
-                    'TOPOLOGY': {
-                        'COORD_FILE_NAME': 'water.xyz',
-                        'COORD_FILE_FORMAT': 'XYZ'
-                    },
-                    'CELL': {
-                        'ABC': '{:<15}  {:<15}  {:<15}'.format(*atoms.cell.diagonal()),
-                    },
                     'KIND': [
                         {
-                            '_': 'O',
+                            '_': 'Si',
+                            'ELEMENT': 'Si',
                             'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                            'POTENTIAL': 'GTH-LDA-q6'
+                            'POTENTIAL': 'GTH-LDA-q4'
                         },
                         {
-                            '_': 'H',
+                            '_': 'Si1',
+                            'ELEMENT': 'Si',
                             'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                            'POTENTIAL': 'GTH-LDA-q1'
+                            'POTENTIAL': 'GTH-LDA-q4'
                         },
                     ],
                 },
+            },
+            'MOTION': {
+                'GEO_OPT': {
+                    'MAX_FORCE': 1e-4,
+                    'MAX_ITER': '3',
+                    'OPTIMIZER': 'BFGS',
+                    'BFGS': {
+                        'TRUST_RADIUS': '[bohr] 0.1',
+                    },
+                },
+            },
+            'GLOBAL': {
+                'RUN_TYPE': 'GEO_OPT',
             }
         })
 
@@ -98,11 +111,35 @@ def main(codelabel):
         },
         "max_wallclock_seconds": 1 * 3 * 60,
     }
-    inputs = {'parameters': parameters, 'code': code, 'file': {'water': structure,}, 'metadata': {'options': options,}}
+
+    inputs = {
+        'structure': structure,
+        'parameters': parameters,
+        'code': cp2k_code,
+        'file': {
+            'basis': basis_file,
+            'pseudo': pseudo_file,
+        },
+        'metadata': {
+            'options': options,
+        }
+    }
 
     print("Submitted calculation...")
     run(Cp2kCalculation, **inputs)
 
 
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_dft_atomic_kinds(code)
+
+
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

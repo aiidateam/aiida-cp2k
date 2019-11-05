@@ -11,29 +11,25 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 import sys
 import ase
 import click
 
 from aiida.engine import run
-from aiida.orm import (Code, Dict, StructureData)
+from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
 from aiida.plugins import CalculationFactory
 
 Cp2kCalculation = CalculationFactory('cp2k')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
+def example_multiple_force_eval(cp2k_code):
     """Run DFT calculation with multiple force eval sections"""
-    try:
-        code = Code.get_from_string(codelabel)
-    except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
-        sys.exit(1)
 
     print("Testing CP2K ENERGY on H2O dimer (Mixed: DFT+MM)...")
+
+    pwd = os.path.dirname(os.path.realpath(__file__))
 
     # structure
     pos = [[0.934, 2.445, 1.844], [1.882, 2.227, 1.982], [0.81, 3.165, 2.479], [3.59, 2.048, 2.436],
@@ -41,6 +37,12 @@ def main(codelabel):
     atoms = ase.Atoms(symbols='OH2OH2', pbc=True, cell=[5.0, 5.0, 5.0])
     atoms.set_positions(pos)
     structure = StructureData(ase=atoms)
+
+    # basis set
+    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+
+    # pseudopotentials
+    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
 
     # parameters
     parameters = Dict(
@@ -149,6 +151,7 @@ def main(codelabel):
                     'METHOD': 'Quickstep',
                     'DFT': {
                         'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+                        'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
                         'QS': {
                             'EPS_DEFAULT': 1.0e-12,
                             'WF_INTERPOLATION': 'ps',
@@ -194,11 +197,35 @@ def main(codelabel):
         },
         "max_wallclock_seconds": 1 * 3 * 60,
     }
-    inputs = {'structure': structure, 'parameters': parameters, 'code': code, 'metadata': {'options': options,}}
+
+    inputs = {
+        'structure': structure,
+        'parameters': parameters,
+        'code': cp2k_code,
+        'file': {
+            'basis': basis_file,
+            'pseudo': pseudo_file,
+        },
+        'metadata': {
+            'options': options,
+        }
+    }
 
     print("Submitted calculation...")
     run(Cp2kCalculation, **inputs)
 
 
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_multiple_force_eval(code)
+
+
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

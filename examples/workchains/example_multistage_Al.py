@@ -45,30 +45,22 @@ def example_multistage_al(cp2k_code):
             }
         }
     })
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,
-    }
-    inputs = {
-        'structure': structure,
-        'protocol_tag': Str('test'),
-        'starting_settings_idx': Int(0),
-        'protocol_modify': protocol_mod,
-        'cp2k_base': {
-            'cp2k': {
-                'parameters': parameters,
-                'code': cp2k_code,
-                'metadata': {
-                    'options': options,
-                }
-            }
-        }
-    }
 
-    run(Cp2kMultistageWorkChain, **inputs)
+    # Construct process builder
+    builder = Cp2kMultistageWorkChain.get_builder()
+    builder.structure = structure
+    builder.protocol_tag = Str('test')
+    builder.starting_settings_idx = Int(0)
+    builder.protocol_modify = protocol_mod
+    builder.cp2k_base.cp2k.parameters = parameters
+    builder.cp2k_base.cp2k.code = cp2k_code
+    builder.cp2k_base.cp2k.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
+    }
+    builder.cp2k_base.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
+
+    run(builder)
 
 
 @click.command('cli')

@@ -103,31 +103,23 @@ def example_mm(cp2k_code):
     # settings
     settings = Dict(dict={'additional_retrieve_list': ["runtime.callgraph"]})
 
-    # resources
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,  # 3 minutes
+    # Construct process builder
+    builder = Cp2kCalculation.get_builder()
+    builder.parameters = parameters
+    builder.settings = settings
+    builder.code = cp2k_code
+    builder.file = {
+        'water_pot': water_pot,
+        'coords_pdb': coords_pdb,
     }
-
-    # collect all inputs
-    inputs = {
-        'parameters': parameters,
-        'settings': settings,
-        'code': cp2k_code,
-        'file': {
-            'water_pot': water_pot,
-            'coords_pdb': coords_pdb,
-        },
-        'metadata': {
-            'options': options,
-        }
+    builder.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
     }
+    builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")
-    calc = run(Cp2kCalculation, **inputs)
+    calc = run(builder)
 
     # check warnings
     assert calc['output_parameters'].dict.nwarnings == 0

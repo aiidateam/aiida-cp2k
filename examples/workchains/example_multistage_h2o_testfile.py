@@ -30,27 +30,18 @@ def example_multistage_h2o_testfile(cp2k_code):
 
     thisdir = os.path.dirname(os.path.abspath(__file__))
 
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,
+    # Construct process builder
+    builder = Cp2kMultistageWorkChain.get_builder()
+    builder.structure = structure
+    builder.protocol_yaml = SinglefileData(file=os.path.abspath(os.path.join(thisdir, '..', 'data', 'testfile.yaml')))
+    builder.cp2k_base.cp2k.code = cp2k_code
+    builder.cp2k_base.cp2k.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
     }
-    inputs = {
-        'structure': structure,
-        'protocol_yaml': SinglefileData(file=os.path.abspath(os.path.join(thisdir, '..', 'data', 'testfile.yaml'))),
-        'cp2k_base': {
-            'cp2k': {
-                'code': cp2k_code,
-                'metadata': {
-                    'options': options,
-                }
-            }
-        }
-    }
+    builder.cp2k_base.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
-    run(Cp2kMultistageWorkChain, **inputs)
+    run(builder)
 
 
 @click.command('cli')

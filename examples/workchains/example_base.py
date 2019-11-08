@@ -87,30 +87,23 @@ def example_base(cp2k_code):
             }
         })
 
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,
+    # Construct process builder
+    builder = Cp2kBaseWorkChain.get_builder()
+    builder.cp2k.structure = structure
+    builder.cp2k.parameters = parameters
+    builder.cp2k.code = cp2k_code
+    builder.cp2k.file = {
+        'basis': basis_file,
+        'pseudo': pseudo_file,
     }
-    inputs = {
-        'cp2k': {
-            'structure': structure,
-            'parameters': parameters,
-            'code': cp2k_code,
-            'file': {
-                'basis': basis_file,
-                'pseudo': pseudo_file,
-            },
-            'metadata': {
-                'options': options,
-            }
-        }
+    builder.cp2k.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
     }
+    builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")
-    run(Cp2kBaseWorkChain, **inputs)
+    run(builder)
 
 
 @click.command('cli')

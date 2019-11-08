@@ -94,29 +94,23 @@ def example_structure_through_file(cp2k_code):
             }
         })
 
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,
+    # Construct process builder
+    builder = Cp2kCalculation.get_builder()
+    builder.parameters = parameters
+    builder.code = cp2k_code
+    builder.file = {
+        'basis': basis_file,
+        'pseudo': pseudo_file,
+        'water': structure,
     }
-
-    inputs = {
-        'parameters': parameters,
-        'code': cp2k_code,
-        'file': {
-            'basis': basis_file,
-            'pseudo': pseudo_file,
-            'water': structure,
-        },
-        'metadata': {
-            'options': options,
-        }
+    builder.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
     }
+    builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")
-    run(Cp2kCalculation, **inputs)
+    run(builder)
 
 
 @click.command('cli')

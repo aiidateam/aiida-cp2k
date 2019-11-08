@@ -38,30 +38,23 @@ def example_multistage_h2o_minus(cp2k_code):
             'CHARGE': -2,
         }
     }})
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,
-    }
-    inputs = {
-        'structure': structure,
-        'min_cell_size': Float(4.1),  #this will make the cell expand in the x direction
-        'protocol_tag': Str('test'),
-        'protocol_modify': protocol_mod,
-        'cp2k_base': {
-            'cp2k': {
-                'parameters': parameters,
-                'code': cp2k_code,
-                'metadata': {
-                    'options': options,
-                }
-            }
-        }
-    }
 
-    run(Cp2kMultistageWorkChain, **inputs)
+    # Construct process builder
+    builder = Cp2kMultistageWorkChain.get_builder()
+    builder.structure = structure
+    builder.min_cell_size = Float(4.1)
+    builder.protocol_tag = Str('test')
+    builder.protocol_modify = protocol_mod
+
+    builder.cp2k_base.cp2k.parameters = parameters
+    builder.cp2k_base.cp2k.code = cp2k_code
+    builder.cp2k_base.cp2k.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
+    }
+    builder.cp2k_base.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
+
+    run(builder)
 
 
 @click.command('cli')

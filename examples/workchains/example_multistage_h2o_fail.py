@@ -27,34 +27,27 @@ def example_multistage_h2o_fail(cp2k_code):
     atoms.center(vacuum=2.0)
     structure = StructureData(ase=atoms)
 
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,
-    }
     parameters = Dict(dict={'FORCE_EVAL': {
         'DFT': {
             'UKS': True,
             'MULTIPLICITY': 666,
         }
     }})
-    inputs = {
-        'structure': structure,
-        'protocol_tag': Str('test'),
-        'cp2k_base': {
-            'max_iterations': Int(1),
-            'cp2k': {
-                'parameters': parameters,
-                'code': cp2k_code,
-                'metadata': {
-                    'options': options,
-                }
-            }
-        }
+
+    # Construct process builder
+    builder = Cp2kMultistageWorkChain.get_builder()
+    builder.structure = structure
+    builder.protocol_tag = Str('test')
+    builder.cp2k_base.max_iterations = Int(1)
+    builder.cp2k_base.cp2k.parameters = parameters
+    builder.cp2k_base.cp2k.code = cp2k_code
+    builder.cp2k_base.cp2k.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
     }
-    run(Cp2kMultistageWorkChain, **inputs)
+    builder.cp2k_base.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
+
+    run(builder)
 
 
 @click.command('cli')

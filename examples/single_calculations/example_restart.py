@@ -107,31 +107,25 @@ def example_restart(cp2k_code):
         })
 
     # ------------------------------------------------------------------------------
+    # Construct process builder
+    builder = Cp2kCalculation.get_builder()
+
     # Set up the first calculation
-
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 2 * 60,
+    builder.structure = structure1
+    builder.parameters = params1
+    builder.code = cp2k_code
+    builder.file = {
+        'basis': basis_file,
+        'pseudo': pseudo_file,
     }
-
-    inputs = {
-        'structure': structure1,
-        'parameters': params1,
-        'code': cp2k_code,
-        'file': {
-            'basis': basis_file,
-            'pseudo': pseudo_file,
-        },
-        'metadata': {
-            'options': options,
-        }
+    builder.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
     }
+    builder.metadata.options.max_wallclock_seconds = 1 * 2 * 60
 
     print("submitted calculation 1:")
-    calc1 = run(Cp2kCalculation, **inputs)
+    calc1 = run(builder)
 
     # check walltime exceeded
     assert calc1['output_parameters'].dict.exceeded_walltime is True
@@ -158,21 +152,13 @@ def example_restart(cp2k_code):
     atoms2.positions *= 0.0  # place all atoms at origin -> nuclear fusion :-)
     structure2 = StructureData(ase=atoms2)
 
-    inputs2 = {
-        'structure': structure2,
-        'parameters': params2,
-        'code': cp2k_code,
-        'file': {
-            'basis': basis_file,
-            'pseudo': pseudo_file,
-        },
-        'parent_calc_folder': calc1['remote_folder'],
-        'metadata': {
-            'options': options,
-        }
-    }
+    # Update the process builder.
+    builder.structure = structure2
+    builder.parameters = params2
+    builder.parent_calc_folder = calc1['remote_folder']
+
     print("submitted calculation 2")
-    calc2 = run(Cp2kCalculation, **inputs2)
+    calc2 = run(builder)
 
     # check energy
     expected_energy = -17.1566455959

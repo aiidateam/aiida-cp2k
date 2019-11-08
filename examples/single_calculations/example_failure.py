@@ -29,20 +29,21 @@ def example_failure(cp2k_code):
 
     # a broken CP2K input
     parameters = Dict(dict={'GLOBAL': {'FOO_BAR_QUUX': 42}})
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 2 * 60,
-    }
 
     print("Submitted calculation...")
 
-    inputs = {'parameters': parameters, 'code': cp2k_code, 'metadata': {'options': options,}}
+    # Construct process builder
+    builder = Cp2kCalculation.get_builder()
+    builder.parameters = parameters
+    builder.code = cp2k_code
+    builder.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
+    }
+    builder.metadata.options.max_wallclock_seconds = 1 * 2 * 60
 
     try:
-        run(Cp2kCalculation, **inputs)
+        run(builder)
         print("ERROR!")
         print("CP2K failure was not recognized")
         sys.exit(3)

@@ -186,29 +186,23 @@ def example_bands(cp2k_code):
             }
         })
 
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,
+    # Construct process builder
+    builder = Cp2kCalculation.get_builder()
+    builder.structure = structure
+    builder.parameters = parameters
+    builder.code = cp2k_code
+    builder.file = {
+        'basis': basis_file,
+        'pseudo': pseudo_file,
     }
-
-    inputs = {
-        'structure': structure,
-        'parameters': parameters,
-        'code': cp2k_code,
-        'file': {
-            'basis': basis_file,
-            'pseudo': pseudo_file,
-        },
-        'metadata': {
-            'options': options,
-        },
+    builder.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
     }
+    builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("submitted calculation...")
-    calc = run(Cp2kCalculation, **inputs)
+    calc = run(builder)
 
     bands = calc['output_bands']
 

@@ -57,13 +57,36 @@ class Cp2kCalculation(CalcJob):
                    default=cls._DEFAULT_PARSER,
                    non_db=True)
 
+        # Add output_filename attribute
+        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
+
         # Use mpi by default
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
 
-        # Exit codes
-        spec.exit_code(100,
+        # Unrecoverable errors: resources like the retrieved folder or its expected contents are missing
+        spec.exit_code(200,
                        'ERROR_NO_RETRIEVED_FOLDER',
                        message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(210,
+                       'ERROR_OUTPUT_STDOUT_MISSING',
+                       message='The retrieved folder did not contain the required stdout output file.')
+
+        # Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
+        spec.exit_code(300, 'ERROR_OUTPUT_FILES', message='Output file could not be read or parsed.')
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ', message='The stdout output file could not be read.')
+        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE', message='The stdout output file could not be parsed.')
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE', message='The stdout output file was incomplete.')
+        spec.exit_code(313, 'ERROR_OUTPUT_CONTAINS_ABORT', message='The stdout output file contains word "abort"')
+        spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION', message='The parser raised an unexpected exception.')
+
+        # Significant errors but calculation can be used to restart
+        spec.exit_code(400,
+                       'ERROR_OUT_OF_WALLTIME',
+                       message='The calculation stopped prematurely because it ran out of walltime.')
+
+        spec.exit_code(500,
+                       'ERROR_GEOMETRY_CONVERGENCE_NOT_REACHED',
+                       message='The ionic minimization cycle did not converge for the given thresholds.')
 
         # Output parameters
         spec.output('output_parameters', valid_type=Dict, required=True, help='the results of the calculation')

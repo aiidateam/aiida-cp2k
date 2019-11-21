@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import io
 import os
+from aiida.common import exceptions
 
 from aiida.parsers import Parser
 from aiida.common import OutputParsingError, NotExistent
@@ -25,10 +26,12 @@ class Cp2kBaseParser(Parser):
 
         try:
             out_folder = self.retrieved
-        except NotExistent:
+        except exceptions.NotExistent:
             return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
-        self._parse_stdout(out_folder)
+        exit_code = self._parse_stdout(out_folder)
+        if exit_code is not None:
+            return exit_code
 
         try:
             structure = self._parse_trajectory(out_folder)
@@ -39,28 +42,33 @@ class Cp2kBaseParser(Parser):
         return ExitCode(0)
 
     def _parse_stdout(self, out_folder):
-        """Basic CP2K output file parser"""
+        """Basic CP2K output file parser."""
 
         from aiida_cp2k.utils import parse_cp2k_output
 
         # pylint: disable=protected-access
 
-        fname = self.node.process_class._DEFAULT_OUTPUT_FILE
-        if fname not in out_folder._repository.list_object_names():
-            raise OutputParsingError("Cp2k output file not retrieved")
+        fname = self.node.get_attribute('output_filename')
 
-        abs_fn = os.path.join(out_folder._repository._get_base_folder().abspath, fname)
+        if fname not in self.retrieved.list_object_names():
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
 
-        with io.open(abs_fn, mode="r", encoding="utf-8") as fobj:
-            result_dict = parse_cp2k_output(fobj)
+        try:
+            output_string = self.retrieved.get_object_content(fname)
+        except IOError:
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
-        if 'nwarnings' not in result_dict:
-            raise OutputParsingError("CP2K did not finish properly.")
+        result_dict = parse_cp2k_output(output_string)
+
+        if "aborted" in result_dict:
+            return self.exit_codes.ERROR_OUTPUT_CONTAINS_ABORT
 
         self.out("output_parameters", Dict(dict=result_dict))
 
+        return None
+
     def _parse_trajectory(self, out_folder):
-        """CP2K trajectory parser"""
+        """CP2K trajectory parser."""
 
         from ase import Atoms
         from aiida.orm import StructureData

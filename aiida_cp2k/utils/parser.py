@@ -14,38 +14,29 @@ import re
 import math
 
 
-def parse_cp2k_output(fobj):
+def parse_cp2k_output(fstring):
     """Parse CP2K output into a dictionary"""
-    lines = fobj.readlines()
+    lines = fstring.splitlines()
 
     result_dict = {"exceeded_walltime": False}
 
-    for i_line, line in enumerate(lines):
+    for line in lines:
         if line.startswith(" ENERGY| "):
             result_dict["energy"] = float(line.split()[8])
             result_dict["energy_units"] = "a.u."
-        elif "The number of warnings for this run is" in line:
+        if "The number of warnings for this run is" in line:
             result_dict["nwarnings"] = int(line.split()[-1])
-        elif "exceeded requested execution time" in line:
+        if "exceeded requested execution time" in line:
             result_dict["exceeded_walltime"] = True
-        elif "KPOINTS| Band Structure Calculation" in line:
-            kpoints, labels, bands = _parse_bands(lines, i_line)
-            result_dict["kpoint_data"] = {
-                "kpoints": kpoints,
-                "labels": labels,
-                "bands": bands,
-                "bands_unit": "eV",
-            }
-        else:
-            # ignore all other lines
-            pass
+        if "ABORT" in line:
+            result_dict["aborted"] = True
 
     return result_dict
 
 
-def parse_cp2k_output_advanced(fobj):  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
+def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
     """Parse CP2K output into a dictionary (ADVANCED: more info parsed @ PRINT_LEVEL MEDIUM)"""
-    lines = fobj.readlines()
+    lines = fstring.splitlines()
 
     result_dict = {"exceeded_walltime": False}
     result_dict['warnings'] = []
@@ -318,14 +309,12 @@ def _parse_bands(lines, n_start):
     return np.array(kpoints), labels, np.array(bands)
 
 
-def parse_cp2k_trajectory(fobj):
+def parse_cp2k_trajectory(content):
     """CP2K trajectory parser"""
 
     import numpy as np
 
     # pylint: disable=protected-access
-
-    content = fobj.read()
 
     # parse coordinate section
     match = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, re.DOTALL)

@@ -25,7 +25,7 @@ def example_multistage_al(cp2k_code):
     print("EXPECTED: the OT (settings_0) will converge to a negative bandgap, then we switch to SMEARING (settings_1)")
 
     thisdir = os.path.dirname(os.path.abspath(__file__))
-    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '../data/Al.cif')))
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'Al.cif')))
 
     # testing user change of parameters and protocol
     parameters = Dict(dict={'FORCE_EVAL': {'DFT': {'MGRID': {'CUTOFF': 250,}}}})

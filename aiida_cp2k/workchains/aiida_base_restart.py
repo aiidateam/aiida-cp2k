@@ -3,83 +3,18 @@
 """Base implementation of `WorkChain` class that implements a simple automated restart mechanism for calculations."""
 from __future__ import absolute_import
 
-from collections import namedtuple
-
 from aiida import orm
 from aiida.orm import Dict
-from aiida.common import exceptions, AttributeDict, AiidaException
+from aiida.common import exceptions
 from aiida.common.lang import override
-from aiida.engine import CalcJob, WorkChain, ToContext, append_, ExitCode
+from aiida.engine import ExitCode
+from aiida.engine import CalcJob, WorkChain, ToContext, append_
 from aiida.plugins.entry_point import get_entry_point_names, load_entry_point
-
-
-class UnexpectedCalculationFailure(AiidaException):
-    """Raised when a calculation job has failed for an unexpected or unrecognized reason."""
-
-
-ErrorHandlerReport = namedtuple('ErrorHandlerReport', 'is_handled do_break exit_code')
-ErrorHandlerReport.__new__.__defaults__ = (False, False, ExitCode())
-"""
-A namedtuple to define an error handler report for a :class:`~aiida.engine.processes.workchains.workchain.WorkChain`.
-
-This namedtuple should be returned by an error handling method of a workchain instance if
-the condition of the error handling was met by the failure mode of the calculation.
-If the error was appriopriately handled, the 'is_handled' field should be set to `True`,
-and `False` otherwise. If no further error handling should be performed after this method
-the 'do_break' field should be set to `True`
-
-:param is_handled: boolean, set to `True` when an error was handled, default is `False`
-:param do_break: boolean, set to `True` if no further error handling should be performed, default is `False`
-:param exit_code: an instance of the :class:`~aiida.engine.processes.exit_code.ExitCode` tuple
-"""
-
-
-def prepare_process_inputs(process, inputs):
-    """Prepare the inputs for submission for the given process, according to its spec.
-
-    That is to say that when an input is found in the inputs that corresponds to an input port in the spec of the
-    process that expects a `Dict`, yet the value in the inputs is a plain dictionary, the value will be wrapped in by
-    the `Dict` class to create a valid input.
-
-    :param process: sub class of `Process` for which to prepare the inputs dictionary
-    :param inputs: a dictionary of inputs intended for submission of the process
-    :return: a dictionary with all bare dictionaries wrapped in `Dict` if dictated by the process spec
-    """
-    prepared_inputs = wrap_bare_dict_inputs(process.spec().inputs, inputs)
-    return AttributeDict(prepared_inputs)
-
-
-def wrap_bare_dict_inputs(port_namespace, inputs):
-    """Wrap bare dictionaries in `inputs` in a `Dict` node if dictated by the corresponding port in given namespace.
-
-    :param port_namespace: a `PortNamespace`
-    :param inputs: a dictionary of inputs intended for submission of the process
-    :return: a dictionary with all bare dictionaries wrapped in `Dict` if dictated by the port namespace
-    """
-    from aiida.engine.processes import PortNamespace
-
-    wrapped = {}
-
-    for key, value in inputs.items():
-
-        if key not in port_namespace:
-            wrapped[key] = value
-            continue
-
-        port = port_namespace[key]
-
-        if isinstance(port, PortNamespace):
-            wrapped[key] = wrap_bare_dict_inputs(port, value)
-        elif port.valid_type == Dict and isinstance(value, dict):
-            wrapped[key] = Dict(dict=value)
-        else:
-            wrapped[key] = value
-
-    return wrapped
+from aiida_cp2k.utils import ErrorHandlerReport, UnexpectedCalculationFailure, prepare_process_inputs
 
 
 class BaseRestartWorkChain(WorkChain):
-    """Base restart work chain
+    """Base restart work chain.
 
     This work chain serves as the starting point for more complex work chains that will be designed to run a calculation
     that might need multiple restarts to come to a successful end. These restarts may be necessary because a single
@@ -117,11 +52,13 @@ class BaseRestartWorkChain(WorkChain):
 
     The `_calculation_class` attribute should be set to the `CalcJob` class that should be run in the loop.
     """
+
     _verbose = False
     _calculation_class = None
     _error_handler_entry_point = None
 
     def __init__(self, *args, **kwargs):
+        """Construct the instance."""
         super(BaseRestartWorkChain, self).__init__(*args, **kwargs)
 
         if self._calculation_class is None or not issubclass(self._calculation_class, CalcJob):
@@ -131,11 +68,16 @@ class BaseRestartWorkChain(WorkChain):
 
     @override
     def load_instance_state(self, saved_state, load_context):
+        """Load the process instance from a saved state.
+
+        :param saved_state: saved state of existing process instance
+        :param load_context: context for loading instance state
+        """
         super(BaseRestartWorkChain, self).load_instance_state(saved_state, load_context)
         self._load_error_handlers()
 
     def _load_error_handlers(self):
-        """If an error handler entry point is defined, load them. If the plugin cannot be loaded log it and pass."""
+        """Load the error handlers defined through entry points, if any."""
         if self._error_handler_entry_point is not None:
             for entry_point_name in get_entry_point_names(self._error_handler_entry_point):
                 try:
@@ -148,13 +90,15 @@ class BaseRestartWorkChain(WorkChain):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
-        # pylint: disable=bad-continuation
         super(BaseRestartWorkChain, cls).define(spec)
         spec.input('max_iterations', valid_type=orm.Int, default=orm.Int(5),
             help='Maximum number of iterations the work chain will restart the calculation to finish successfully.')
         spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False),
             help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
+        spec.input_namespace('fixers', valid_type=tuple, required=False,
+            help="Fixers you want to apply to the outputs of every calculation.", dynamic=True)
         spec.exit_code(101, 'ERROR_MAXIMUM_ITERATIONS_EXCEEDED',
             message='The maximum number of iterations was exceeded.')
         spec.exit_code(102, 'ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE',
@@ -213,7 +157,8 @@ class BaseRestartWorkChain(WorkChain):
             # but has handled the problem and we should restart the cycle.
             handler = self._handle_calculation_sanity_checks(calculation)  # pylint: disable=assignment-from-no-return
 
-            if isinstance(handler, ErrorHandlerReport) and handler.exit_code.status != 0:
+            if (isinstance(handler, ErrorHandlerReport) and
+                    handler.exit_code is not None and handler.exit_code.status != 0):
                 # Sanity check returned a handler with an exit code that is non-zero, so we abort
                 self.report('{}<{}> finished successfully, but sanity check detected unrecoverable problem'.format(
                     self.ctx.calc_name, calculation.pk))
@@ -241,13 +186,20 @@ class BaseRestartWorkChain(WorkChain):
         except UnexpectedCalculationFailure as exception:
             exit_code = self._handle_unexpected_failure(calculation, exception)
 
+        # If the exit code returned actually has status `0` that means we consider the calculation as successful
+        if isinstance(exit_code, ExitCode) and exit_code.status == 0:
+            self.ctx.is_finished = True
+
         return exit_code
 
     def results(self):
         """Attach the outputs specified in the output specification from the last completed calculation."""
         calculation = self.ctx.calculations[self.ctx.iteration - 1]
 
-        if calculation.is_failed and self.ctx.iteration >= self.inputs.max_iterations.value:
+        # We check the `is_finished` attribute of the work chain and not the successfulness of the last calculation
+        # because the error handlers in the last iteration can have qualified a "failed" calculation as satisfactory
+        # for the outcome of the work chain and so have marked it as `is_finished=True`.
+        if not self.ctx.is_finished and self.ctx.iteration >= self.inputs.max_iterations.value:
             # Abort: exceeded maximum number of retries
             self.report('reached the maximum number of iterations {}: last ran {}<{}>'.format(
                 self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
@@ -303,6 +255,40 @@ class BaseRestartWorkChain(WorkChain):
         :param calculation: the calculation whose outputs should be checked for consistency
         :return: `ErrorHandlerReport` if a new calculation should be launched or abort if it includes an exit code
         """
+        import importlib
+        is_handled = False # Becomes True if at least one error handling operation was performed and was sucessfull
+        not_handled = False # Becomes True if at least one error handling operation was performed and was NOT sucessfull
+
+        for fxtr in sorted(self.inputs.fixers.keys()):
+            module_path, fixer_name, *args = self.inputs.fixers[fxtr]
+            module = importlib.import_module(module_path)
+            fixer = getattr(module, fixer_name)
+            handler_report = fixer(self, calculation, *args)
+
+            # if the handler detected a problem and tried to fix it
+            if isinstance(handler_report, ErrorHandlerReport):
+
+                # if the problem was succesfully resolved
+                if handler_report.is_handled:
+                    is_handled = True
+
+                    # Break error checks if required
+                    if handler_report.do_break:
+                        return ErrorHandlerReport(True)
+
+                # If the problem wasn't resolved
+                else:
+                    not_handled = True
+                    # Specify latest not handled report for return
+                    latest_not_handled_report = handler_report
+
+        # If at least one error is handled, we consider that the calculation should be restarted
+        if is_handled:
+            return ErrorHandlerReport(True, True)
+
+        # If none of the handlers were sucesfull in fixing problems, we return the latest not handled report.
+        if not_handled:
+            return latest_not_handled_report
 
     def _handle_calculation_failure(self, calculation):
         """Call the attached error handlers if any to attempt to correct the cause of the calculation failure.

@@ -9,6 +9,9 @@
 from __future__ import absolute_import
 
 from .input_generator import Cp2kInput
+from .other_utilities import ErrorHandlerReport
+from .other_utilities import UnexpectedCalculationFailure
+from .other_utilities import prepare_process_inputs
 from .parser import parse_cp2k_output
 from .parser import parse_cp2k_output_advanced
 from .parser import parse_cp2k_trajectory

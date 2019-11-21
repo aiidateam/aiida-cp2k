@@ -4,7 +4,6 @@ services:
   - docker
 
 before_install:
-  - pip install --user coveralls
   - python .ci/check_travis_tag.py
   - docker build -t aiida_cp2k_test .
   - docker run -d aiida_cp2k_test

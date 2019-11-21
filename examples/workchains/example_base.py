@@ -39,12 +39,16 @@ def example_base(cp2k_code):
 
     # structure
     atoms = ase.build.molecule('H2O')
-    atoms.center(vacuum=2.0)
+    atoms.center(vacuum=5.0)
     structure = StructureData(ase=atoms)
 
     # parameters
     parameters = Dict(
         dict={
+            'GLOBAL': {
+                'RUN_TYPE': 'GEO_OPT',
+                'WALLTIME': '00:00:30',  # too short
+            },
             'FORCE_EVAL': {
                 'METHOD': 'Quickstep',
                 'DFT': {
@@ -100,6 +104,9 @@ def example_base(cp2k_code):
         "num_machines": 1,
         "num_mpiprocs_per_machine": 1,
     }
+
+    builder.fixers = {"fixer_001": ('aiida_cp2k.fixers', 'resubmit_unconverged_geometry')}
+
     builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")

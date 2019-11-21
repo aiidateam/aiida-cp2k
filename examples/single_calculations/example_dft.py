@@ -21,8 +21,6 @@ from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
 from aiida.plugins import CalculationFactory
 
-Cp2kCalculation = CalculationFactory('cp2k')
-
 
 def example_dft(cp2k_code):
     """Run simple DFT calculation"""
@@ -88,7 +86,7 @@ def example_dft(cp2k_code):
         })
 
     # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    builder = cp2k_code.get_builder()
     builder.structure = structure
     builder.parameters = parameters
     builder.code = cp2k_code

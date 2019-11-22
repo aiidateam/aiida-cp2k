@@ -53,6 +53,8 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
             result_dict['nwarnings'] = int(line.split()[-1])
         if 'exceeded requested execution time' in line:
             result_dict['exceeded_walltime'] = True
+        if "ABORT" in line:
+            result_dict["aborted"] = True
         if "KPOINTS| Band Structure Calculation" in line:
             kpoints, labels, bands = _parse_bands(lines, i_line)
             result_dict["kpoint_data"] = {

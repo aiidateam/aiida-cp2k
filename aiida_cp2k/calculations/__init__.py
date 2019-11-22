@@ -68,15 +68,17 @@ class Cp2kCalculation(CalcJob):
                        'ERROR_NO_RETRIEVED_FOLDER',
                        message='The retrieved folder data node could not be accessed.')
         spec.exit_code(210,
-                       'ERROR_OUTPUT_STDOUT_MISSING',
-                       message='The retrieved folder did not contain the required stdout output file.')
+                       'ERROR_OUTPUT_MISSING',
+                       message='The retrieved folder did not contain the required output file.')
 
         # Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
-        spec.exit_code(300, 'ERROR_OUTPUT_FILES', message='Output file could not be read or parsed.')
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ', message='The stdout output file could not be read.')
-        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE', message='The stdout output file could not be parsed.')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE', message='The stdout output file was incomplete.')
-        spec.exit_code(313, 'ERROR_OUTPUT_CONTAINS_ABORT', message='The stdout output file contains word "abort"')
+        spec.exit_code(301, 'ERROR_OUTPUT_READ', message='The output file could not be read.')
+        spec.exit_code(302, 'ERROR_OUTPUT_PARSE', message='The output file could not be parsed.')
+        spec.exit_code(303, 'ERROR_OUTPUT_INCOMPLETE', message='The output file was incomplete.')
+        spec.exit_code(304, 'ERROR_OUTPUT_CONTAINS_ABORT', message='The output file contains the word "ABORT"')
+
+        spec.exit_code(312, 'ERROR_STRUCTURE_PARSE', message='The output structure could not be parsed.')
+
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION', message='The parser raised an unexpected exception.')
 
         # Significant errors but calculation can be used to restart

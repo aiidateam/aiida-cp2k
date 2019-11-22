@@ -1,14 +1,15 @@
+"""Fixers that can be applied to the geometry optimization jobs."""
 from __future__ import absolute_import
 
 from aiida.orm import Dict
-from aiida_cp2k.utils import merge_dict
-from aiida.engine import calcfunction
-from aiida_cp2k.utils import ErrorHandlerReport
+from aiida.engine import calcfunction, ExitCode
+from aiida_cp2k.utils import ErrorHandlerReport, merge_dict
 
 
 @calcfunction
-def add_restart_section(input_Dict):
-    params = input_Dict.get_dict()
+def add_restart_section(input_dict):
+    """Add restart section to the input dictionary."""
+    params = input_dict.get_dict()
     restart_wfn_dict = {
         'FORCE_EVAL': {
             'DFT': {
@@ -24,14 +25,9 @@ def add_restart_section(input_Dict):
     return Dict(dict=params)
 
 
-def get_file_content(calc):
-    fname = calc.get_attribute('output_filename')
-    return calc.outputs.retrieved.get_object_content(fname)
-
-
 def resubmit_unconverged_geometry(workchain, calc):
-    output_fname = calc.get_option('output_filename')
-    content_string = get_file_content(calc)
+    """Resubmit a calculation it is not converged, but can be recovered."""
+    content_string = calc.outputs.retrieved.get_object_content(calc.get_attribute('output_filename'))
 
     time_not_exceeded = "PROGRAM ENDED AT"
     time_exceeded = "exceeded requested execution time"
@@ -46,7 +42,7 @@ def resubmit_unconverged_geometry(workchain, calc):
     if (time_not_exceeded not in content_string or
             time_exceeded in content_string) and one_step_done not in content_string:
         workchain.report("Could NOT fix the problem")
-        return ErrorHandlerReport(False, True)
+        return ErrorHandlerReport(False, True, ExitCode(555))
 
     workchain.report("No problems!")
 

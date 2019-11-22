@@ -19,7 +19,6 @@ import click
 from aiida.engine import run
 from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
-from aiida.plugins import CalculationFactory
 
 
 def example_dft(cp2k_code):

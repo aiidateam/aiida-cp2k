@@ -4,7 +4,6 @@
 from __future__ import absolute_import
 
 from aiida import orm
-from aiida.orm import Dict
 from aiida.common import exceptions
 from aiida.common.lang import override
 from aiida.engine import ExitCode

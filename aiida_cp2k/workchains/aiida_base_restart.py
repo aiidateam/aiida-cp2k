@@ -161,6 +161,7 @@ class BaseRestartWorkChain(WorkChain):
                 # Sanity check returned a handler with an exit code that is non-zero, so we abort
                 self.report('{}<{}> finished successfully, but sanity check detected unrecoverable problem'.format(
                     self.ctx.calc_name, calculation.pk))
+                self.ctx.is_finished = True
                 return handler.exit_code
 
             if isinstance(handler, ErrorHandlerReport):

@@ -79,6 +79,7 @@ class Cp2kBaseParser(Parser):
 
         return StructureData(ase=atoms)
 
+
 class Cp2kBsseParser(Cp2kBaseParser):
     """Advanced AiiDA parser class for a BSSE calculation in CP2K."""
 
@@ -101,20 +102,22 @@ class Cp2kBsseParser(Cp2kBaseParser):
         # if it is not there, CP2K didn't finish properly
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")
-        else:
-            result_dict["energy"] = result_dict["energy_list"][4]
-            result_dict["energy_units"] = "a.u."
-            result_dict["binding_energy_raw"] = (redult_dict["energy_list"][4] - redult_dict["energy_list"][0]
-                - redult_dict["energy_list"][1]) * HARTREE2KJMOL
-            result_dict["binding_energy_corr"] = (redult_dict["energy_list"][4] - redult_dict["energy_list"][2]
-                - redult_dict["energy_list"][3]) * HARTREE2KJMOL
-            result_dict["binding_energy_bsse"] = result_dict["binding_energy_raw"] - result_dict["binding_energy_corr"]
-            result_dict["binding_energy_unit"] = "kJ/mol"
-            if result_dict["energy_dispersion_list"]:
-                result_dict["binding_energy_dispersion"] = (redult_dict["energy_dispersion_list"][4] - redult_dict[
-                    "energy_dispersion_list"][0] - redult_dict["energy_dispersion_list"][1]) * HARTREE2KJMOL
+
+        result_dict["energy"] = result_dict["energy_list"][4]
+        result_dict["energy_units"] = "a.u."
+        result_dict["binding_energy_raw"] = (result_dict["energy_list"][4] - result_dict["energy_list"][0] -
+                                             result_dict["energy_list"][1]) * HARTREE2KJMOL
+        result_dict["binding_energy_corr"] = (result_dict["energy_list"][4] - result_dict["energy_list"][2] -
+                                              result_dict["energy_list"][3]) * HARTREE2KJMOL
+        result_dict["binding_energy_bsse"] = result_dict["binding_energy_raw"] - result_dict["binding_energy_corr"]
+        result_dict["binding_energy_unit"] = "kJ/mol"
+        if result_dict["energy_dispersion_list"]:
+            result_dict["binding_energy_dispersion"] = (result_dict["energy_dispersion_list"][4] -
+                                                        result_dict["energy_dispersion_list"][0] -
+                                                        result_dict["energy_dispersion_list"][1]) * HARTREE2KJMOL
 
         self.out("output_parameters", Dict(dict=result_dict))
+
 
 class Cp2kAdvancedParser(Cp2kBaseParser):
     """Advanced AiiDA parser class for the output of CP2K."""

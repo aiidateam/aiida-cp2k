@@ -17,9 +17,11 @@ from .workchains import merge_dict
 from .workchains import merge_Dict
 from .workchains import get_kinds_section
 from .workchains import get_kinds_with_ghost_section
+from .workchains import get_bsse_section
 from .workchains import get_input_multiplicity
 from .workchains import ot_has_small_bandgap
 from .workchains import check_resize_unit_cell
 from .workchains import resize_unit_cell
+from .workchains import aiida_structure_merge
 from .workchains import HARTREE2EV
 from .workchains import HARTREE2KJMOL

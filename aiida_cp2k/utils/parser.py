@@ -49,19 +49,16 @@ def parse_cp2k_output_bsse(fobj):
 
     result_dict = {
         "exceeded_walltime": False,
-        "energy_description_list" : [
-            "Energy of A with basis set A",
-            "Energy of B with basis set B",
-            "Energy of A with basis set of A+B",
-            "Energy of B with basis set of A+B",
-            "Energy of A+B with basis set of A+B"
+        "energy_description_list": [
+            "Energy of A with basis set A", "Energy of B with basis set B", "Energy of A with basis set of A+B",
+            "Energy of B with basis set of A+B", "Energy of A+B with basis set of A+B"
         ],
         "energy_list": [],
         "energy_dispersion_list": []
     }
 
     read_energy = False
-    for i_line, line in enumerate(lines):
+    for line in lines:
         if "The number of warnings for this run is" in line:
             result_dict["nwarnings"] = int(line.split()[-1])
         if "exceeded requested execution time" in line:
@@ -69,13 +66,14 @@ def parse_cp2k_output_bsse(fobj):
         if "SCF run converged in" in line:
             read_energy = True
         if read_energy:
-            if "Dispersion energy" in line:
+            if r"Dispersion energy:" in line:
                 result_dict["energy_dispersion_list"].append(float(line.split()[-1]))
-            if "Total energy" in line:
+            if r"  Total energy:" in line:
                 result_dict["energy_list"].append(float(line.split()[-1]))
-                read_energy_val = False
+                read_energy = False
 
     return result_dict
+
 
 def parse_cp2k_output_advanced(fobj):  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
     """Parse CP2K output into a dictionary (ADVANCED: more info parsed @ PRINT_LEVEL MEDIUM)"""

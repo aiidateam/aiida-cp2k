@@ -15,6 +15,7 @@ HARTREE2EV = 27.211399
 
 HARTREE2KJMOL = 2625.5002
 
+
 def merge_dict(dct, merge_dct):
     """ Taken from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
     Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
@@ -55,8 +56,9 @@ def get_kinds_section(structure, protocol_settings):
         })
     return {'FORCE_EVAL': {'SUBSYS': {'KIND': kinds}}}
 
+
 def get_kinds_with_ghost_section(structure, protocol_settings):
-    """ Write the &KIND sections given the structure and the settings_dict, and add also GHOST atoms"""
+    """Write the &KIND sections given the structure and the settings_dict, and add also GHOST atoms"""
     kinds = []
     all_atoms = set(structure.get_ase().get_chemical_symbols())
     for atom in all_atoms:
@@ -66,12 +68,58 @@ def get_kinds_with_ghost_section(structure, protocol_settings):
             'POTENTIAL': protocol_settings['pseudopotential'][atom],
             'MAGNETIZATION': protocol_settings['initial_magnetization'][atom],
         })
-        kinds.append({
-            '_': atom + "_ghost",
-            'BASIS_SET': protocol_settings['basis_set'][atom],
-            'GHOST': True
-        })
+        kinds.append({'_': atom + "_ghost", 'BASIS_SET': protocol_settings['basis_set'][atom], 'GHOST': True})
     return {'FORCE_EVAL': {'SUBSYS': {'KIND': kinds}}}
+
+
+def get_bsse_section(natoms_a, natoms_b, mult_a=1, mult_b=1, charge_a=0, charge_b=0):
+    """Get the &FORCE_EVAL/&BSSE section."""
+    bsse_section = {
+        'FORCE_EVAL': {
+            'BSSE' : {
+                'FRAGMENT': [{
+                'LIST': '1..{}'.format(natoms_a)
+                },
+                {
+                'LIST': '{}..{}'.format(natoms_a + 1, natoms_a + natoms_b)
+                }],
+                'CONFIGURATION': [
+                    { # A fragment with basis set A
+                        'MULTIPLICITY': mult_a,
+                        'CHARGE': charge_a,
+                        'GLB_CONF': '1 0',
+                        'SUB_CONF': '1 0',
+                        },
+                    { # B fragment with basis set B
+                        'MULTIPLICITY': mult_b,
+                        'CHARGE': charge_b,
+                        'GLB_CONF': '0 1',
+                        'SUB_CONF': '0 1',
+                        },
+                    { # A fragment with basis set A+B
+                        'MULTIPLICITY': mult_a,
+                        'CHARGE': charge_a,
+                        'GLB_CONF': '1 1',
+                        'SUB_CONF': '1 0',
+                        },
+                    { # B fragment with basis set A+B
+                        'MULTIPLICITY': mult_b,
+                        'CHARGE': charge_b,
+                        'GLB_CONF': '1 1',
+                        'SUB_CONF': '0 1',
+                        },
+                    { # A+B fragments with basis set A+B
+                        'MULTIPLICITY': mult_a + mult_b - 1,
+                        'CHARGE': charge_a + charge_b,
+                        'GLB_CONF': '1 1',
+                        'SUB_CONF': '1 1',
+                        }
+                ]
+            }
+        }
+    }
+    return bsse_section
+
 
 def get_input_multiplicity(structure, protocol_settings):
     """ Compute the total multiplicity of the structure,
@@ -172,6 +220,7 @@ def resize_unit_cell(struct, resize):
     """Resize the StructureData according to the resize Dict"""
     resize_tuple = tuple([resize[x] for x in ['nx', 'ny', 'nz']])
     return StructureData(ase=struct.get_ase().repeat(resize_tuple))
+
 
 @calcfunction
 def aiida_structure_merge(aiida_structure_a, aiida_structure_b):

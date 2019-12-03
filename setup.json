@@ -26,11 +26,13 @@
         ],
         "aiida.parsers": [
             "cp2k_base_parser = aiida_cp2k.parsers:Cp2kBaseParser",
+            "cp2k_bsse_parser = aiida_cp2k.parsers:Cp2kBsseParser",
             "cp2k_advanced_parser = aiida_cp2k.parsers:Cp2kAdvancedParser"
         ],
         "aiida.workflows": [
             "cp2k.base = aiida_cp2k.workchains:Cp2kBaseWorkChain",
-            "cp2k.multistage= aiida_cp2k.workchains:Cp2kMultistageWorkChain"
+            "cp2k.multistage = aiida_cp2k.workchains:Cp2kMultistageWorkChain",
+            "cp2k.binding_energy = aiida_cp2k.workchains:BindingEnergyWorkChain"
         ]
     },
     "setup_requires": ["reentry"],

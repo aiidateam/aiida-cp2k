@@ -1,0 +1,25 @@
+data_crystal
+ 
+_cell_length_a    6.99901
+_cell_length_b    15.24390
+_cell_length_c    15.24400
+_cell_angle_alpha 117.69900
+_cell_angle_beta  98.80460
+_cell_angle_gamma 98.80710
+ 
+_symmetry_space_group_name_Hall 'P 1'
+_symmetry_space_group_name_H-M  'P 1'
+ 
+loop_
+_symmetry_equiv_pos_as_xyz
+ 'x,y,z' 
+ 
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+C          C       0.33115   0.32787   0.22880 
+O          O       0.34171   0.39886   0.21435 
+O          O       0.32043   0.25675   0.24325 

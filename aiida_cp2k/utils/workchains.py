@@ -13,6 +13,7 @@ from aiida.orm import Dict, StructureData
 
 HARTREE2EV = 27.211399
 
+HARTREE2KJMOL = 2625.5002
 
 def merge_dict(dct, merge_dct):
     """ Taken from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
@@ -54,6 +55,23 @@ def get_kinds_section(structure, protocol_settings):
         })
     return {'FORCE_EVAL': {'SUBSYS': {'KIND': kinds}}}
 
+def get_kinds_with_ghost_section(structure, protocol_settings):
+    """ Write the &KIND sections given the structure and the settings_dict, and add also GHOST atoms"""
+    kinds = []
+    all_atoms = set(structure.get_ase().get_chemical_symbols())
+    for atom in all_atoms:
+        kinds.append({
+            '_': atom,
+            'BASIS_SET': protocol_settings['basis_set'][atom],
+            'POTENTIAL': protocol_settings['pseudopotential'][atom],
+            'MAGNETIZATION': protocol_settings['initial_magnetization'][atom],
+        })
+        kinds.append({
+            '_': atom + "_ghost",
+            'BASIS_SET': protocol_settings['basis_set'][atom],
+            'GHOST': True
+        })
+    return {'FORCE_EVAL': {'SUBSYS': {'KIND': kinds}}}
 
 def get_input_multiplicity(structure, protocol_settings):
     """ Compute the total multiplicity of the structure,
@@ -154,3 +172,18 @@ def resize_unit_cell(struct, resize):
     """Resize the StructureData according to the resize Dict"""
     resize_tuple = tuple([resize[x] for x in ['nx', 'ny', 'nz']])
     return StructureData(ase=struct.get_ase().repeat(resize_tuple))
+
+@calcfunction
+def aiida_structure_merge(aiida_structure_a, aiida_structure_b):
+    """Merge the coordinates of two StructureData into a sigle one. Note: the two unit cells must be the same."""
+    import ase
+    ase_a = aiida_structure_a.get_ase()
+    ase_b = aiida_structure_b.get_ase()
+    if not (ase_a.cell == ase_b.cell).all():
+        raise ValueError('Attempting to merge two StructureData with different unit cells.')
+    ase_ab = ase.Atoms(  #Maybe there is a more direct way...
+        symbols=list(ase_a.symbols) + list(ase_b.symbols),
+        cell=ase_a.cell,
+        positions=list(ase_a.positions) + list(ase_b.positions),
+        pbc=True)
+    return StructureData(ase=ase_ab)

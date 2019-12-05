@@ -6,43 +6,39 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Run simple DFT calculation"""
+"""Run simple DFT calculation."""
 
 from __future__ import print_function
 from __future__ import absolute_import
 
 import os
 import sys
-import ase.build
 import click
+
+import ase.io
 
 from aiida.engine import run
 from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
 
 
 def example_dft(cp2k_code):
-    """Run simple DFT calculation"""
+    """Run simple DFT calculation."""
 
     print("Testing CP2K ENERGY on H2O (DFT)...")
 
-    pwd = os.path.dirname(os.path.realpath(__file__))
+    thisdir = os.path.dirname(os.path.realpath(__file__))
 
-    # structure
-    atoms = ase.build.molecule('H2O')
-    atoms.center(vacuum=2.0)
-    structure = StructureData(ase=atoms)
+    # Structure.
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
 
-    # basis set
-    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+    # Basis set.
+    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
 
-    # pseudopotentials
-    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
+    # Pseudopotentials.
+    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
 
-    # parameters
+    # Parameters.
     parameters = Dict(
         dict={
             'FORCE_EVAL': {
@@ -87,8 +83,8 @@ def example_dft(cp2k_code):
             }
         })
 
-    # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    # Construct process builder.
+    builder = cp2k_code.get_builder()
     builder.structure = structure
     builder.parameters = parameters
     builder.code = cp2k_code
@@ -109,7 +105,7 @@ def example_dft(cp2k_code):
 @click.command('cli')
 @click.argument('codelabel')
 def cli(codelabel):
-    """Click interface"""
+    """Click interface."""
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:

@@ -6,7 +6,7 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Run DFT calculation with structure specified in the input file"""
+"""Run DFT calculation with structure specified in the input file."""
 
 from __future__ import print_function
 from __future__ import absolute_import
@@ -18,25 +18,22 @@ import click
 from aiida.orm import (Code, Dict, SinglefileData)
 from aiida.engine import run
 from aiida.common import NotExistent
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
 
 
 def example_no_struct(cp2k_code):
-    """Run DFT calculation with structure specified in the input file"""
+    """Run DFT calculation with structure specified in the input file."""
 
     print("Testing CP2K ENERGY on H2 (DFT) without StructureData...")
 
-    pwd = os.path.dirname(os.path.realpath(__file__))
+    thisdir = os.path.dirname(os.path.realpath(__file__))
 
-    # basis set
-    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+    # Basis set.
+    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
 
-    # pseudopotentials
-    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
+    # Pseudopotentials.
+    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
 
-    # parameters
+    # Parameters.
     parameters = Dict(
         dict={
             'FORCE_EVAL': {
@@ -88,8 +85,8 @@ def example_no_struct(cp2k_code):
             }
         })
 
-    # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    # Construct process builder.
+    builder = cp2k_code.get_builder()
     builder.parameters = parameters
     builder.code = cp2k_code
     builder.file = {
@@ -105,7 +102,7 @@ def example_no_struct(cp2k_code):
     print("submitted calculation...")
     calc = run(builder)
 
-    # check energy
+    # Check energy.
     expected_energy = -1.14005678487
     if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
         print("OK, energy has the expected value")

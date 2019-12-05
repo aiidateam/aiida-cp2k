@@ -7,30 +7,31 @@
 
 FROM aiidateam/aiida-docker-stack
 
-# Install cp2k
-RUN apt-get update && apt-get install -y --no-install-recommends  \
-    cp2k
-
-# Set HOME variable:
+# Set HOME and PATH variables:
 ENV HOME="/home/aiida"
+ENV PATH="${HOME}/.local/bin:${PATH}"
 
-# Install aiida-cp2k
+# Install cp2k
+RUN apt-get update && apt-get install -y --no-install-recommends cp2k
+
+# Copy local aiida-cp2k folder and change permissions
 COPY . ${HOME}/code/aiida-cp2k
 RUN chown -R aiida:aiida ${HOME}/code
 
-# Install AiiDA
+# Now do everything as the aiida user
 USER aiida
-ENV PATH="${HOME}/.local/bin:${PATH}"
+
+# Set the plugin folder as the workdir
+WORKDIR ${HOME}/code/aiida-cp2k
 
 # Install aiida-cp2k plugin and coveralls
-WORKDIR ${HOME}/code/aiida-cp2k
 RUN pip install --user .[pre-commit,test]
 RUN pip install --user coveralls
 
 # Populate reentry cache for aiida user https://pypi.python.org/pypi/reentry/
 RUN reentry scan
 
-# Install the cp2k code
+# Install the CP2K code to AiiDA
 COPY .docker/opt/add-codes.sh /opt/
 COPY .docker/my_init.d/add-codes.sh /etc/my_init.d/40_add-codes.sh
 

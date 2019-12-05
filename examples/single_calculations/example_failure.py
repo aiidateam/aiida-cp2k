@@ -15,11 +15,7 @@ import click
 
 from aiida.orm import (Code, Dict)
 from aiida.common import NotExistent
-from aiida.engine import run
-from aiida.common.exceptions import OutputParsingError
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
+from aiida.engine import run_get_node
 
 
 def example_failure(cp2k_code):
@@ -33,7 +29,7 @@ def example_failure(cp2k_code):
     print("Submitted calculation...")
 
     # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    builder = cp2k_code.get_builder()
     builder.parameters = parameters
     builder.code = cp2k_code
     builder.metadata.options.resources = {
@@ -42,13 +38,13 @@ def example_failure(cp2k_code):
     }
     builder.metadata.options.max_wallclock_seconds = 1 * 2 * 60
 
-    try:
-        run(builder)
-        print("ERROR!")
-        print("CP2K failure was not recognized")
-        sys.exit(3)
-    except OutputParsingError:
+    _, calc = run_get_node(builder)
+    if not calc.is_finished_ok:
         print("CP2K failure correctly recognized")
+        return
+
+    print("ERROR!\nCP2K failure was not recognized")
+    sys.exit(3)
 
 
 @click.command('cli')

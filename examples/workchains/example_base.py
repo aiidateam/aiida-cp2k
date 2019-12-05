@@ -13,8 +13,9 @@ from __future__ import absolute_import
 
 import os
 import sys
-import ase.build
 import click
+
+import ase.io
 
 from aiida.engine import run
 from aiida.orm import (Code, Dict, SinglefileData, StructureData)
@@ -27,27 +28,25 @@ Cp2kBaseWorkChain = WorkflowFactory('cp2k.base')
 def example_base(cp2k_code):
     """Run simple DFT calculation through a workchain"""
 
-    pwd = os.path.dirname(os.path.realpath(__file__))
+    thisdir = os.path.dirname(os.path.realpath(__file__))
 
     print("Testing CP2K ENERGY on H2O (DFT) through a workchain...")
 
     # basis set
-    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
 
     # pseudopotentials
-    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
+    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
 
     # structure
-    atoms = ase.build.molecule('H2O')
-    atoms.center(vacuum=5.0)
-    structure = StructureData(ase=atoms)
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
 
     # parameters
     parameters = Dict(
         dict={
             'GLOBAL': {
                 'RUN_TYPE': 'GEO_OPT',
-                'WALLTIME': '00:00:30',  # too short
+                'WALLTIME': '00:30:30',  # too short
             },
             'FORCE_EVAL': {
                 'METHOD': 'Quickstep',
@@ -66,12 +65,8 @@ def example_base(cp2k_code):
                     },
                     'XC': {
                         'XC_FUNCTIONAL': {
-                            '_': 'LDA',
+                            '_': 'PBE',
                         },
-                    },
-                    'POISSON': {
-                        'PERIODIC': 'none',
-                        'PSOLVER': 'MT',
                     },
                 },
                 'SUBSYS': {
@@ -79,12 +74,12 @@ def example_base(cp2k_code):
                         {
                             '_': 'O',
                             'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                            'POTENTIAL': 'GTH-LDA-q6'
+                            'POTENTIAL': 'GTH-PBE-q6'
                         },
                         {
                             '_': 'H',
                             'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                            'POTENTIAL': 'GTH-LDA-q1'
+                            'POTENTIAL': 'GTH-PBE-q1'
                         },
                     ],
                 },

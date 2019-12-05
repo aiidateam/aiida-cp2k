@@ -46,7 +46,7 @@
             "coverage"
     ],
     "pre-commit":[
-            "pre-commit==1.17.0",
+            "pre-commit==1.18.3",
             "yapf==0.28.0",
             "prospector==1.1.7",
             "pylint==1.9.4; python_version<'3.0'",

@@ -12,15 +12,13 @@ from __future__ import absolute_import
 
 import os
 import sys
-import ase.build
+
+import ase.io
 import click
 
 from aiida.orm import (Code, Dict, SinglefileData)
 from aiida.engine import run
 from aiida.common import NotExistent
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
 
 
 def example_mm(cp2k_code):
@@ -51,8 +49,10 @@ def example_mm(cp2k_code):
 
     water_pot = SinglefileData(file=os.path.join("/tmp", "water.pot"))  # pylint: disable=no-value-for-parameter
 
+    thisdir = os.path.dirname(os.path.realpath(__file__))
+
     # structure using pdb format, because it also carries topology information
-    atoms = ase.build.molecule('H2O')
+    atoms = ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz'))
     atoms.center(vacuum=10.0)
     atoms.write(os.path.join("/tmp", "coords.pdb"), format="proteindatabank")
     coords_pdb = SinglefileData(file=os.path.join("/tmp", "coords.pdb"))
@@ -104,7 +104,7 @@ def example_mm(cp2k_code):
     settings = Dict(dict={'additional_retrieve_list': ["runtime.callgraph"]})
 
     # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    builder = cp2k_code.get_builder()
     builder.parameters = parameters
     builder.settings = settings
     builder.code = cp2k_code

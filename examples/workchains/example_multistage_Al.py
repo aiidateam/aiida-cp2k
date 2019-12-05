@@ -8,7 +8,8 @@ from __future__ import absolute_import
 import os
 import sys
 import click
-import ase.build
+
+import ase.io
 
 from aiida.engine import run
 from aiida.orm import Code, Dict, StructureData, Str, Int

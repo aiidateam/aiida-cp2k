@@ -12,34 +12,30 @@ from __future__ import absolute_import
 
 import os
 import sys
+
+import ase.io
 import click
-import ase.build
 
 from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.engine import run
 from aiida.common import NotExistent
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
 
 
 def example_geopt(cp2k_code):
     """Run DFT geometry optimization"""
 
-    print("Testing CP2K GEO_OPT on H2 (DFT)...")
+    print("Testing CP2K GEO_OPT on H2O (DFT)...")
 
-    pwd = os.path.dirname(os.path.realpath(__file__))
+    thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # structure
-    atoms = ase.build.molecule('H2')
-    atoms.center(vacuum=2.0)
-    structure = StructureData(ase=atoms)
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
 
     # basis set
-    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
 
     # pseudopotentials
-    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
+    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
 
     # parameters
     parameters = Dict(
@@ -64,7 +60,7 @@ def example_geopt(cp2k_code):
                     },
                     'XC': {
                         'XC_FUNCTIONAL': {
-                            '_': 'LDA',
+                            '_': 'PBE',
                         },
                     },
                     'POISSON': {
@@ -77,12 +73,12 @@ def example_geopt(cp2k_code):
                         {
                             '_': 'O',
                             'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                            'POTENTIAL': 'GTH-LDA-q6'
+                            'POTENTIAL': 'GTH-PBE-q6'
                         },
                         {
                             '_': 'H',
                             'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                            'POTENTIAL': 'GTH-LDA-q1'
+                            'POTENTIAL': 'GTH-PBE-q1'
                         },
                     ],
                 },
@@ -90,7 +86,7 @@ def example_geopt(cp2k_code):
         })
 
     # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    builder = cp2k_code.get_builder()
     builder.structure = structure
     builder.parameters = parameters
     builder.code = cp2k_code

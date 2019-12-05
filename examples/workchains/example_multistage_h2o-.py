@@ -5,9 +5,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 import sys
 import click
-import ase.build
+
+import ase.io
 
 from aiida.engine import run
 from aiida.orm import Code, Dict, StructureData, Float, Str
@@ -26,9 +28,8 @@ def example_multistage_h2o_minus(cp2k_code):
     print(" > protocol modification")
     print(" > cp2k calc modification")
 
-    atoms = ase.build.molecule('H2O')
-    atoms.center(vacuum=2.0)
-    structure = StructureData(ase=atoms)
+    thisdir = os.path.dirname(os.path.abspath(__file__))
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
 
     protocol_mod = Dict(dict={'settings_0': {'FORCE_EVAL': {'DFT': {'MGRID': {'CUTOFF': 300,}}}}})
     parameters = Dict(dict={'FORCE_EVAL': {

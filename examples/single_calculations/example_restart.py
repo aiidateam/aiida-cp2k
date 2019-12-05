@@ -16,14 +16,11 @@ import sys
 from copy import deepcopy
 import click
 
-import ase.build
+import ase.io
 
 from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.engine import run
 from aiida.common import NotExistent
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
 
 
 def example_restart(cp2k_code):
@@ -31,18 +28,16 @@ def example_restart(cp2k_code):
 
     print("Testing CP2K restart...")
 
-    pwd = os.path.dirname(os.path.realpath(__file__))
+    thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # structure
-    atoms1 = ase.build.molecule('H2O')
-    atoms1.center(vacuum=2.0)
-    structure1 = StructureData(ase=atoms1)
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
 
     # basis set
-    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
 
     # pseudopotentials
-    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
+    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
 
     # CP2K input
     params1 = Dict(
@@ -108,10 +103,10 @@ def example_restart(cp2k_code):
 
     # ------------------------------------------------------------------------------
     # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    builder = cp2k_code.get_builder()
 
     # Set up the first calculation
-    builder.structure = structure1
+    builder.structure = structure
     builder.parameters = params1
     builder.code = cp2k_code
     builder.file = {
@@ -147,8 +142,7 @@ def example_restart(cp2k_code):
     params2 = Dict(dict=params2)
 
     # structure
-    atoms2 = ase.build.molecule('H2O')
-    atoms2.center(vacuum=2.0)
+    atoms2 = ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz'))
     atoms2.positions *= 0.0  # place all atoms at origin -> nuclear fusion :-)
     structure2 = StructureData(ase=atoms2)
 

@@ -13,15 +13,13 @@ from __future__ import absolute_import
 
 import os
 import sys
-import ase
 import click
+
+import ase
 
 from aiida.engine import run
 from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
 
 
 def example_multiple_force_eval(cp2k_code):
@@ -29,7 +27,7 @@ def example_multiple_force_eval(cp2k_code):
 
     print("Testing CP2K ENERGY on H2O dimer (Mixed: DFT+MM)...")
 
-    pwd = os.path.dirname(os.path.realpath(__file__))
+    thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # structure
     pos = [[0.934, 2.445, 1.844], [1.882, 2.227, 1.982], [0.81, 3.165, 2.479], [3.59, 2.048, 2.436],
@@ -39,10 +37,10 @@ def example_multiple_force_eval(cp2k_code):
     structure = StructureData(ase=atoms)
 
     # basis set
-    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
 
     # pseudopotentials
-    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
+    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
 
     # parameters
     parameters = Dict(
@@ -191,7 +189,7 @@ def example_multiple_force_eval(cp2k_code):
         })
 
     # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    builder = cp2k_code.get_builder()
     builder.structure = structure
     builder.parameters = parameters
     builder.code = cp2k_code

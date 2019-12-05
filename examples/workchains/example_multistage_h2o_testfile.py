@@ -8,7 +8,8 @@ from __future__ import absolute_import
 import os
 import sys
 import click
-import ase.build
+
+import ase.io
 
 from aiida.engine import run
 from aiida.orm import Code, StructureData, SinglefileData
@@ -24,11 +25,8 @@ def example_multistage_h2o_testfile(cp2k_code):
     print("Testing CP2K multistage workchain on H2O")
     print(">>> Loading a custom protocol from file testfile.yaml")
 
-    atoms = ase.build.molecule('H2O')
-    atoms.center(vacuum=2.0)
-    structure = StructureData(ase=atoms)
-
     thisdir = os.path.dirname(os.path.abspath(__file__))
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
 
     # Construct process builder
     builder = Cp2kMultistageWorkChain.get_builder()

@@ -18,9 +18,6 @@ import click
 from aiida.orm import (Code, Dict, SinglefileData)
 from aiida.engine import run
 from aiida.common import NotExistent
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
 
 
 def example_no_struct(cp2k_code):
@@ -28,13 +25,13 @@ def example_no_struct(cp2k_code):
 
     print("Testing CP2K ENERGY on H2 (DFT) without StructureData...")
 
-    pwd = os.path.dirname(os.path.realpath(__file__))
+    thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # basis set
-    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
 
     # pseudopotentials
-    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
+    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
 
     # parameters
     parameters = Dict(
@@ -89,7 +86,7 @@ def example_no_struct(cp2k_code):
         })
 
     # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    builder = cp2k_code.get_builder()
     builder.parameters = parameters
     builder.code = cp2k_code
     builder.file = {

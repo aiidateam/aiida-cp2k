@@ -13,8 +13,9 @@ from __future__ import absolute_import
 
 import os
 import sys
-import ase.build
 import click
+
+import ase.io
 
 from aiida.engine import run
 from aiida.orm import (Code, Dict, SinglefileData, StructureData)
@@ -26,18 +27,16 @@ def example_dft(cp2k_code):
 
     print("Testing CP2K ENERGY on H2O (DFT)...")
 
-    pwd = os.path.dirname(os.path.realpath(__file__))
+    thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # structure
-    atoms = ase.build.molecule('H2O')
-    atoms.center(vacuum=2.0)
-    structure = StructureData(ase=atoms)
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
 
     # basis set
-    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
 
     # pseudopotentials
-    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
+    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
 
     # parameters
     parameters = Dict(

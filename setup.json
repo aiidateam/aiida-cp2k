@@ -30,7 +30,8 @@
         ],
         "aiida.workflows": [
             "cp2k.base = aiida_cp2k.workchains:Cp2kBaseWorkChain",
-            "cp2k.multistage= aiida_cp2k.workchains:Cp2kMultistageWorkChain"
+            "cp2k.multistage = aiida_cp2k.workchains:Cp2kMultistageWorkChain",
+            "cp2k.bands = aiida_cp2k.workchains:Cp2kBandsWorkChain"
         ]
     },
     "setup_requires": ["reentry"],

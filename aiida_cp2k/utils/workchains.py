@@ -13,6 +13,40 @@ from aiida.orm import Dict, StructureData
 
 HARTREE2EV = 27.211399
 
+val_elec = {
+    "H": 1,
+    "He": 2,
+    "Li": 3,
+    "Be": 4,
+    "B": 3,
+    "C": 4,
+    "N": 5,
+    "O": 6,
+    "F": 7,
+    "Ne": 8,
+    "Na": 9,
+    "Mg": 2,
+    "Al": 3,
+    "Si": 4,
+    "P": 5,
+    "S": 6,
+    "Cl": 7,
+    "Ar": 8,
+    "K": 9,
+    "Ca": 10,
+    "Sc": 11,
+    "Ti": 12,
+    "V": 13,
+    "Cr": 14,
+    "Mn": 15,
+    "Fe": 16,
+    "Co": 17,
+    "Ni": 18,
+    "Cu": 19,
+    "Zn": 12,
+    "Zr": 12,
+}
+
 
 def merge_dict(dct, merge_dct):
     """ Taken from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
@@ -154,3 +188,46 @@ def resize_unit_cell(struct, resize):
     """Resize the StructureData according to the resize Dict"""
     resize_tuple = tuple([resize[x] for x in ['nx', 'ny', 'nz']])
     return StructureData(ase=struct.get_ase().repeat(resize_tuple))
+
+
+def add_condband(structure):
+    total = 0
+    for s in structure.get_ase().get_chemical_symbols():
+        total += val_elec[s]
+    added_mos = total // 10  # 20% of conduction band
+    if added_mos == 0:
+        added_mos = 1
+    return added_mos
+
+
+def update_input_dict_for_bands_calc(input_dict, seekpath, structure):
+    """Insert kpoint path into the input dictonary of CP2K."""
+
+    i_dict = input_dict.get_dict()
+
+    path = seekpath.dict['path']
+    coords = seekpath.dict['point_coords']
+
+    kpath = []
+    for p in path:
+        p1 = p[0] + ' ' + " ".join(str(x) for x in coords[p[0]])
+        p2 = p[1] + ' ' + " ".join(str(x) for x in coords[p[1]])
+        kpath.append({'_': "", 'UNITS': 'B_VECTOR', 'NPOINTS': 10, 'SPECIAL_POINT': [p1, p2]})
+
+    kpath_dict = {'FORCE_EVAL': {'DFT': {'PRINT': {'BAND_STRUCTURE': {'KPOINT_SET': kpath}}}}}
+    merge_dict(i_dict, kpath_dict)
+
+    added_mos = {'FORCE_EVAL': {'DFT': {'SCF': {'ADDED_MOS': add_condband(structure)}}}}
+    merge_dict(i_dict, added_mos)
+
+    return Dict(dict=i_dict)
+
+
+@calcfunction
+def seekpath_structure_analysis(structure, parameters):
+    """This calcfunction will take a structure and pass it through SeeKpath to get the
+    primitive cell and the path of high symmetry k-points through its Brillouin zone.
+    Note that the returned primitive cell may differ from the original structure in
+    which case the k-points are only congruent with the primitive cell."""
+    from aiida.tools import get_kpoints_path
+    return get_kpoints_path(structure, **parameters.get_dict())

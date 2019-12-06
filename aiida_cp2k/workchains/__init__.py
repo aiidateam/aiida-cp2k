@@ -9,3 +9,4 @@
 
 from .base import Cp2kBaseWorkChain
 from .multistage import Cp2kMultistageWorkChain
+from .bands import Cp2kBandsWorkChain

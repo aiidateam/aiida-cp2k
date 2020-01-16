@@ -45,6 +45,8 @@ def parse_cp2k_output(fobj):
 
 def parse_cp2k_output_bsse(fobj):
     """Parse CP2K BSSE output into a dictionary (tested with PRINT_LEVEL MEDIUM)."""
+    from aiida_cp2k.utils import HARTREE2KJMOL
+
     lines = fobj.readlines()
 
     result_dict = {
@@ -71,6 +73,19 @@ def parse_cp2k_output_bsse(fobj):
             if r"  Total energy:" in line:
                 result_dict["energy_list"].append(float(line.split()[-1]))
                 read_energy = False
+
+    result_dict["energy"] = result_dict["energy_list"][4]
+    result_dict["energy_units"] = "a.u."
+    result_dict["binding_energy_raw"] = (result_dict["energy_list"][4] - result_dict["energy_list"][0] -
+                                         result_dict["energy_list"][1]) * HARTREE2KJMOL
+    result_dict["binding_energy_corr"] = (result_dict["energy_list"][4] - result_dict["energy_list"][2] -
+                                          result_dict["energy_list"][3]) * HARTREE2KJMOL
+    result_dict["binding_energy_bsse"] = result_dict["binding_energy_raw"] - result_dict["binding_energy_corr"]
+    result_dict["binding_energy_unit"] = "kJ/mol"
+    if result_dict["energy_dispersion_list"]:
+        result_dict["binding_energy_dispersion"] = (result_dict["energy_dispersion_list"][4] -
+                                                    result_dict["energy_dispersion_list"][0] -
+                                                    result_dict["energy_dispersion_list"][1]) * HARTREE2KJMOL
 
     return result_dict
 

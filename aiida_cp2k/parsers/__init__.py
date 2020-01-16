@@ -86,7 +86,7 @@ class Cp2kBsseParser(Cp2kBaseParser):
     def _parse_stdout(self, out_folder):
         """BSSE CP2K output file parser"""
 
-        from aiida_cp2k.utils import parse_cp2k_output_bsse, HARTREE2KJMOL
+        from aiida_cp2k.utils import parse_cp2k_output_bsse
 
         # pylint: disable=protected-access
 
@@ -102,19 +102,6 @@ class Cp2kBsseParser(Cp2kBaseParser):
         # if it is not there, CP2K didn't finish properly
         if 'nwarnings' not in result_dict:
             raise OutputParsingError("CP2K did not finish properly.")
-
-        result_dict["energy"] = result_dict["energy_list"][4]
-        result_dict["energy_units"] = "a.u."
-        result_dict["binding_energy_raw"] = (result_dict["energy_list"][4] - result_dict["energy_list"][0] -
-                                             result_dict["energy_list"][1]) * HARTREE2KJMOL
-        result_dict["binding_energy_corr"] = (result_dict["energy_list"][4] - result_dict["energy_list"][2] -
-                                              result_dict["energy_list"][3]) * HARTREE2KJMOL
-        result_dict["binding_energy_bsse"] = result_dict["binding_energy_raw"] - result_dict["binding_energy_corr"]
-        result_dict["binding_energy_unit"] = "kJ/mol"
-        if result_dict["energy_dispersion_list"]:
-            result_dict["binding_energy_dispersion"] = (result_dict["energy_dispersion_list"][4] -
-                                                        result_dict["energy_dispersion_list"][0] -
-                                                        result_dict["energy_dispersion_list"][1]) * HARTREE2KJMOL
 
         self.out("output_parameters", Dict(dict=result_dict))
 

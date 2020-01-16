@@ -12,6 +12,7 @@ from aiida.engine import calcfunction
 from aiida.orm import Dict, StructureData
 
 HARTREE2EV = 27.211399
+HARTREE2KJMOL = 2625.500
 
 
 def merge_dict(dct, merge_dct):

@@ -165,9 +165,6 @@ def example_restart(cp2k_code):
     if abs(calc2['output_parameters'].dict.energy - expected_energy) < 1e-10:
         print("OK, energy has the expected value")
 
-    # if restart wfn is not found it will create a warning
-    assert calc2['output_parameters'].dict.nwarnings == 1
-
     # ensure that this warning originates from overwritting coordinates
     output = calc2['retrieved']._repository.get_object_content('aiida.out')  # pylint: disable=protected-access
     assert re.search("WARNING .* :: Overwriting coordinates", output)

@@ -121,9 +121,6 @@ def example_mm(cp2k_code):
     print("Submitted calculation...")
     calc = run(builder)
 
-    # check warnings
-    assert calc['output_parameters'].dict.nwarnings == 0
-
     # check energy
     expected_energy = 0.146927412614e-3
     if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:

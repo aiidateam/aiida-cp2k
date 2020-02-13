@@ -22,40 +22,46 @@ from aiida.plugins import CalculationFactory
 Cp2kCalculation = CalculationFactory('cp2k')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
+def example_failure(cp2k_code):
     """Run failing calculation"""
-    try:
-        code = Code.get_from_string(codelabel)
-    except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
-        sys.exit(1)
 
     print("Testing CP2K failure...")
 
     # a broken CP2K input
     parameters = Dict(dict={'GLOBAL': {'FOO_BAR_QUUX': 42}})
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 2 * 60,
-    }
 
     print("Submitted calculation...")
-    inputs = {'parameters': parameters, 'code': code, 'metadata': {'options': options,}}
+
+    # Construct process builder
+    builder = Cp2kCalculation.get_builder()
+    builder.parameters = parameters
+    builder.code = cp2k_code
+    builder.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
+    }
+    builder.metadata.options.max_wallclock_seconds = 1 * 2 * 60
+
     try:
-        run(Cp2kCalculation, **inputs)
+        run(builder)
         print("ERROR!")
         print("CP2K failure was not recognized")
         sys.exit(3)
     except OutputParsingError:
         print("CP2K failure correctly recognized")
 
-    sys.exit(0)
+
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_failure(code)
 
 
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

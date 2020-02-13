@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/aiidateam/aiida-cp2k.svg?branch=develop)](https://travis-ci.org/aiidateam/aiida-cp2k)
+[![Coverage Status](https://coveralls.io/repos/github/aiidateam/aiida-cp2k/badge.svg?branch=develop)](https://coveralls.io/github/aiidateam/aiida-cp2k?branch=develop)
+[![PyPI version](https://badge.fury.io/py/aiida-cp2k.svg)](https://badge.fury.io/py/aiida-cp2k)
+
 # AiiDA CP2K
 **The CP2K plugin for the AiiDA workflow and provenance engine.**
 
@@ -93,3 +97,14 @@ git clone https://github.com/cp2k/aiida-cp2k
 docker build -t aiida_cp2k_test aiida-cp2k
 docker run -it --init aiida_cp2k_test
 ```
+
+
+## Acknowledgements
+This work is supported by:
+* the [MARVEL National Centre for Competency in Research](http://nccr-marvel.ch) funded by the [Swiss National Science Foundation](http://www.snf.ch/en);
+* the [MaX European Centre of Excellence](http://www.max-centre.eu/) funded by the Horizon 2020 EINFRA-5 program, Grant No. 676598;
+* the [swissuniversities P-5 project "Materials Cloud"](https://www.materialscloud.org/swissuniversities).
+
+<img src="miscellaneous/logos/MARVEL.png" alt="MARVEL" style="padding:10px;" width="150"/>
+<img src="miscellaneous/logos/MaX.png" alt="MaX" style="padding:10px;" width="250"/>
+<img src="miscellaneous/logos/swissuniversities.png" alt="swissuniversities" style="padding:10px;" width="250"/>

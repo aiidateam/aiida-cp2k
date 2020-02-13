@@ -10,6 +10,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 import re
 import sys
 from copy import deepcopy
@@ -17,7 +18,7 @@ import click
 
 import ase.build
 
-from aiida.orm import (Code, Dict, StructureData)
+from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.engine import run
 from aiida.common import NotExistent
 from aiida.plugins import CalculationFactory
@@ -25,22 +26,23 @@ from aiida.plugins import CalculationFactory
 Cp2kCalculation = CalculationFactory('cp2k')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
+def example_restart(cp2k_code):
     """Test CP2K restart"""
-    try:
-        code = Code.get_from_string(codelabel)
-    except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
-        sys.exit(1)
 
     print("Testing CP2K restart...")
+
+    pwd = os.path.dirname(os.path.realpath(__file__))
 
     # structure
     atoms1 = ase.build.molecule('H2O')
     atoms1.center(vacuum=2.0)
     structure1 = StructureData(ase=atoms1)
+
+    # basis set
+    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+
+    # pseudopotentials
+    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
 
     # CP2K input
     params1 = Dict(
@@ -59,6 +61,7 @@ def main(codelabel):
                 'METHOD': 'Quickstep',
                 'DFT': {
                     'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+                    'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
                     'QS': {
                         'EPS_DEFAULT': 1.0e-12,
                         'WF_INTERPOLATION': 'ps',
@@ -104,19 +107,25 @@ def main(codelabel):
         })
 
     # ------------------------------------------------------------------------------
-    # Set up the first calculation
+    # Construct process builder
+    builder = Cp2kCalculation.get_builder()
 
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 2 * 60,
+    # Set up the first calculation
+    builder.structure = structure1
+    builder.parameters = params1
+    builder.code = cp2k_code
+    builder.file = {
+        'basis': basis_file,
+        'pseudo': pseudo_file,
     }
-    inputs = {'structure': structure1, 'parameters': params1, 'code': code, 'metadata': {'options': options,}}
+    builder.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
+    }
+    builder.metadata.options.max_wallclock_seconds = 1 * 2 * 60
 
     print("submitted calculation 1:")
-    calc1 = run(Cp2kCalculation, **inputs)
+    calc1 = run(builder)
 
     # check walltime exceeded
     assert calc1['output_parameters'].dict.exceeded_walltime is True
@@ -143,32 +152,35 @@ def main(codelabel):
     atoms2.positions *= 0.0  # place all atoms at origin -> nuclear fusion :-)
     structure2 = StructureData(ase=atoms2)
 
-    inputs2 = {
-        'structure': structure2,
-        'parameters': params2,
-        'code': code,
-        'parent_calc_folder': calc1['remote_folder'],
-        'metadata': {
-            'options': options,
-        }
-    }
+    # Update the process builder.
+    builder.structure = structure2
+    builder.parameters = params2
+    builder.parent_calc_folder = calc1['remote_folder']
+
     print("submitted calculation 2")
-    calc2 = run(Cp2kCalculation, **inputs2)
+    calc2 = run(builder)
 
     # check energy
     expected_energy = -17.1566455959
     if abs(calc2['output_parameters'].dict.energy - expected_energy) < 1e-10:
         print("OK, energy has the expected value")
 
-    # if restart wfn is not found it will create a warning
-    assert calc2['output_parameters'].dict.nwarnings == 1
-
     # ensure that this warning originates from overwritting coordinates
     output = calc2['retrieved']._repository.get_object_content('aiida.out')  # pylint: disable=protected-access
     assert re.search("WARNING .* :: Overwriting coordinates", output)
 
-    sys.exit(0)
+
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_restart(code)
 
 
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

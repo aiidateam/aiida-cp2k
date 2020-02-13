@@ -11,29 +11,25 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 import sys
 import ase.build
 import click
 
 from aiida.engine import run
-from aiida.orm import (Code, Dict, StructureData)
+from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
 from aiida.plugins import CalculationFactory
 
 Cp2kCalculation = CalculationFactory('cp2k')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
+def example_dft_atomic_kinds(cp2k_code):
     """Run DFT calculation with different atomic kinds"""
-    try:
-        code = Code.get_from_string(codelabel)
-    except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
-        sys.exit(1)
 
     print("Testing CP2K GEOP_OPT on Si with different atomic kinds (DFT)...")
+
+    pwd = os.path.dirname(os.path.realpath(__file__))
 
     # structure
     pos = [[0., 0., 0.], [1.90598, 1.10041807, 0.77811308]]
@@ -42,6 +38,12 @@ def main(codelabel):
     atoms = ase.Atoms(symbols='Si2', pbc=True, cell=cell, positions=pos, tags=tags)
     structure = StructureData(ase=atoms)
 
+    # basis set
+    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+
+    # pseudopotentials
+    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
+
     # parameters
     parameters = Dict(
         dict={
@@ -49,6 +51,7 @@ def main(codelabel):
                 'METHOD': 'Quickstep',
                 'DFT': {
                     'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+                    'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
                     'QS': {
                         'EPS_DEFAULT': 1.0e-12,
                         'WF_INTERPOLATION': 'ps',
@@ -101,18 +104,36 @@ def main(codelabel):
             }
         })
 
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,
+    # Construct process builder
+    builder = Cp2kCalculation.get_builder()
+    builder.structure = structure
+    builder.parameters = parameters
+    builder.code = cp2k_code
+    builder.file = {
+        'basis': basis_file,
+        'pseudo': pseudo_file,
     }
-    inputs = {'structure': structure, 'parameters': parameters, 'code': code, 'metadata': {'options': options,}}
+    builder.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
+    }
+    builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")
-    run(Cp2kCalculation, **inputs)
+    run(builder)
+
+
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_dft_atomic_kinds(code)
 
 
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

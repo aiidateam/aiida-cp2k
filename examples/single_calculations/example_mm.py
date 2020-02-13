@@ -10,6 +10,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 import sys
 import ase.build
 import click
@@ -22,20 +23,13 @@ from aiida.plugins import CalculationFactory
 Cp2kCalculation = CalculationFactory('cp2k')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
+def example_mm(cp2k_code):
     """Run molecular mechanics calculation"""
-    try:
-        code = Code.get_from_string(codelabel)
-    except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
-        sys.exit(1)
 
     print("Testing CP2K ENERGY on H2O (MM) ...")
 
     # force field
-    with open("/tmp/water.pot", "w") as f:
+    with open(os.path.join("/tmp", "water.pot"), "w") as f:
         f.write("""BONDS
     H    H       0.000     1.5139
     O    H     450.000     0.9572
@@ -55,13 +49,13 @@ def main(codelabel):
 
     END""")
 
-    water_pot = SinglefileData(file="/tmp/water.pot")  # pylint: disable=no-value-for-parameter
+    water_pot = SinglefileData(file=os.path.join("/tmp", "water.pot"))  # pylint: disable=no-value-for-parameter
 
     # structure using pdb format, because it also carries topology information
     atoms = ase.build.molecule('H2O')
     atoms.center(vacuum=10.0)
-    atoms.write("/tmp/coords.pdb", format="proteindatabank")
-    coords_pdb = SinglefileData(file="/tmp/coords.pdb")  # pylint: disable=no-value-for-parameter
+    atoms.write(os.path.join("/tmp", "coords.pdb"), format="proteindatabank")
+    coords_pdb = SinglefileData(file=os.path.join("/tmp", "coords.pdb"))
 
     # parameters
     # based on cp2k/tests/Fist/regtest-1-1/water_1.inp
@@ -109,34 +103,23 @@ def main(codelabel):
     # settings
     settings = Dict(dict={'additional_retrieve_list': ["runtime.callgraph"]})
 
-    # resources
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,  # 3 minutes
+    # Construct process builder
+    builder = Cp2kCalculation.get_builder()
+    builder.parameters = parameters
+    builder.settings = settings
+    builder.code = cp2k_code
+    builder.file = {
+        'water_pot': water_pot,
+        'coords_pdb': coords_pdb,
     }
-
-    # collect all inputs
-    inputs = {
-        'parameters': parameters,
-        'settings': settings,
-        'code': code,
-        'file': {
-            'water_pot': water_pot,
-            'coords_pdb': coords_pdb,
-        },
-        'metadata': {
-            'options': options,
-        }
+    builder.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
     }
+    builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")
-    calc = run(Cp2kCalculation, **inputs)
-
-    # check warnings
-    assert calc['output_parameters'].dict.nwarnings == 0
+    calc = run(builder)
 
     # check energy
     expected_energy = 0.146927412614e-3
@@ -156,8 +139,18 @@ def main(codelabel):
         print("Callgraph file was not retrieved.")
         sys.exit(3)
 
-    sys.exit(0)
+
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_mm(code)
 
 
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

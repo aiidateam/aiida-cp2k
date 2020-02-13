@@ -11,10 +11,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 import sys
 import click
 
-from aiida.orm import (Code, Dict)
+from aiida.orm import (Code, Dict, SinglefileData)
 from aiida.engine import run
 from aiida.common import NotExistent
 from aiida.plugins import CalculationFactory
@@ -22,17 +23,18 @@ from aiida.plugins import CalculationFactory
 Cp2kCalculation = CalculationFactory('cp2k')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
+def example_no_struct(cp2k_code):
     """Run DFT calculation with structure specified in the input file"""
-    try:
-        code = Code.get_from_string(codelabel)
-    except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
-        sys.exit(1)
 
     print("Testing CP2K ENERGY on H2 (DFT) without StructureData...")
+
+    pwd = os.path.dirname(os.path.realpath(__file__))
+
+    # basis set
+    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+
+    # pseudopotentials
+    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
 
     # parameters
     parameters = Dict(
@@ -41,6 +43,7 @@ def main(codelabel):
                 'METHOD': 'Quickstep',
                 'DFT': {
                     'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+                    'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
                     'QS': {
                         'EPS_DEFAULT': 1.0e-12,
                         'WF_INTERPOLATION': 'ps',
@@ -85,19 +88,22 @@ def main(codelabel):
             }
         })
 
-    # resources
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,
+    # Construct process builder
+    builder = Cp2kCalculation.get_builder()
+    builder.parameters = parameters
+    builder.code = cp2k_code
+    builder.file = {
+        'basis': basis_file,
+        'pseudo': pseudo_file,
     }
-
-    inputs = {'parameters': parameters, 'code': code, 'metadata': {'options': options,}}
+    builder.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
+    }
+    builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("submitted calculation...")
-    calc = run(Cp2kCalculation, **inputs)
+    calc = run(builder)
 
     # check energy
     expected_energy = -1.14005678487
@@ -109,8 +115,18 @@ def main(codelabel):
         print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
         sys.exit(3)
 
-    sys.exit(0)
+
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_no_struct(code)
 
 
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

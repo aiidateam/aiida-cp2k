@@ -11,30 +11,26 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 import sys
 import click
 import numpy as np
 from ase.atoms import Atoms
 
 from aiida.engine import run
-from aiida.orm import (Code, Dict, StructureData)
+from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
 from aiida.plugins import CalculationFactory
 
 Cp2kCalculation = CalculationFactory('cp2k')
 
 
-@click.command('cli')
-@click.argument('codelabel')
-def main(codelabel):
+def example_bands(cp2k_code):
     """Run simple Band Structure calculation"""
-    try:
-        code = Code.get_from_string(codelabel)
-    except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
-        sys.exit(1)
 
     print("Computing Band Structure of Si...")
+
+    pwd = os.path.dirname(os.path.realpath(__file__))
 
     # structure
     positions = [
@@ -48,6 +44,12 @@ def main(codelabel):
     ]
     atoms = Atoms('Si2', positions=positions, cell=cell)
     structure = StructureData(ase=atoms)
+
+    # basis set
+    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+
+    # pseudopotentials
+    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
 
     # parameters
     parameters = Dict(
@@ -168,7 +170,7 @@ def main(codelabel):
                         {
                             '_': 'Si',
                             'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                            'POTENTIAL': 'GTH-PBE-q4'
+                            'POTENTIAL': 'GTH-LDA-q4'
                         },
                     ]
                 },
@@ -184,16 +186,23 @@ def main(codelabel):
             }
         })
 
-    options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 3 * 60,
+    # Construct process builder
+    builder = Cp2kCalculation.get_builder()
+    builder.structure = structure
+    builder.parameters = parameters
+    builder.code = cp2k_code
+    builder.file = {
+        'basis': basis_file,
+        'pseudo': pseudo_file,
     }
-    inputs = {'structure': structure, 'parameters': parameters, 'code': code, 'metadata': {'options': options,}}
+    builder.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
+    }
+    builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
+
     print("submitted calculation...")
-    calc = run(Cp2kCalculation, **inputs)
+    calc = run(builder)
 
     bands = calc['output_bands']
 
@@ -221,5 +230,17 @@ def main(codelabel):
     sys.exit(0)
 
 
+@click.command('cli')
+@click.argument('codelabel')
+def cli(codelabel):
+    """Click interface"""
+    try:
+        code = Code.get_from_string(codelabel)
+    except NotExistent:
+        print("The code '{}' does not exist".format(codelabel))
+        sys.exit(1)
+    example_bands(code)
+
+
 if __name__ == '__main__':
-    main()  # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

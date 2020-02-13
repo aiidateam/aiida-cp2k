@@ -12,6 +12,7 @@ from aiida.engine import calcfunction
 from aiida.orm import Dict, StructureData
 
 HARTREE2EV = 27.211399
+HARTREE2KJMOL = 2625.500
 
 
 def merge_dict(dct, merge_dct):
@@ -97,7 +98,7 @@ def check_resize_unit_cell(struct, threshold):  #pylint: disable=too-many-locals
     """Returns the multiplication factors for the cell vectors to respect, in every direction:
     min(perpendicular_width) > threshold.
     """
-    from math import cos, sin, sqrt, pi, fabs, ceil  #pylint: disable=unused-import
+    from math import cos, sin, sqrt, fabs, ceil
     import numpy as np
 
     # Parsing structure's cell

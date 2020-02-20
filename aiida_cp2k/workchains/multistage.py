@@ -108,7 +108,7 @@ class Cp2kMultistageWorkChain(WorkChain):
         spec.input('structure', valid_type=StructureData, required=False, help='Input structure')
         spec.input('protocol_tag',
                    valid_type=Str,
-                   default=Str('standard'),
+                   default=lambda: Str('standard'),
                    required=False,
                    help='The tag of the protocol to be read from {tag}.yaml unless protocol_yaml input is specified')
         spec.input('protocol_yaml',
@@ -117,17 +117,17 @@ class Cp2kMultistageWorkChain(WorkChain):
                    help='Specify a custom yaml file with the multistage settings (and ignore protocol_tag)')
         spec.input('protocol_modify',
                    valid_type=Dict,
-                   default=Dict(dict={}),
+                   default=lambda: Dict(dict={}),
                    required=False,
                    help='Specify custom settings that overvrite the yaml settings')
         spec.input('starting_settings_idx',
                    valid_type=Int,
-                   default=Int(0),
+                   default=lambda: Int(0),
                    required=False,
                    help='If idx>0 is chosen, jumps directly to overwrite settings_0 with settings_{idx}')
         spec.input('min_cell_size',
                    valid_type=Float,
-                   default=Float(0.0),
+                   default=lambda: Float(0.0),
                    required=False,
                    help='To avoid using k-points, extend the cell so that min(perp_width)>min_cell_size')
         spec.input('parent_calc_folder',

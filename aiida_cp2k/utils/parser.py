@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=cyclic-import
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #

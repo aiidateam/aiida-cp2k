@@ -7,40 +7,25 @@
 
 FROM aiidateam/aiida-docker-stack
 
-# Set HOME variable:
+# Set HOME and PATH variables.
 ENV HOME="/home/aiida"
 ENV PATH="${HOME}/.local/bin:${PATH}"
 
+# To prevent the container to exit prematurely.
+ENV KILL_ALL_RPOCESSES_TIMEOUT=50
+
+WORKDIR /opt/
 
 # Install CP2K.
 RUN apt-get update && apt-get install -y --no-install-recommends cp2k
 
-# Install aiida-cp2k.
-COPY . ${HOME}/code/aiida-cp2k
-RUN chown -R aiida:aiida ${HOME}/code
+# Install aiida-cp2k plugin.
+COPY . aiida-cp2k
+RUN pip install ./aiida-cp2k[pre-commit,test]
 
-# Now do everything as the aiida user.
-USER aiida
-
-# Set the plugin folder as the workdir.
-WORKDIR ${HOME}/code/aiida-cp2k
-
-# Install aiida-cp2k plugin and coveralls
-RUN pip install --user .[pre-commit,test]
-RUN pip install --user coveralls
-
-# Populate reentry cache for aiida user https://pypi.python.org/pypi/reentry/.
-RUN reentry scan
+# Install coverals.
+RUN pip install coveralls
 
 # Install the cp2k code.
 COPY .docker/opt/add-codes.sh /opt/
 COPY .docker/my_init.d/add-codes.sh /etc/my_init.d/40_add-codes.sh
-
-# Change workdir back to $HOME.
-WORKDIR ${HOME}
-
-# Important to end as user root!
-USER root
-
-# Use baseimage-docker's init system.
-CMD ["/sbin/my_init"]

@@ -29,3 +29,5 @@ RUN pip install coveralls
 # Install the cp2k code.
 COPY .docker/opt/add-codes.sh /opt/
 COPY .docker/my_init.d/add-codes.sh /etc/my_init.d/40_add-codes.sh
+
+RUN chown -R aiida:aiida ${HOME}

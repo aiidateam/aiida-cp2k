@@ -10,7 +10,6 @@ from __future__ import absolute_import
 
 from .input_generator import Cp2kInput
 from .parser import parse_cp2k_output
-from .parser import parse_cp2k_output_bsse
 from .parser import parse_cp2k_output_advanced
 from .parser import parse_cp2k_trajectory
 from .workchains import merge_dict

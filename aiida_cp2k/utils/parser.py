@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=cyclic-import
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""AiiDA-CP2K input plugin"""
+"""AiiDA-CP2K input plugin."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -15,85 +14,29 @@ import re
 import math
 
 
-def parse_cp2k_output(fobj):
-    """Parse CP2K output into a dictionary"""
-    lines = fobj.readlines()
+def parse_cp2k_output(fstring):
+    """Parse CP2K output into a dictionary."""
+    lines = fstring.splitlines()
 
     result_dict = {"exceeded_walltime": False}
 
-    for i_line, line in enumerate(lines):
+    for line in lines:
         if line.startswith(" ENERGY| "):
             result_dict["energy"] = float(line.split()[8])
             result_dict["energy_units"] = "a.u."
-        elif "The number of warnings for this run is" in line:
-            result_dict["nwarnings"] = int(line.split()[-1])
-        elif "exceeded requested execution time" in line:
-            result_dict["exceeded_walltime"] = True
-        elif "KPOINTS| Band Structure Calculation" in line:
-            kpoints, labels, bands = _parse_bands(lines, i_line)
-            result_dict["kpoint_data"] = {
-                "kpoints": kpoints,
-                "labels": labels,
-                "bands": bands,
-                "bands_unit": "eV",
-            }
-        else:
-            # ignore all other lines
-            pass
-
-    return result_dict
-
-
-def parse_cp2k_output_bsse(fobj):
-    """Parse CP2K BSSE output into a dictionary (tested with PRINT_LEVEL MEDIUM)."""
-    from aiida_cp2k.utils import HARTREE2KJMOL
-
-    lines = fobj.readlines()
-
-    result_dict = {
-        "exceeded_walltime": False,
-        "energy_description_list": [
-            "Energy of A with basis set A", "Energy of B with basis set B", "Energy of A with basis set of A+B",
-            "Energy of B with basis set of A+B", "Energy of A+B with basis set of A+B"
-        ],
-        "energy_list": [],
-        "energy_dispersion_list": []
-    }
-
-    read_energy = False
-    for line in lines:
         if "The number of warnings for this run is" in line:
             result_dict["nwarnings"] = int(line.split()[-1])
         if "exceeded requested execution time" in line:
             result_dict["exceeded_walltime"] = True
-        if "SCF run converged in" in line:
-            read_energy = True
-        if read_energy:
-            if r"Dispersion energy:" in line:
-                result_dict["energy_dispersion_list"].append(float(line.split()[-1]))
-            if r"  Total energy:" in line:
-                result_dict["energy_list"].append(float(line.split()[-1]))
-                read_energy = False
-
-    result_dict["energy"] = result_dict["energy_list"][4]
-    result_dict["energy_units"] = "a.u."
-    result_dict["binding_energy_raw"] = (result_dict["energy_list"][4] - result_dict["energy_list"][0] -
-                                         result_dict["energy_list"][1]) * HARTREE2KJMOL
-    result_dict["binding_energy_corr"] = (result_dict["energy_list"][4] - result_dict["energy_list"][2] -
-                                          result_dict["energy_list"][3]) * HARTREE2KJMOL
-    result_dict["binding_energy_bsse"] = result_dict["binding_energy_raw"] - result_dict["binding_energy_corr"]
-    result_dict["binding_energy_unit"] = "kJ/mol"
-    if result_dict["energy_dispersion_list"]:
-        result_dict["binding_energy_dispersion"] = (result_dict["energy_dispersion_list"][4] -
-                                                    result_dict["energy_dispersion_list"][0] -
-                                                    result_dict["energy_dispersion_list"][1]) * HARTREE2KJMOL
+        if "ABORT" in line:
+            result_dict["aborted"] = True
 
     return result_dict
 
 
-def parse_cp2k_output_advanced(fobj):  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
-    """Parse CP2K output into a dictionary (ADVANCED: more info parsed @ PRINT_LEVEL MEDIUM)"""
-    lines = fobj.readlines()
+def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
+    """Parse CP2K output into a dictionary (ADVANCED: more info parsed @ PRINT_LEVEL MEDIUM)."""
+    lines = fstring.splitlines()
 
     result_dict = {"exceeded_walltime": False}
     result_dict['warnings'] = []
@@ -110,6 +53,8 @@ def parse_cp2k_output_advanced(fobj):  # pylint: disable=too-many-locals, too-ma
             result_dict['nwarnings'] = int(line.split()[-1])
         if 'exceeded requested execution time' in line:
             result_dict['exceeded_walltime'] = True
+        if "ABORT" in line:
+            result_dict["aborted"] = True
         if "KPOINTS| Band Structure Calculation" in line:
             kpoints, labels, bands = _parse_bands(lines, i_line)
             result_dict["kpoint_data"] = {
@@ -366,14 +311,12 @@ def _parse_bands(lines, n_start):
     return np.array(kpoints), labels, np.array(bands)
 
 
-def parse_cp2k_trajectory(fobj):
-    """CP2K trajectory parser"""
+def parse_cp2k_trajectory(content):
+    """CP2K trajectory parser."""
 
     import numpy as np
 
     # pylint: disable=protected-access
-
-    content = fobj.read()
 
     # parse coordinate section
     match = re.search(r'\n\s*&COORD\n(.*?)\n\s*&END COORD\n', content, re.DOTALL)

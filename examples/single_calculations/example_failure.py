@@ -15,8 +15,7 @@ import click
 
 from aiida.orm import (Code, Dict)
 from aiida.common import NotExistent
-from aiida.engine import run
-from aiida.common.exceptions import OutputParsingError
+from aiida.engine import run_get_node
 from aiida.plugins import CalculationFactory
 
 Cp2kCalculation = CalculationFactory('cp2k')
@@ -42,13 +41,14 @@ def example_failure(cp2k_code):
     }
     builder.metadata.options.max_wallclock_seconds = 1 * 2 * 60
 
-    try:
-        run(builder)
+    _, calc_node = run_get_node(builder)
+
+    if calc_node.exit_status == 304:
+        print("CP2K failure correctly recognized")
+    else:
         print("ERROR!")
         print("CP2K failure was not recognized")
         sys.exit(3)
-    except OutputParsingError:
-        print("CP2K failure correctly recognized")
 
 
 @click.command('cli')

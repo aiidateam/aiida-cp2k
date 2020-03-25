@@ -26,7 +26,6 @@
         ],
         "aiida.parsers": [
             "cp2k_base_parser = aiida_cp2k.parsers:Cp2kBaseParser",
-            "cp2k_bsse_parser = aiida_cp2k.parsers:Cp2kBsseParser",
             "cp2k_advanced_parser = aiida_cp2k.parsers:Cp2kAdvancedParser"
         ],
         "aiida.workflows": [

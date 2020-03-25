@@ -30,7 +30,7 @@ def example_dft(cp2k_code):
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # Structure.
-    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', "files", 'h2o.xyz')))
 
     # Basis set.
     basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
@@ -109,7 +109,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print("The code '{}' does not exist.".format(codelabel))
         sys.exit(1)
     example_dft(code)
 

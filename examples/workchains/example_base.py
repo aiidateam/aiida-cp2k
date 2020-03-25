@@ -38,7 +38,7 @@ def example_base(cp2k_code):
     pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
 
     # Structure.
-    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, "..", "files", "h2o.xyz")))
 
     # Parameters.
     parameters = Dict(

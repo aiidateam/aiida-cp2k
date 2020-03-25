@@ -134,7 +134,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print("The code '{}' does not exist.".format(codelabel))
         sys.exit(1)
     example_precision(code)
 

@@ -41,10 +41,10 @@ def example_failure(cp2k_code):
     _, calc_node = run_get_node(builder)
 
     if calc_node.exit_status == 304:
-        print("CP2K failure correctly recognized")
+        print("CP2K failure correctly recognized.")
     else:
         print("ERROR!")
-        print("CP2K failure was not recognized")
+        print("CP2K failure was not recognized.")
         sys.exit(3)
 
 
@@ -55,7 +55,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print("The code '{}' does not exist.".format(codelabel))
         sys.exit(1)
     example_failure(code)
 

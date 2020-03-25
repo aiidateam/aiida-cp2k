@@ -6,7 +6,7 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Run DFT geometry optimization"""
+"""Run DFT geometry optimization."""
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -29,7 +29,7 @@ def example_geopt(cp2k_code):
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # Structure.
-    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', "files", 'h2o.xyz')))
 
     # Basis set.
     basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
@@ -109,7 +109,7 @@ def example_geopt(cp2k_code):
     # Check energy.
     expected_energy = -1.14009973178
     if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
-        print("OK, energy has the expected value")
+        print("OK, energy has the expected value.")
     else:
         print("ERROR!")
         print("Expected energy value: {}".format(expected_energy))
@@ -120,7 +120,7 @@ def example_geopt(cp2k_code):
     expected_dist = 0.736103879818
     dist = calc['output_structure'].get_ase().get_distance(0, 1)
     if abs(dist - expected_dist) < 1e-7:
-        print("OK, H-H distance has the expected value")
+        print("OK, H-H distance has the expected value.")
     else:
         print("ERROR!")
         print("Expected dist value: {}".format(expected_dist))
@@ -135,7 +135,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print("The code '{}' does not exist.".format(codelabel))
         sys.exit(1)
     example_geopt(code)
 

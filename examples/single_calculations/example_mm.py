@@ -52,7 +52,7 @@ def example_mm(cp2k_code):
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # structure using pdb format, because it also carries topology information
-    atoms = ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz'))
+    atoms = ase.io.read(os.path.join(thisdir, '..', 'files', 'h2o.xyz'))
     atoms.center(vacuum=10.0)
     atoms.write(os.path.join("/tmp", "coords.pdb"), format="proteindatabank")
     coords_pdb = SinglefileData(file=os.path.join("/tmp", "coords.pdb"))
@@ -100,7 +100,7 @@ def example_mm(cp2k_code):
             }
         })
 
-    # settings
+    # Settings.
     settings = Dict(dict={'additional_retrieve_list': ["runtime.callgraph"]})
 
     # Construct process builder.
@@ -124,16 +124,16 @@ def example_mm(cp2k_code):
     # Check energy.
     expected_energy = 0.146927412614e-3
     if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
-        print("OK, energy has the expected value")
+        print("OK, energy has the expected value.")
     else:
         print("ERROR!")
         print("Expected energy value: {}".format(expected_energy))
         print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
         sys.exit(3)
 
-    # check if callgraph is there
+    # Check if callgraph is there.
     if "runtime.callgraph" in calc['retrieved']._repository.list_object_names():  # pylint: disable=protected-access
-        print("OK, callgraph file was retrived")
+        print("OK, callgraph file was retrived.")
     else:
         print("ERROR!")
         print("Callgraph file was not retrieved.")
@@ -147,7 +147,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print("The code '{}' does not exist.".format(codelabel))
         sys.exit(1)
     example_mm(code)
 

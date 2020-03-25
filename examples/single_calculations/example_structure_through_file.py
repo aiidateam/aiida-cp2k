@@ -31,7 +31,7 @@ def example_structure_through_file(cp2k_code):
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # structure
-    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, "..", "files", "h2o.xyz")))
 
     # basis set
     basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))

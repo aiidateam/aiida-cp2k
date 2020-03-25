@@ -99,13 +99,13 @@ def example_no_struct(cp2k_code):
     }
     builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
-    print("submitted calculation...")
+    print("Submitted calculation...")
     calc = run(builder)
 
     # Check energy.
     expected_energy = -1.14005678487
     if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
-        print("OK, energy has the expected value")
+        print("OK, energy has the expected value.")
     else:
         print("ERROR!")
         print("Expected energy value: {}".format(expected_energy))
@@ -116,11 +116,11 @@ def example_no_struct(cp2k_code):
 @click.command('cli')
 @click.argument('codelabel')
 def cli(codelabel):
-    """Click interface"""
+    """Click interface."""
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print("The code '{}' does not exist.".format(codelabel))
         sys.exit(1)
     example_no_struct(code)
 

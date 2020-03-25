@@ -31,7 +31,7 @@ def example_restart(cp2k_code):
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # Structure.
-    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz')))
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'files', 'h2o.xyz')))
 
     # Basis set.
     basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
@@ -105,7 +105,7 @@ def example_restart(cp2k_code):
     # Construct process builder.
     builder = cp2k_code.get_builder()
 
-    # Set up the first calculation
+    # Set up the first calculation.
     builder.structure = structure
     builder.parameters = params1
     builder.code = cp2k_code
@@ -142,7 +142,7 @@ def example_restart(cp2k_code):
     params2 = Dict(dict=params2)
 
     # Structure.
-    atoms2 = ase.io.read(os.path.join(thisdir, '..', 'data', 'h2o.xyz'))
+    atoms2 = ase.io.read(os.path.join(thisdir, '..', 'files', 'h2o.xyz'))
     atoms2.positions *= 0.0  # place all atoms at origin -> nuclear fusion :-)
     structure2 = StructureData(ase=atoms2)
 
@@ -154,13 +154,13 @@ def example_restart(cp2k_code):
     print("Submitted calculation 2.")
     calc2 = run(builder)
 
-    # check energy
+    # Check energy.
     expected_energy = -17.1566455959
     if abs(calc2['output_parameters'].dict.energy - expected_energy) < 1e-10:
-        print("OK, energy has the expected value")
+        print("OK, energy has the expected value.")
 
-    # ensure that this warning originates from overwritting coordinates
-    output = calc2['retrieved']._repository.get_object_content('aiida.out')  # pylint: disable=protected-access
+    # Ensure that this warning originates from overwritting coordinates.
+    output = calc2['retrieved'].get_object_content('aiida.out')
     assert re.search("WARNING .* :: Overwriting coordinates", output)
 
 
@@ -171,7 +171,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print("The code '{}' does not exist.".format(codelabel))
         sys.exit(1)
     example_restart(code)
 

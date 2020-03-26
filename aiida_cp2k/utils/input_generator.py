@@ -41,14 +41,18 @@ class Cp2kInput:  # pylint: disable=old-style-class
         Add a value for the given keyword.
 
         Args:
+
             kwpath: Can be a single keyword, a path with `/` as divider for sections & key,
-                    or a sequence with sections and key
+                    or a sequence with sections and key.
+
             value: the value to set the given key to
+
             override: whether to override the key if it is already present in the self._params
+
             conflicting_keys: list of keys that cannot live together with the provided key
-                              (SOMETHING1/[..]/SOMETHING2/KEY). In case override is True, all conflicting keys will
-                              be removed, if override is False and conflicting_keys are present the new key won't be
-                              added.
+            (SOMETHING1/[..]/SOMETHING2/KEY). In case override is True, all conflicting keys will
+            be removed, if override is False and conflicting_keys are present the new key won't be
+            added.
         """
 
         if isinstance(kwpath, six.string_types):
@@ -101,35 +105,34 @@ class Cp2kInput:  # pylint: disable=old-style-class
 
     @staticmethod
     def _render_section(output, params, indent=0):
-        """
-        It takes a dictionary and recurses through.
+        """It takes a dictionary and recurses through.
 
-        For key-value pair it checks whether the value is a dictionary
-        and prepends the key with & (CP2K section)
-        It passes the valued to the same function, increasing the indentation
-        If the value is a list, I assume that this is something the user
-        wants to store repetitively
+        For key-value pair it checks whether the value is a dictionary and prepends the key with & (CP2K section).
+        It passes the valued to the same function, increasing the indentation. If the value is a list, I assume
+        that this is something the user wants to store repetitively
         eg:
-            dict['KEY'] = ['val1', 'val2']
-            ===>
-            KEY val1
-            KEY val2
+        .. highlight::
 
-            or
+           dict['KEY'] = ['val1', 'val2']
+           ===>
+           KEY val1
+           KEY val2
 
-            dict['KIND'] = [{'_': 'Ba', 'ELEMENT':'Ba'},
-                            {'_': 'Ti', 'ELEMENT':'Ti'},
-                            {'_': 'O', 'ELEMENT':'O'}]
-            ====>
-                  &KIND Ba
-                     ELEMENT  Ba
-                  &END KIND
-                  &KIND Ti
-                     ELEMENT  Ti
-                  &END KIND
-                  &KIND O
-                     ELEMENT  O
-                  &END KIND
+           or
+
+           dict['KIND'] = [{'_': 'Ba', 'ELEMENT':'Ba'},
+                           {'_': 'Ti', 'ELEMENT':'Ti'},
+                           {'_': 'O', 'ELEMENT':'O'}]
+           ====>
+                 &KIND Ba
+                    ELEMENT  Ba
+                 &END KIND
+                 &KIND Ti
+                    ELEMENT  Ti
+                 &END KIND
+                 &KIND O
+                    ELEMENT  O
+                 &END KIND
         """
 
         for key, val in sorted(params.items()):

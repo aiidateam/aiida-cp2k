@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends cp2k
 
 # Install aiida-cp2k plugin.
 COPY . aiida-cp2k
-RUN pip install ./aiida-cp2k[pre-commit,test]
+RUN pip install ./aiida-cp2k[pre-commit,test,docs]
 
 # Install coverals.
 RUN pip install coveralls

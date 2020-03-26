@@ -104,12 +104,12 @@ def example_no_struct(cp2k_code):
 
     # Check energy.
     expected_energy = -1.14005678487
-    if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
+    if abs(calc['output_parameters']['energy'] - expected_energy) < 1e-10:
         print("OK, energy has the expected value.")
     else:
         print("ERROR!")
         print("Expected energy value: {}".format(expected_energy))
-        print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
+        print("Actual energy value: {}".format(calc['output_parameters']['energy']))
         sys.exit(3)
 
 

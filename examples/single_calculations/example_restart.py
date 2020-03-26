@@ -123,8 +123,8 @@ def example_restart(cp2k_code):
     calc1 = run(builder)
 
     # Check walltime exceeded.
-    assert calc1['output_parameters'].dict.exceeded_walltime is True
-    assert calc1['output_parameters'].dict.energy is not None
+    assert calc1['output_parameters']['exceeded_walltime'] is True
+    assert calc1['output_parameters']['energy'] is not None
     assert 'output_structure' in calc1
     print("OK, walltime exceeded as expected.")
 
@@ -156,7 +156,7 @@ def example_restart(cp2k_code):
 
     # Check energy.
     expected_energy = -17.1566455959
-    if abs(calc2['output_parameters'].dict.energy - expected_energy) < 1e-10:
+    if abs(calc2['output_parameters']['energy'] - expected_energy) < 1e-10:
         print("OK, energy has the expected value.")
 
     # Ensure that this warning originates from overwritting coordinates.

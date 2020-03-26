@@ -123,12 +123,12 @@ def example_mm(cp2k_code):
 
     # Check energy.
     expected_energy = 0.146927412614e-3
-    if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
+    if abs(calc['output_parameters']['energy'] - expected_energy) < 1e-10:
         print("OK, energy has the expected value.")
     else:
         print("ERROR!")
         print("Expected energy value: {}".format(expected_energy))
-        print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
+        print("Actual energy value: {}".format(calc['output_parameters']['energy']))
         sys.exit(3)
 
     # Check if callgraph is there.

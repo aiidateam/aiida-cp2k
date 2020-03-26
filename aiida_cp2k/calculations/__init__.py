@@ -56,10 +56,13 @@ class Cp2kCalculation(CalcJob):
                    default=cls._DEFAULT_PARSER,
                    non_db=True)
 
+        # Add input_filename attribute.
+        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
+
         # Add output_filename attribute.
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
 
-        # Use mpi by default
+        # Use mpi by default.
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
 
         # Unrecoverable errors: resources like the retrieved folder or its expected contents are missing.

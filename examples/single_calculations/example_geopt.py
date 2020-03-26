@@ -29,7 +29,7 @@ def example_geopt(cp2k_code):
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # Structure.
-    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', "files", 'h2o.xyz')))
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', "files", 'h2.xyz')))
 
     # Basis set.
     basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
@@ -104,16 +104,16 @@ def example_geopt(cp2k_code):
     calc = run(builder)
 
     # Check walltime not exceeded.
-    assert calc['output_parameters'].dict.exceeded_walltime is False
+    assert calc['output_parameters']['exceeded_walltime'] is False
 
     # Check energy.
     expected_energy = -1.14009973178
-    if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
+    if abs(calc['output_parameters']['energy'] - expected_energy) < 1e-10:
         print("OK, energy has the expected value.")
     else:
         print("ERROR!")
         print("Expected energy value: {}".format(expected_energy))
-        print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
+        print("Actual energy value: {}".format(calc['output_parameters']['energy']))
         sys.exit(3)
 
     # Check geometry.

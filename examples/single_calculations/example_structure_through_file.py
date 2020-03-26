@@ -13,15 +13,14 @@ from __future__ import absolute_import
 
 import os
 import sys
-import ase.build
 import click
+from six.moves import range
+
+import ase.io
 
 from aiida.engine import run
 from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
 
 
 def example_structure_through_file(cp2k_code):
@@ -29,18 +28,16 @@ def example_structure_through_file(cp2k_code):
 
     print("Testing CP2K ENERGY on H2O (DFT). Water molecule is provided through a file input...")
 
-    pwd = os.path.dirname(os.path.realpath(__file__))
+    thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # structure
-    atoms = ase.build.molecule('H2O')
-    atoms.center(vacuum=2.0)
-    structure = StructureData(ase=atoms)
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, "..", "files", "h2o.xyz")))
 
     # basis set
-    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
 
     # pseudopotentials
-    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
+    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
 
     # parameters
     parameters = Dict(
@@ -76,7 +73,7 @@ def example_structure_through_file(cp2k_code):
                         'COORD_FILE_FORMAT': 'XYZ'
                     },
                     'CELL': {
-                        'ABC': '{:<15}  {:<15}  {:<15}'.format(*atoms.cell.diagonal()),
+                        'ABC': '{:<15}  {:<15}  {:<15}'.format(*[structure.cell[i][i] for i in range(3)]),
                     },
                     'KIND': [
                         {
@@ -95,7 +92,7 @@ def example_structure_through_file(cp2k_code):
         })
 
     # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    builder = cp2k_code.get_builder()
     builder.parameters = parameters
     builder.code = cp2k_code
     builder.file = {

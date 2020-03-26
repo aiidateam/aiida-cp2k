@@ -1,19 +1,17 @@
 {
-    "version": "1.0.0b6",
-    "name": "aiida_cp2k",
-    "url": "https://github.com/aiidateam/aiida-cp2k",
-    "license": "MIT License",
-    "author": "Ole Schütt, Edward Ditler, Aliaksandr Yakutovich, Patrick Seewald, Tiziano Müller, Andreas Glöss, Leonid Kahle",
-    "author_email": "ole.schuett@cp2k.org",
-    "description": "The CP2K plugin for the AiiDA workflow and provenance engine.",
+    "author": "The AiiDA team",
+    "author_email": "yakutovicha@gmail.com",
     "classifiers": [
+        "Development Status :: 5 - Production/Stable Copy.",
+        "Framework :: AiiDA",
         "License :: OSI Approved :: MIT License",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS :: MacOS X",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Framework :: AiiDA",
-        "Development Status :: 4 - Beta"
+        "Programming Language :: Python :: 3.7"
     ],
+    "description": "The official AiiDA plugin for CP2K.",
     "install_requires": [
         "aiida-core>=1.0.0,<1.1.0",
         "ase==3.17.0; python_version<'3.0'",
@@ -32,30 +30,29 @@
             "cp2k.base = aiida_cp2k.workchains:Cp2kBaseWorkChain"
         ]
     },
-    "setup_requires": ["reentry"],
-    "reentry_register": true,
-    "data_files": [
-        [".", ["setup.json"]]
-    ],
     "extras_require": {
-    "test": [
-        "pgtest==1.2.0",
-        "pytest>=4.4,<5.0.0",
-        "pytest-cov>=2.6.1,<3.0.0",
-        "coverage"
-    ],
-    "pre-commit":[
-        "pre-commit==1.18.3",
-        "yapf==0.28.0",
-        "prospector==1.1.7",
-        "pylint==1.9.4; python_version<'3.0'",
-        "pylint==2.3.1; python_version>='3.0'"
-    ],
-    "docs": [
-        "sphinx",
-        "sphinx-rtd-theme",
-        "sphinxcontrib-contentui",
-        "sphinxcontrib-details-directive; python_version>='3.0'"
-    ]
-    }
+    	"test": [
+    	    "pgtest==1.2.0",
+    	    "pytest>=4.4,<5.0.0",
+    	    "pytest-cov>=2.6.1,<3.0.0",
+    	    "coverage"
+    	],
+    	"pre-commit":[
+    	    "pre-commit==1.18.3",
+    	    "yapf==0.28.0",
+    	    "prospector==1.1.7",
+    	    "pylint==1.9.4; python_version<'3.0'",
+    	    "pylint==2.3.1; python_version>='3.0'"
+    	],
+    	"docs": [
+    	    "sphinx",
+    	    "sphinx-rtd-theme",
+    	    "sphinxcontrib-contentui",
+    	    "sphinxcontrib-details-directive; python_version>='3.0'"
+    	]
+    },
+    "license": "MIT License",
+    "name": "aiida_cp2k",
+    "url": "https://github.com/aiidateam/aiida-cp2k",
+    "version": "1.0.0"
 }

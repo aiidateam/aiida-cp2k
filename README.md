@@ -5,10 +5,10 @@
 # AiiDA CP2K
 [AiiDA](http://www.aiida.net/) plugin for [CP2K](https://www.cp2k.org/).
 
-# Documentation
+## Documentation
 The full documenation for this package can be found on [Read the Docs](https://aiida-cp2k.readthedocs.io/en/latest/)
 
-# Installation
+## Installation
 
 If you use `pip`, you can install it as: 
 ```
@@ -22,28 +22,28 @@ cd aiida-cp2k
 pip install -e .  # Also installs aiida, if missing (but not postgres/rabbitmq).
 ```
 
-# Examples
+## Examples
 See `examples` folder for complete examples of setting up a calculation or a work chain.
 
-## Simple calculation
+### Simple calculation
 ```shell
 cd examples/single_calculations
 verdi run example_dft.py <code_label>         # Submit example calculation.
 verdi process list -a -p1                     # Check status of calculation.
 ```
 
-## Work chain
+### Work chain
 ```shell
 cd examples/workchains
 verdi run example_base.py  <code_label>       # Submit test calculation.
 verdi process list -a -p1                     # Check status of the work chain.
 ```
 
-# License
+## License
 MIT
 
 
-# Contact
+## Contact
 yakutovicha@gmail.com
 
 

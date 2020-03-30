@@ -15,7 +15,7 @@
         "Development Status :: 4 - Beta"
     ],
     "install_requires": [
-        "aiida-core>=1.0.0,<2.0.0",
+        "aiida-core>=1.0.0,<1.1.0",
         "ase==3.17.0; python_version<'3.0'",
         "ase; python_version>='3.5'",
         "ruamel.yaml>=0.16.5"

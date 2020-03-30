@@ -4,8 +4,7 @@
 [![Documentation Status](https://readthedocs.org/projects/aiida-cp2k/badge/?version=latest)](https://aiida-cp2k.readthedocs.io/en/latest/?badge=latest)
 
 # AiiDA CP2K
-AiiDA plugin for CP2K.
-
+[AiiDA](http://www.aiida.net/) plugin for [CP2K](https://www.cp2k.org/).
 
 ## Installation
 

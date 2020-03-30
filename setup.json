@@ -2,7 +2,7 @@
     "author": "The AiiDA team",
     "author_email": "yakutovicha@gmail.com",
     "classifiers": [
-        "Development Status :: 5 - Production/Stable Copy.",
+        "Development Status :: 5 - Production/Stable",
         "Framework :: AiiDA",
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX :: Linux",

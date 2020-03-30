@@ -21,7 +21,7 @@ pip install -e .  # Also installs aiida, if missing (but not postgres/rabbitmq).
 ```
 
 ## Links
-* [Documentation](https://aiida-cp2k.readthedocs.io/en/latest/) for the examples, features of the plugin.
+* [Documentation](https://aiida-cp2k.readthedocs.io/en/latest/) for the calculation examples and features of the plugin.
 * [Make an issue](https://github.com/aiidateam/aiida-cp2k/issues/new) for bug reports, questions and suggestions.
 * [AiiDA](http://www.aiida.net/) to learn about AiiDA.
 * [Cp2k](https://www.cp2k.org/) to learn about CP2K.

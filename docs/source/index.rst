@@ -11,6 +11,8 @@ The aiida-cp2k plugin for `AiiDA`_
 .. toctree::
    :maxdepth: 1
 
+   features
+   examples
    workflows
 
 

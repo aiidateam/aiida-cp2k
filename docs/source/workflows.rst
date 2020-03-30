@@ -1,4 +1,4 @@
-workflows
+Workflows
 ---------
 
 .. aiida-workchain:: Cp2kBaseWorkChain

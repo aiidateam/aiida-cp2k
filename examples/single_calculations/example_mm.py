@@ -6,29 +6,27 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Run molecular mechanics calculation"""
+"""Run molecular mechanics calculation."""
 from __future__ import print_function
 from __future__ import absolute_import
 
 import os
 import sys
-import ase.build
+
+import ase.io
 import click
 
 from aiida.orm import (Code, Dict, SinglefileData)
 from aiida.engine import run
 from aiida.common import NotExistent
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
 
 
 def example_mm(cp2k_code):
-    """Run molecular mechanics calculation"""
+    """Run molecular mechanics calculation."""
 
     print("Testing CP2K ENERGY on H2O (MM) ...")
 
-    # force field
+    # Force field.
     with open(os.path.join("/tmp", "water.pot"), "w") as f:
         f.write("""BONDS
     H    H       0.000     1.5139
@@ -51,14 +49,16 @@ def example_mm(cp2k_code):
 
     water_pot = SinglefileData(file=os.path.join("/tmp", "water.pot"))  # pylint: disable=no-value-for-parameter
 
+    thisdir = os.path.dirname(os.path.realpath(__file__))
+
     # structure using pdb format, because it also carries topology information
-    atoms = ase.build.molecule('H2O')
+    atoms = ase.io.read(os.path.join(thisdir, '..', 'files', 'h2o.xyz'))
     atoms.center(vacuum=10.0)
     atoms.write(os.path.join("/tmp", "coords.pdb"), format="proteindatabank")
     coords_pdb = SinglefileData(file=os.path.join("/tmp", "coords.pdb"))
 
-    # parameters
-    # based on cp2k/tests/Fist/regtest-1-1/water_1.inp
+    # Parameters.
+    # Based on cp2k/tests/Fist/regtest-1-1/water_1.inp
     parameters = Dict(
         dict={
             'FORCE_EVAL': {
@@ -100,11 +100,11 @@ def example_mm(cp2k_code):
             }
         })
 
-    # settings
+    # Settings.
     settings = Dict(dict={'additional_retrieve_list': ["runtime.callgraph"]})
 
-    # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    # Construct process builder.
+    builder = cp2k_code.get_builder()
     builder.parameters = parameters
     builder.settings = settings
     builder.code = cp2k_code
@@ -121,19 +121,19 @@ def example_mm(cp2k_code):
     print("Submitted calculation...")
     calc = run(builder)
 
-    # check energy
+    # Check energy.
     expected_energy = 0.146927412614e-3
-    if abs(calc['output_parameters'].dict.energy - expected_energy) < 1e-10:
-        print("OK, energy has the expected value")
+    if abs(calc['output_parameters']['energy'] - expected_energy) < 1e-10:
+        print("OK, energy has the expected value.")
     else:
         print("ERROR!")
         print("Expected energy value: {}".format(expected_energy))
-        print("Actual energy value: {}".format(calc['output_parameters'].dict.energy))
+        print("Actual energy value: {}".format(calc['output_parameters']['energy']))
         sys.exit(3)
 
-    # check if callgraph is there
+    # Check if callgraph is there.
     if "runtime.callgraph" in calc['retrieved']._repository.list_object_names():  # pylint: disable=protected-access
-        print("OK, callgraph file was retrived")
+        print("OK, callgraph file was retrived.")
     else:
         print("ERROR!")
         print("Callgraph file was not retrieved.")
@@ -143,11 +143,11 @@ def example_mm(cp2k_code):
 @click.command('cli')
 @click.argument('codelabel')
 def cli(codelabel):
-    """Click interface"""
+    """Click interface."""
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print("The code '{}' does not exist.".format(codelabel))
         sys.exit(1)
     example_mm(code)
 

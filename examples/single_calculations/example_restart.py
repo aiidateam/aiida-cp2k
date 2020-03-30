@@ -6,7 +6,7 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Test CP2K restart"""
+"""Test CP2K restart."""
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -16,35 +16,30 @@ import sys
 from copy import deepcopy
 import click
 
-import ase.build
+import ase.io
 
 from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.engine import run
 from aiida.common import NotExistent
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
 
 
 def example_restart(cp2k_code):
-    """Test CP2K restart"""
+    """Test CP2K restart."""
 
     print("Testing CP2K restart...")
 
-    pwd = os.path.dirname(os.path.realpath(__file__))
+    thisdir = os.path.dirname(os.path.realpath(__file__))
 
-    # structure
-    atoms1 = ase.build.molecule('H2O')
-    atoms1.center(vacuum=2.0)
-    structure1 = StructureData(ase=atoms1)
+    # Structure.
+    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'files', 'h2o.xyz')))
 
-    # basis set
-    basis_file = SinglefileData(file=os.path.join(pwd, "..", "files", "BASIS_MOLOPT"))
+    # Basis set.
+    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
 
-    # pseudopotentials
-    pseudo_file = SinglefileData(file=os.path.join(pwd, "..", "files", "GTH_POTENTIALS"))
+    # Pseudopotentials.
+    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
 
-    # CP2K input
+    # CP2K input.
     params1 = Dict(
         dict={
             'GLOBAL': {
@@ -107,11 +102,11 @@ def example_restart(cp2k_code):
         })
 
     # ------------------------------------------------------------------------------
-    # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    # Construct process builder.
+    builder = cp2k_code.get_builder()
 
-    # Set up the first calculation
-    builder.structure = structure1
+    # Set up the first calculation.
+    builder.structure = structure
     builder.parameters = params1
     builder.code = cp2k_code
     builder.file = {
@@ -124,19 +119,19 @@ def example_restart(cp2k_code):
     }
     builder.metadata.options.max_wallclock_seconds = 1 * 2 * 60
 
-    print("submitted calculation 1:")
+    print("Submitted calculation 1.")
     calc1 = run(builder)
 
-    # check walltime exceeded
-    assert calc1['output_parameters'].dict.exceeded_walltime is True
-    assert calc1['output_parameters'].dict.energy is not None
+    # Check walltime exceeded.
+    assert calc1['output_parameters']['exceeded_walltime'] is True
+    assert calc1['output_parameters']['energy'] is not None
     assert 'output_structure' in calc1
-    print("OK, walltime exceeded as expected")
+    print("OK, walltime exceeded as expected.")
 
     # ------------------------------------------------------------------------------
-    # Set up and start the second calculation
+    # Set up and start the second calculation.
 
-    # parameters
+    # Parameters.
     params2 = deepcopy(params1.get_dict())
     del params2['GLOBAL']['WALLTIME']
     del params2['MOTION']['GEO_OPT']['MAX_FORCE']
@@ -146,9 +141,8 @@ def example_restart(cp2k_code):
     params2['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
     params2 = Dict(dict=params2)
 
-    # structure
-    atoms2 = ase.build.molecule('H2O')
-    atoms2.center(vacuum=2.0)
+    # Structure.
+    atoms2 = ase.io.read(os.path.join(thisdir, '..', 'files', 'h2o.xyz'))
     atoms2.positions *= 0.0  # place all atoms at origin -> nuclear fusion :-)
     structure2 = StructureData(ase=atoms2)
 
@@ -157,27 +151,27 @@ def example_restart(cp2k_code):
     builder.parameters = params2
     builder.parent_calc_folder = calc1['remote_folder']
 
-    print("submitted calculation 2")
+    print("Submitted calculation 2.")
     calc2 = run(builder)
 
-    # check energy
+    # Check energy.
     expected_energy = -17.1566455959
-    if abs(calc2['output_parameters'].dict.energy - expected_energy) < 1e-10:
-        print("OK, energy has the expected value")
+    if abs(calc2['output_parameters']['energy'] - expected_energy) < 1e-10:
+        print("OK, energy has the expected value.")
 
-    # ensure that this warning originates from overwritting coordinates
-    output = calc2['retrieved']._repository.get_object_content('aiida.out')  # pylint: disable=protected-access
+    # Ensure that this warning originates from overwritting coordinates.
+    output = calc2['retrieved'].get_object_content('aiida.out')
     assert re.search("WARNING .* :: Overwriting coordinates", output)
 
 
 @click.command('cli')
 @click.argument('codelabel')
 def cli(codelabel):
-    """Click interface"""
+    """Click interface."""
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print("The code '{}' does not exist.".format(codelabel))
         sys.exit(1)
     example_restart(code)
 

@@ -6,7 +6,7 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Run failing calculation"""
+"""Run failing calculation."""
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -15,15 +15,11 @@ import click
 
 from aiida.orm import (Code, Dict)
 from aiida.common import NotExistent
-from aiida.engine import run
-from aiida.common.exceptions import OutputParsingError
-from aiida.plugins import CalculationFactory
-
-Cp2kCalculation = CalculationFactory('cp2k')
+from aiida.engine import run_get_node
 
 
 def example_failure(cp2k_code):
-    """Run failing calculation"""
+    """Run failing calculation."""
 
     print("Testing CP2K failure...")
 
@@ -33,7 +29,7 @@ def example_failure(cp2k_code):
     print("Submitted calculation...")
 
     # Construct process builder
-    builder = Cp2kCalculation.get_builder()
+    builder = cp2k_code.get_builder()
     builder.parameters = parameters
     builder.code = cp2k_code
     builder.metadata.options.resources = {
@@ -42,23 +38,24 @@ def example_failure(cp2k_code):
     }
     builder.metadata.options.max_wallclock_seconds = 1 * 2 * 60
 
-    try:
-        run(builder)
+    _, calc_node = run_get_node(builder)
+
+    if calc_node.exit_status == 304:
+        print("CP2K failure correctly recognized.")
+    else:
         print("ERROR!")
-        print("CP2K failure was not recognized")
+        print("CP2K failure was not recognized.")
         sys.exit(3)
-    except OutputParsingError:
-        print("CP2K failure correctly recognized")
 
 
 @click.command('cli')
 @click.argument('codelabel')
 def cli(codelabel):
-    """Click interface"""
+    """Click interface."""
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print("The code '{}' does not exist.".format(codelabel))
         sys.exit(1)
     example_failure(code)
 

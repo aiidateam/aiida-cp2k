@@ -6,7 +6,6 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 """AiiDA-CP2K output parser."""
-from __future__ import absolute_import
 
 import io
 import os

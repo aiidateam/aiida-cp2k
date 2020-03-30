@@ -7,7 +7,6 @@
 ###############################################################################
 """AiiDA-CP2K utilities for workchains"""
 
-from __future__ import absolute_import
 from aiida.engine import calcfunction
 from aiida.orm import Dict, StructureData
 

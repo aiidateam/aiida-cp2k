@@ -6,7 +6,6 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 """AiiDA-CP2K utils"""
-from __future__ import absolute_import
 
 from .input_generator import Cp2kInput
 from .parser import parse_cp2k_output

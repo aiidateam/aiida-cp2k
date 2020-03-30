@@ -7,8 +7,6 @@
 ###############################################################################
 """AiiDA-CP2K input plugin."""
 
-from __future__ import absolute_import
-
 import io
 import six
 from six.moves import map

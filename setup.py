@@ -6,7 +6,6 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 """Setting up CP2K plugin for AiiDA"""
-from __future__ import absolute_import
 
 import json
 

@@ -7,8 +7,6 @@
 ###############################################################################
 """Test Cp2k input generator"""
 
-from __future__ import absolute_import
-
 import pytest
 
 from aiida_cp2k.utils import Cp2kInput

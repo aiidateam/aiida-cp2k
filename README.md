@@ -3,7 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/aiida-cp2k.svg)](https://badge.fury.io/py/aiida-cp2k)
 
 # AiiDA CP2K
-AiiDA plugin for [CP2K](https://www.cp2k.org/).
+AiiDA plugin for CP2K.
 
 
 ## Installation

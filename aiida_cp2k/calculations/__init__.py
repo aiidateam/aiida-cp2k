@@ -8,8 +8,6 @@
 """AiiDA-CP2K input plugin."""
 
 import io
-import six
-from six.moves import map
 
 from aiida.engine import CalcJob
 from aiida.orm import Computer, Dict, SinglefileData, StructureData, RemoteData, BandsData
@@ -49,16 +47,13 @@ class Cp2kCalculation(CalcJob):
                              dynamic=True)
 
         # Specify default parser.
-        spec.input('metadata.options.parser_name',
-                   valid_type=six.string_types,
-                   default=cls._DEFAULT_PARSER,
-                   non_db=True)
+        spec.input('metadata.options.parser_name', valid_type=str, default=cls._DEFAULT_PARSER, non_db=True)
 
         # Add input_filename attribute.
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
 
         # Add output_filename attribute.
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
 
         # Use mpi by default.
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
@@ -127,7 +122,7 @@ class Cp2kCalculation(CalcJob):
             try:
                 fobj.write(inp.render())
             except ValueError as exc:
-                six.raise_from(InputValidationError("invalid keys or values in input parameters found"), exc)
+                raise InputValidationError("Invalid keys or values in input parameters found") from exc
 
         settings = self.inputs.settings.get_dict() if 'settings' in self.inputs else {}
 

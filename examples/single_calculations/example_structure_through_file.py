@@ -11,7 +11,6 @@
 import os
 import sys
 import click
-from six.moves import range
 
 import ase.io
 

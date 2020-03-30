@@ -3,10 +3,8 @@
 [![PyPI version](https://badge.fury.io/py/aiida-cp2k.svg)](https://badge.fury.io/py/aiida-cp2k)
 
 # AiiDA CP2K
-[AiiDA](http://www.aiida.net/) plugin for [CP2K](https://www.cp2k.org/).
+AiiDA plugin for [CP2K](https://www.cp2k.org/).
 
-## Documentation
-The full documenation for this package can be found on [Read the Docs](https://aiida-cp2k.readthedocs.io/en/latest/)
 
 ## Installation
 
@@ -15,29 +13,19 @@ If you use `pip`, you can install it as:
 pip install aiida-cp2k
 ```
 
-If you want to install the plugin in an editable mode, run:
+To install the plugin in an editable mode, run:
 ```
 git clone https://github.com/aiidateam/aiida-cp2k
 cd aiida-cp2k
 pip install -e .  # Also installs aiida, if missing (but not postgres/rabbitmq).
 ```
 
-## Examples
-See `examples` folder for complete examples of setting up a calculation or a work chain.
+## Links
+[Documentation](https://aiida-cp2k.readthedocs.io/en/latest/) for the examples, features of the plugin.
+[Make an issue](https://github.com/aiidateam/aiida-cp2k/issues/new) for bug reports, questions and suggestions.
+[AiiDA](http://www.aiida.net/) to learn about AiiDA.
+[Cp2k](https://www.cp2k.org/) to learn about CP2K.
 
-### Simple calculation
-```shell
-cd examples/single_calculations
-verdi run example_dft.py <code_label>         # Submit example calculation.
-verdi process list -a -p1                     # Check status of calculation.
-```
-
-### Work chain
-```shell
-cd examples/workchains
-verdi run example_base.py  <code_label>       # Submit test calculation.
-verdi process list -a -p1                     # Check status of the work chain.
-```
 
 ## License
 MIT

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=inconsistent-return-statements,no-member
 """Base implementation of `WorkChain` class that implements a simple automated restart mechanism for calculations."""
-from __future__ import absolute_import
 
 from collections import namedtuple
 

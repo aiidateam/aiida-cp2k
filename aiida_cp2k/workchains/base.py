@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Base workchain to run a CP2K calculation"""
-from __future__ import absolute_import
 
 from aiida.common import AttributeDict
 from aiida.engine import while_

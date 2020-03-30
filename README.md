@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/aiidateam/aiida-cp2k.svg?branch=develop)](https://travis-ci.org/aiidateam/aiida-cp2k)
 [![Coverage Status](https://coveralls.io/repos/github/aiidateam/aiida-cp2k/badge.svg?branch=develop)](https://coveralls.io/github/aiidateam/aiida-cp2k?branch=develop)
 [![PyPI version](https://badge.fury.io/py/aiida-cp2k.svg)](https://badge.fury.io/py/aiida-cp2k)
+[![Documentation Status](https://readthedocs.org/projects/aiida-cp2k/badge/?version=latest)](https://aiida-cp2k.readthedocs.io/en/latest/?badge=latest)
 
 # AiiDA CP2K
 AiiDA plugin for CP2K.

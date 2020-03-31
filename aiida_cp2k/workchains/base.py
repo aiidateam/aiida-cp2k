@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Base workchain to run a CP2K calculation"""
+"""Base work chain to run a CP2K calculation."""
 
 from aiida.common import AttributeDict
 from aiida.engine import while_
 from aiida.plugins import CalculationFactory
 
-from aiida_cp2k.workchains.aiida_base_restart import BaseRestartWorkChain
+from aiida.engine import BaseRestartWorkChain
 
 Cp2kCalculation = CalculationFactory('cp2k')  # pylint: disable=invalid-name
 
@@ -13,7 +13,7 @@ Cp2kCalculation = CalculationFactory('cp2k')  # pylint: disable=invalid-name
 class Cp2kBaseWorkChain(BaseRestartWorkChain):
     """Workchain to run a CP2K calculation with automated error handling and restarts."""
 
-    _calculation_class = Cp2kCalculation
+    _process_class = Cp2kCalculation
 
     @classmethod
     def define(cls, spec):
@@ -23,9 +23,9 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
 
         spec.outline(
             cls.setup,
-            while_(cls.should_run_calculation)(
-                cls.run_calculation,
-                cls.inspect_calculation,
+            while_(cls.should_run_process)(
+                cls.run_process,
+                cls.inspect_process,
             ),
             cls.results,
         )

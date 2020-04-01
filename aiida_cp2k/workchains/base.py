@@ -47,7 +47,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
     def resubmit_unconverged_geometry(self, calc):
         """Resubmit a calculation it is not converged, but can be recovered."""
 
-        self.report("Entering the process handler.")
+        self.report("Checking the geometry convergence.")
 
         content_string = calc.outputs.retrieved.get_object_content(calc.get_attribute('output_filename'))
 
@@ -89,11 +89,13 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         if (time_not_exceeded not in content_string or
                 time_exceeded in content_string) and one_step_done not in content_string:
 
-            self.report("It seems that the restart of CP2K calculation wouldn't be able to fix the problem. "
-                             "Sending a signal to stop the Base work chain.")
+            self.report("It seems that the restart of CP2K calculation wouldn't be able to fix the problem as the "
+                        "geometry optimization couldn't complete a single step. Sending a signal to stop the Base "
+                        "work chain.")
 
             # Signaling to the base work chain that the problem could not be recovered.
             return ProcessHandlerReport(True, ExitCode(1))
 
+        self.report("The geometry seem to be converged.")
         # If everything is alright
         return None

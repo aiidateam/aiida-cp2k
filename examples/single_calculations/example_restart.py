@@ -42,7 +42,7 @@ def example_restart(cp2k_code):
         dict={
             'GLOBAL': {
                 'RUN_TYPE': 'GEO_OPT',
-                'WALLTIME': '00:00:10',  # too short
+                'WALLTIME': '00:00:20',  # too short
             },
             'MOTION': {
                 'GEO_OPT': {

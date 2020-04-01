@@ -5,11 +5,14 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""AiiDA-CP2K input generator"""
+"""AiiDA-CP2K input generator."""
 
 from copy import deepcopy
-
 from collections.abc import Mapping, Sequence
+
+from aiida.orm import Dict
+from aiida.engine import calcfunction
+from .workchains import merge_dict
 
 
 class Cp2kInput:  # pylint: disable=old-style-class
@@ -154,3 +157,23 @@ class Cp2kInput:  # pylint: disable=old-style-class
 
             else:
                 output.append('{}{} {}'.format(' ' * indent, key, val))
+
+
+@calcfunction
+def add_restart_sections(input_dict):
+    """Add restart section to the input dictionary."""
+
+    params = input_dict.get_dict()
+    restart_wfn_dict = {
+        'FORCE_EVAL': {
+            'DFT': {
+                'RESTART_FILE_NAME': './parent_calc/aiida-RESTART.wfn',
+                'SCF': {
+                    'SCF_GUESS': 'RESTART',
+                },
+            },
+        },
+    }
+    merge_dict(params, restart_wfn_dict)
+    params['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
+    return Dict(dict=params)

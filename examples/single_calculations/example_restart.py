@@ -123,7 +123,11 @@ def example_restart(cp2k_code):
     # Check walltime exceeded.
     assert calc1['output_parameters']['exceeded_walltime'] is True
     assert calc1['output_parameters']['energy'] is not None
-    assert 'output_structure' in calc1
+    if 'output_structure' not in calc1:
+        print("There is no 'output_structure' in the process outputs. "
+              "Most probably the calculation did not reach the first geometry optimization step.")
+        sys.exit(1)
+
     print("OK, walltime exceeded as expected.")
 
     # ------------------------------------------------------------------------------

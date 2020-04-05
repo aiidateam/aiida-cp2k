@@ -88,6 +88,8 @@ class Cp2kCalculation(CalcJob):
         spec.output('output_bands', valid_type=BandsData, required=False, help='optional band structure')
         spec.default_output_node = 'output_parameters'
 
+        spec.outputs.dynamic = True
+
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
 

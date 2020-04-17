@@ -11,15 +11,13 @@ All configuration values have a default; values that are commented out
 serve to show the default.
 """
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name,ungrouped-imports
 
 import os
 import sys
 import time
 
 from aiida.manage.configuration import load_documentation_profile
-
-import aiida_cp2k
 
 # -- AiiDA-related setup --------------------------------------------------
 
@@ -32,6 +30,16 @@ if not os.environ.get('READTHEDOCS', None):
     import sphinx_rtd_theme
     html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+# let's make sure the entry points are up to date
+try:
+    from aiida.plugins.entry_point import ENTRYPOINT_MANAGER as mgr
+    mgr.scan()
+except AttributeError:
+    # .scan may be no longer availabe if we switch away from reentry
+    pass
+
+import aiida_cp2k  # pylint: disable=wrong-import-position
 
 # -- General configuration ------------------------------------------------
 

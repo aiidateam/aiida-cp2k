@@ -5,11 +5,7 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-FROM aiidateam/aiida-docker-stack
-
-# Set HOME and PATH variables.
-ENV HOME="/home/aiida"
-ENV PATH="${HOME}/.local/bin:${PATH}"
+FROM aiidateam/aiida-core:latest
 
 # To prevent the container to exit prematurely.
 ENV KILL_ALL_RPOCESSES_TIMEOUT=50
@@ -28,6 +24,4 @@ RUN pip install coveralls
 
 # Install the cp2k code.
 COPY .docker/opt/add-codes.sh /opt/
-COPY .docker/my_init.d/add-codes.sh /etc/my_init.d/40_add-codes.sh
-
-RUN chown -R aiida:aiida ${HOME}
+COPY .docker/my_init.d/add-codes.sh /etc/my_init.d/50_add-codes.sh

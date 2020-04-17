@@ -7,8 +7,6 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 """Test CP2K restart."""
-from __future__ import print_function
-from __future__ import absolute_import
 
 import os
 import re
@@ -44,7 +42,7 @@ def example_restart(cp2k_code):
         dict={
             'GLOBAL': {
                 'RUN_TYPE': 'GEO_OPT',
-                'WALLTIME': '00:00:10',  # too short
+                'WALLTIME': '00:00:20',  # too short
             },
             'MOTION': {
                 'GEO_OPT': {
@@ -125,7 +123,11 @@ def example_restart(cp2k_code):
     # Check walltime exceeded.
     assert calc1['output_parameters']['exceeded_walltime'] is True
     assert calc1['output_parameters']['energy'] is not None
-    assert 'output_structure' in calc1
+    if 'output_structure' not in calc1:
+        print("There is no 'output_structure' in the process outputs. "
+              "Most probably the calculation did not reach the first geometry optimization step.")
+        sys.exit(1)
+
     print("OK, walltime exceeded as expected.")
 
     # ------------------------------------------------------------------------------

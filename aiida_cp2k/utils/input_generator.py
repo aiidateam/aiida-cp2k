@@ -5,18 +5,14 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""AiiDA-CP2K input generator"""
-
-from __future__ import absolute_import
-from __future__ import division
+"""AiiDA-CP2K input generator."""
 
 from copy import deepcopy
+from collections.abc import Mapping, Sequence
 
-import six
-if six.PY2:
-    from collections import Mapping, Sequence  # pylint: disable=import-error, no-name-in-module
-else:
-    from collections.abc import Mapping, Sequence  # pylint: disable=import-error, no-name-in-module
+from aiida.orm import Dict
+from aiida.engine import calcfunction
+from .workchains import merge_dict
 
 
 class Cp2kInput:  # pylint: disable=old-style-class
@@ -55,7 +51,7 @@ class Cp2kInput:  # pylint: disable=old-style-class
             added.
         """
 
-        if isinstance(kwpath, six.string_types):
+        if isinstance(kwpath, str):
             kwpath = kwpath.split("/")
 
         Cp2kInput._add_keyword(kwpath, value, self._params, ovrd=override, cfct=conflicting_keys)
@@ -89,7 +85,7 @@ class Cp2kInput:  # pylint: disable=old-style-class
             Cp2kInput._add_keyword(kwpath[1:], value, params[kwpath[0]], ovrd, cfct)
 
         # if it is a list, loop over its elements
-        elif isinstance(params[kwpath[0]], Sequence) and not isinstance(params[kwpath[0]], six.string_types):
+        elif isinstance(params[kwpath[0]], Sequence) and not isinstance(params[kwpath[0]], str):
             for element in params[kwpath[0]]:
                 Cp2kInput._add_keyword(kwpath[1:], value, element, ovrd, cfct)
 
@@ -151,7 +147,7 @@ class Cp2kInput:  # pylint: disable=old-style-class
                 Cp2kInput._render_section(output, val, indent + 3)
                 output.append('{}&END {}'.format(' ' * indent, key))
 
-            elif isinstance(val, Sequence) and not isinstance(val, six.string_types):
+            elif isinstance(val, Sequence) and not isinstance(val, str):
                 for listitem in val:
                     Cp2kInput._render_section(output, {key: listitem}, indent)
 
@@ -161,3 +157,23 @@ class Cp2kInput:  # pylint: disable=old-style-class
 
             else:
                 output.append('{}{} {}'.format(' ' * indent, key, val))
+
+
+@calcfunction
+def add_restart_sections(input_dict):
+    """Add restart section to the input dictionary."""
+
+    params = input_dict.get_dict()
+    restart_wfn_dict = {
+        'FORCE_EVAL': {
+            'DFT': {
+                'RESTART_FILE_NAME': './parent_calc/aiida-RESTART.wfn',
+                'SCF': {
+                    'SCF_GUESS': 'RESTART',
+                },
+            },
+        },
+    }
+    merge_dict(params, restart_wfn_dict)
+    params['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
+    return Dict(dict=params)

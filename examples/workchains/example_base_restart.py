@@ -8,9 +8,6 @@
 ###############################################################################
 """Run simple DFT calculation through a workchain."""
 
-from __future__ import print_function
-from __future__ import absolute_import
-
 import os
 import sys
 import ase.io
@@ -43,6 +40,10 @@ def example_base(cp2k_code):
     # Parameters.
     parameters = Dict(
         dict={
+            'GLOBAL': {
+                'RUN_TYPE': 'GEO_OPT',
+                'WALLTIME': '00:00:20',  # too short
+            },
             'FORCE_EVAL': {
                 'METHOD': 'Quickstep',
                 'DFT': {
@@ -67,6 +68,13 @@ def example_base(cp2k_code):
                         'PERIODIC': 'none',
                         'PSOLVER': 'MT',
                     },
+                    'SCF': {
+                        'PRINT': {
+                            'RESTART': {
+                                '_': 'ON'
+                            }
+                        }
+                    },
                 },
                 'SUBSYS': {
                     'KIND': [
@@ -87,6 +95,11 @@ def example_base(cp2k_code):
 
     # Construct process builder.
     builder = Cp2kBaseWorkChain.get_builder()
+
+    # Switch on resubmit_unconverged_geometry disabled by default.
+    builder.handler_overrides = Dict(dict={'resubmit_unconverged_geometry': True})
+
+    # Input structure.
     builder.cp2k.structure = structure
     builder.cp2k.parameters = parameters
     builder.cp2k.code = cp2k_code

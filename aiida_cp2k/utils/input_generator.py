@@ -8,7 +8,7 @@
 """AiiDA-CP2K input generator."""
 
 from copy import deepcopy
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, Sequence, MutableSequence
 
 from aiida.orm import Dict
 from aiida.engine import calcfunction
@@ -59,7 +59,23 @@ class Cp2kInput:  # pylint: disable=old-style-class
     def render(self):
         output = [self.DISCLAIMER]
         self._render_section(output, deepcopy(self._params))
-        return u"\n".join(output)
+        return "\n".join(output)
+
+    def param_iter(self, sections=True):
+        """Iterator yielding ((section,section,...,section/keyword), value) tuples"""
+        stack = [((k,), v) for k, v in self._params.items()]
+
+        while stack:
+            key, value = stack.pop(0)
+            if isinstance(value, Mapping):
+                if sections:
+                    yield (key, value)
+                stack += [(key + (k,), v) for k, v in value.items()]
+            elif isinstance(value, MutableSequence):  # not just 'Sequence' to avoid matching strings
+                for entry in value:
+                    stack += [(key, entry)]
+            else:
+                yield (key, value)
 
     @staticmethod
     def _add_keyword(kwpath, value, params, ovrd, cfct):

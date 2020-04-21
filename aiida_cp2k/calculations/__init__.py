@@ -13,6 +13,8 @@ from aiida.engine import CalcJob
 from aiida.orm import Computer, Dict, SinglefileData, StructureData, RemoteData, BandsData
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 
+from ..utils.datatype_helpers import validate_basissets_namespace, validate_basissets, write_basissets
+
 
 class Cp2kCalculation(CalcJob):
     """This is a Cp2kCalculation, subclass of JobCalculation, to prepare input for an ab-initio CP2K calculation.
@@ -45,6 +47,16 @@ class Cp2kCalculation(CalcJob):
                              required=False,
                              help='additional input files',
                              dynamic=True)
+
+        spec.input_namespace(
+            "basissets",
+            dynamic=True,
+            required=False,
+            validator=validate_basissets_namespace,
+            help=('A dictionary of basissets to be used in the calculations: key is the atomic symbol,'
+                  ' value is either a single basisset or a list of basissets. If multiple basissets for'
+                  ' a single symbol are passed, it is mandatory to specify a KIND section with a BASIS_SET'
+                  ' keyword matching the names (or aliases) of the basissets.'))
 
         # Specify default parser.
         spec.input('metadata.options.parser_name', valid_type=str, default=cls._DEFAULT_PARSER, non_db=True)
@@ -119,6 +131,10 @@ class Cp2kCalculation(CalcJob):
             topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
             inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME, override=False)
             inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ", override=False, conflicting_keys=['COORDINATE'])
+
+        if self.inputs.basissets:
+            validate_basissets(inp, self.inputs.basissets)
+            write_basissets(inp, self.inputs.basissets, folder)
 
         with io.open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8") as fobj:
             try:

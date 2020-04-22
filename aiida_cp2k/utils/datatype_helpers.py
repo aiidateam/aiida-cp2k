@@ -25,32 +25,48 @@ def _unpack(adict):
             yield (key, value)
 
 
-def _identifier(bset):
-    """Our uniquenes identifier for basis sets"""
-    return bset.element, bset.name
+def _identifier(gdt):
+    """Our unique identifier for gaussian datatypes"""
+    return gdt.element, gdt.name
 
 
-def validate_basissets_namespace(basissets, _):
-    """A input_namespace validator to ensure passed down basis sets have the correct type."""
-
-    BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
+def _validate_gdt_namespace(entries, gdt_cls, attr):
+    """Common namespace validator for both basissets and pseudos"""
 
     identifiers = []
 
-    for kind, bset in _unpack(basissets):
-        if not isinstance(bset, BasisSet):
-            return "invalid basis set for '{kind}' specified".format(kind=kind)
+    for kind, gdt_instance in _unpack(entries):
+        if not isinstance(gdt_instance, gdt_cls):
+            return "invalid {attr} for '{kind}' specified".format(attr=attr, kind=kind)
 
-        identifier = _identifier(bset)
+        identifier = _identifier(gdt_instance)
 
         if identifier in identifiers:
             # note: this should be possible for basissets with different versions
             #       but at this point we should require some format for the key to match it
-            return "basis set for kind {bset.element} ({bset.name}) specified multiple times".format(bset=bset)
+            return "{attr} for kind {gdt_instance.element} ({gdt_instance.name}) specified multiple times".format(
+                attr=attr, gdt_instance=gdt_instance)
 
         identifiers += [identifier]
 
     return None
+
+
+def _write_gdt(inp, entries, folder, key, fname):
+    """inject <key>=<fname> into all FORCE_EVAL/DFT sections and write the entries to a file"""
+
+    for secpath, section in inp.param_iter(sections=True):
+        if secpath[-1].upper() == "DFT":
+            section[key] = fname
+
+    with io.open(folder.get_abs_path(fname), mode="w", encoding="utf-8") as fhandle:
+        for _, entry in _unpack(entries):
+            entry.to_cp2k(fhandle)
+
+
+def validate_basissets_namespace(basissets, _):
+    """A input_namespace validator to ensure passed down basis sets have the correct type."""
+    return _validate_gdt_namespace(basissets, DataFactory("gaussian.basisset"), "basis set")
 
 
 def validate_basissets(inp, basissets):
@@ -102,12 +118,4 @@ def validate_basissets(inp, basissets):
 
 def write_basissets(inp, basissets, folder):
     """Writes the unified BASIS_SETS file with the used basissets"""
-
-    # inject BASIS_SET_FILE_NAME into all FORCE_EVAL/DFT sections
-    for secpath, section in inp.param_iter(sections=True):
-        if secpath[-1].upper() == "DFT":
-            section["BASIS_SET_FILE_NAME"] = "BASIS_SETS"
-
-    with io.open(folder.get_abs_path("BASIS_SETS"), mode="w", encoding="utf-8") as fhandle:
-        for _, bset in _unpack(basissets):
-            bset.to_cp2k(fhandle)
+    _write_gdt(inp, basissets, folder, "BASIS_SET_FILE_NAME", "BASIS_SETS")

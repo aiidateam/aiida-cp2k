@@ -16,9 +16,12 @@ from aiida.common.exceptions import LoadingEntryPointError, MissingEntryPointErr
 
 try:
     BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
-    DataFactory("gaussian.pseudo")
+    Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
 except (LoadingEntryPointError, MissingEntryPointError):
     pytest.skip("Gaussian Datatypes are not available", allow_module_level=True)
+
+# Note: the basissets and pseudos deliberately have a prefix to avoid matching
+#       any CP2K provided entries which may creep in via the DATA_DIR
 
 BSET_INPUT = """\
  H  MY-DZVP-MOLOPT-GTH MY-DZVP-MOLOPT-GTH-q1
@@ -40,6 +43,21 @@ BSET_INPUT = """\
       1.388401188741 -0.434348231700 -0.322839719400 -0.377726982800 -0.224839187800  0.732321580100
       0.496955043655 -0.852791790900 -0.095944016600 -0.454266086000  0.380324658600  0.893564918400
       0.162491615040 -0.242351537800  1.102830348700 -0.257388983000  1.054102919900  0.152954188700
+"""
+
+PSEUDO_INPUT = """\
+#
+H MY-GTH-PADE-q1 MY-GTH-LDA-q1 MY-GTH-PADE MY-GTH-LDA
+    1
+     0.20000000    2    -4.18023680     0.72507482
+    0
+
+O MY-GTH-PADE-q6 MY-GTH-LDA-q6 MY-GTH-PADE MY-GTH-LDA
+    2    4
+     0.24762086    2   -16.58031797     2.39570092
+    2
+     0.22178614    1    18.26691718
+     0.25682890    0
 """
 
 BSET_INPUT_MULTIPLE_O = """\
@@ -91,8 +109,10 @@ def test_basisset_validation(cp2k_code, clear_database):  # pylint: disable=unus
     atoms.center(vacuum=2.0)
     structure = StructureData(ase=atoms)
 
-    fhandle = StringIO(BSET_INPUT)
-    bsets = {b.element: b for b in BasisSet.from_cp2k(fhandle)}
+    fhandle_bset = StringIO(BSET_INPUT)
+    fhandle_pseudo = StringIO(PSEUDO_INPUT)
+    bsets = {b.element: b for b in BasisSet.from_cp2k(fhandle_bset)}
+    pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo)}
 
     # parameters
     parameters = Dict(
@@ -124,12 +144,12 @@ def test_basisset_validation(cp2k_code, clear_database):  # pylint: disable=unus
                     "KIND": [
                         {
                             "_": "O",
-                            "POTENTIAL": "GTH-LDA-q6",
+                            "POTENTIAL": pseudos["O"].name,
                             "BASIS_SET": bsets["O"].name,
                         },
                         {
                             "_": "H",
-                            "POTENTIAL": "GTH-LDA-q1",
+                            "POTENTIAL": pseudos["O"].name,
                             "BASIS_SET": bsets["H"].name,
                         },
                     ]
@@ -174,8 +194,10 @@ def test_basisset_validation_fail(cp2k_code, clear_database):  # pylint: disable
     atoms.center(vacuum=2.0)
     structure = StructureData(ase=atoms)
 
-    fhandle = StringIO(BSET_INPUT)
-    bsets = {b.element: b for b in BasisSet.from_cp2k(fhandle)}
+    fhandle_bset = StringIO(BSET_INPUT)
+    fhandle_pseudo = StringIO(PSEUDO_INPUT)
+    bsets = {b.element: b for b in BasisSet.from_cp2k(fhandle_bset)}
+    pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo)}
 
     # parameters
     parameters = Dict(
@@ -207,12 +229,12 @@ def test_basisset_validation_fail(cp2k_code, clear_database):  # pylint: disable
                     "KIND": [
                         {
                             "_": "O",
-                            "POTENTIAL": "GTH-LDA-q6",
+                            "POTENTIAL": pseudos["O"].name,
                             "BASIS_SET": bsets["O"].name,
                         },
                         {
                             "_": "H",
-                            "POTENTIAL": "GTH-LDA-q1",
+                            "POTENTIAL": pseudos["H"].name,
                             "BASIS_SET": bsets["H"].name,
                         },
                     ]
@@ -273,6 +295,9 @@ def test_basisset_validation_unused(cp2k_code, clear_database):  # pylint: disab
         else:
             bsets[bset.element] = [bset]
 
+    fhandle_pseudo = StringIO(PSEUDO_INPUT)
+    pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo)}
+
     # parameters
     parameters = Dict(
         dict={
@@ -303,12 +328,12 @@ def test_basisset_validation_unused(cp2k_code, clear_database):  # pylint: disab
                     "KIND": [
                         {
                             "_": "O",
-                            "POTENTIAL": "GTH-LDA-q6",
+                            "POTENTIAL": pseudos["O"].name,
                             "BASIS_SET": bsets["O"][0].name,
                         },
                         {
                             "_": "H",
-                            "POTENTIAL": "GTH-LDA-q1",
+                            "POTENTIAL": pseudos["H"].name,
                             "BASIS_SET": bsets["H"][0].name,
                         },
                     ]

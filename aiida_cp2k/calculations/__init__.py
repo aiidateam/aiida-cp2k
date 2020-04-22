@@ -13,7 +13,14 @@ from aiida.engine import CalcJob
 from aiida.orm import Computer, Dict, SinglefileData, StructureData, RemoteData, BandsData
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 
-from ..utils.datatype_helpers import validate_basissets_namespace, validate_basissets, write_basissets
+from ..utils.datatype_helpers import (
+    validate_basissets_namespace,
+    validate_basissets,
+    write_basissets,
+    validate_pseudos_namespace,
+    validate_pseudos,
+    write_pseudos,
+)
 
 
 class Cp2kCalculation(CalcJob):
@@ -57,6 +64,16 @@ class Cp2kCalculation(CalcJob):
                   ' value is either a single basisset or a list of basissets. If multiple basissets for'
                   ' a single symbol are passed, it is mandatory to specify a KIND section with a BASIS_SET'
                   ' keyword matching the names (or aliases) of the basissets.'))
+
+        spec.input_namespace(
+            "pseudos",
+            dynamic=True,
+            required=False,
+            validator=validate_pseudos_namespace,
+            help=('A dictionary of pseudopotentials to be used in the calculations: key is the atomic symbol,'
+                  ' value is either a single pseudopotential or a list of pseudopotentials. If multiple pseudos'
+                  ' for a single symbol are passed, it is mandatory to specify a KIND section with a PSEUDOPOTENTIAL'
+                  ' keyword matching the names (or aliases) of the pseudopotentials.'))
 
         # Specify default parser.
         spec.input('metadata.options.parser_name', valid_type=str, default=cls._DEFAULT_PARSER, non_db=True)
@@ -109,6 +126,8 @@ class Cp2kCalculation(CalcJob):
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
 
+        # pylint: disable=too-many-statements,too-many-branches
+
         from aiida_cp2k.utils import Cp2kInput
 
         # create cp2k input file
@@ -135,6 +154,10 @@ class Cp2kCalculation(CalcJob):
         if self.inputs.basissets:
             validate_basissets(inp, self.inputs.basissets)
             write_basissets(inp, self.inputs.basissets, folder)
+
+        if self.inputs.pseudos:
+            validate_pseudos(inp, self.inputs.pseudos)
+            write_pseudos(inp, self.inputs.pseudos, folder)
 
         with io.open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8") as fobj:
             try:

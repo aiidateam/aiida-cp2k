@@ -119,3 +119,46 @@ def validate_basissets(inp, basissets):
 def write_basissets(inp, basissets, folder):
     """Writes the unified BASIS_SETS file with the used basissets"""
     _write_gdt(inp, basissets, folder, "BASIS_SET_FILE_NAME", "BASIS_SETS")
+
+
+def validate_pseudos_namespace(pseudos, _):
+    """A input_namespace validator to ensure passed down pseudopentials have the correct type."""
+    return _validate_gdt_namespace(pseudos, DataFactory("gaussian.pseudo"), "pseudo")
+
+
+def validate_pseudos(inp, pseudos):
+    """Verify that all referenced pseudos are present in the input"""
+
+    pseudo_used = {_identifier(pseudo): 0 for _, pseudo in _unpack(pseudos)}
+
+    for secpath, section in inp.param_iter(sections=True):
+        # ignore non-kind sections
+        if secpath[-1].upper() != "KIND":
+            continue
+
+        kind = section["_"]
+        element = section.get("ELEMENT", kind)
+
+        try:
+            pname = section.get("POTENTIAL", section["POT"])
+        except KeyError:
+            # ignore kind sections without a POTENTIAL keyword (or POT alias)
+            continue
+
+        try:
+            pseudo_used[(element, pname)] += 1
+        except KeyError:
+            raise InputValidationError(("'POTENTIAL {pname}' for element {element} (from kind {kind})"
+                                        " not found in pseudos input namespace").format(pname=pname,
+                                                                                        element=element,
+                                                                                        kind=kind))
+
+    for (sym, name), used in pseudo_used.items():
+        if not used:
+            raise InputValidationError("Pseudos provided in calculation for kind {sym} ({name}),"
+                                       " but not used in input".format(sym=sym, name=name))
+
+
+def write_pseudos(inp, pseudos, folder):
+    """Writes the unified POTENTIAL file with the used pseudos"""
+    _write_gdt(inp, pseudos, folder, "POTENTIAL_FILE_NAME", "POTENTIAL")

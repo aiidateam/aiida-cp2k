@@ -214,8 +214,8 @@ def update_input_dict_for_bands(input_dict, seekpath, structure):
     kpath = []
     for pnt in path:
         pnt1 = pnt[0] + ' ' + " ".join(str(x) for x in coords[pnt[0]])
-        pnt1 = pnt[1] + ' ' + " ".join(str(x) for x in coords[pnt[1]])
-        kpath.append({'_': "", 'UNITS': 'B_VECTOR', 'NPOINTS': 10, 'SPECIAL_POINT': [pnt1, pnt1]})
+        pnt2 = pnt[1] + ' ' + " ".join(str(x) for x in coords[pnt[1]])
+        kpath.append({'_': "", 'UNITS': 'B_VECTOR', 'NPOINTS': 10, 'SPECIAL_POINT': [pnt1, pnt2]})
 
     kpath_dict = {'FORCE_EVAL': {'DFT': {'PRINT': {'BAND_STRUCTURE': {'KPOINT_SET': kpath}}}}}
     merge_dict(i_dict, kpath_dict)

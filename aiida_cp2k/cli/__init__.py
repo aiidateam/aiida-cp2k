@@ -19,3 +19,4 @@ def cmd_root(profile):  # pylint: disable=unused-argument
 
 
 from .data import cmd_structure
+from .workflows import cmd_workflow

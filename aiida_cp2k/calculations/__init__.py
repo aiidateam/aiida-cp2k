@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=import-outside-toplevel
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -152,11 +153,12 @@ class Cp2kCalculation(CalcJob):
             inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ", override=False, conflicting_keys=['COORDINATE'])
 
         if self.inputs.basissets:
-            validate_basissets(inp, self.inputs.basissets)
+            validate_basissets(inp, self.inputs.basissets,
+                               self.inputs.structure if 'structure' in self.inputs else None)
             write_basissets(inp, self.inputs.basissets, folder)
 
         if self.inputs.pseudos:
-            validate_pseudos(inp, self.inputs.pseudos)
+            validate_pseudos(inp, self.inputs.pseudos, self.inputs.structure if 'structure' in self.inputs else None)
             write_pseudos(inp, self.inputs.pseudos, folder)
 
         with io.open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8") as fobj:

@@ -69,10 +69,17 @@ def validate_basissets_namespace(basissets, _):
     return _validate_gdt_namespace(basissets, DataFactory("gaussian.basisset"), "basis set")
 
 
-def validate_basissets(inp, basissets):
-    """Verify that all referenced basissets are present in the input"""
+def validate_basissets(inp, basissets, structure):
+    """
+    Verify that all referenced basissets are present in the input.
+    Currently supports 2 modes: either all of the basisssets are explicitly
+    listed in a KIND section, or none of them are, at which point they're
+    verified against the symbols in the structure.
+    """
+    # pylint: disable=too-many-branches
 
     basisset_used = {_identifier(bset): 0 for _, bset in _unpack(basissets)}
+    basisset_kw_used = False
 
     for secpath, section in inp.param_iter(sections=True):
         # ignore non-kind sections
@@ -82,6 +89,8 @@ def validate_basissets(inp, basissets):
         if "BASIS_SET" not in section:
             # ignore kind sections without a BASIS_SET keyword
             continue
+
+        basisset_kw_used = True
 
         kind = section["_"]
         element = section.get("ELEMENT", kind)
@@ -110,10 +119,45 @@ def validate_basissets(inp, basissets):
                                                                                               element=element,
                                                                                               kind=kind))
 
-    for (sym, name), used in basisset_used.items():
-        if not used:
-            raise InputValidationError("Basis sets provided in calculation for kind {sym} ({name}),"
-                                       " but not used in input".format(sym=sym, name=name))
+    if basisset_kw_used:
+        for (sym, name), used in basisset_used.items():
+            if not used:
+                raise InputValidationError("Basis sets provided in calculation for kind {sym} ({name}),"
+                                           " but not used in input".format(sym=sym, name=name))
+        # if all basissets are referenced in the input, we're done
+        return
+
+    if not structure:  # no support for COORD section (yet)
+        raise InputValidationError("No explicit structure given and basis sets not referenced in input")
+
+    allowed_labels = structure.get_kind_names() + list(structure.get_symbols_set())
+
+    for label, bset in _unpack(basissets):
+        try:
+            label, bstype = label.split("_", maxsplit=1)
+        except ValueError:
+            bstype = "ORB"
+
+        if label not in allowed_labels:
+            raise InputValidationError("Basis sets provided in calculation for kind {bset.element} ({bset.name}),"
+                                       " with label {label} could not be matched to a kind in the structure".format(
+                                           bset=bset, label=label))
+
+        if "SUBSYS" not in inp["FORCE_EVAL"]:
+            inp["FORCE_EVAL"]["SUBSYS"] = {}
+
+        if "KIND" not in inp["FORCE_EVAL"]["SUBSYS"]:
+            inp["FORCE_EVAL"]["SUBSYS"]["KIND"] = []
+
+        kind_sec = next((s for s in inp["FORCE_EVAL"]["SUBSYS"]["KIND"] if s.get("_", "") == label), None)
+
+        if not kind_sec:
+            inp["FORCE_EVAL"]["SUBSYS"]["KIND"].append({"_": label})
+            kind_sec = inp["FORCE_EVAL"]["SUBSYS"]["KIND"][-1]
+
+        kind_sec["BASIS_SET"] = "{bstype} {bset.name}".format(bstype=bstype, bset=bset)
+        if "ELEMENT" not in kind_sec:
+            kind_sec["ELEMENT"] = bset.element
 
 
 def write_basissets(inp, basissets, folder):
@@ -126,10 +170,14 @@ def validate_pseudos_namespace(pseudos, _):
     return _validate_gdt_namespace(pseudos, DataFactory("gaussian.pseudo"), "pseudo")
 
 
-def validate_pseudos(inp, pseudos):
+def validate_pseudos(inp, pseudos, structure):
     """Verify that all referenced pseudos are present in the input"""
 
-    pseudo_used = {_identifier(pseudo): 0 for _, pseudo in _unpack(pseudos)}
+    # pylint: disable=too-many-branches
+
+    # there can be only one pseudo per kind, thus, no _unpack
+    pseudo_used = {_identifier(pseudo): 0 for _, pseudo in pseudos.items()}
+    pseudo_kw_used = False
 
     for secpath, section in inp.param_iter(sections=True):
         # ignore non-kind sections
@@ -139,24 +187,62 @@ def validate_pseudos(inp, pseudos):
         kind = section["_"]
         element = section.get("ELEMENT", kind)
 
-        try:
-            pname = section.get("POTENTIAL", section["POT"])
-        except KeyError:
+        pname = section.get("POTENTIAL", section.get("POT"))
+
+        if pname is None:
             # ignore kind sections without a POTENTIAL keyword (or POT alias)
             continue
 
         try:
+            ptype, pname = pname.split(maxsplit=1)
+        except ValueError:
+            ptype = "GTH"
+
+        pseudo_kw_used = True
+
+        try:
             pseudo_used[(element, pname)] += 1
         except KeyError:
-            raise InputValidationError(("'POTENTIAL {pname}' for element {element} (from kind {kind})"
+            raise InputValidationError(("'POTENTIAL {ptype} {pname}' for element {element} (from kind {kind})"
                                         " not found in pseudos input namespace").format(pname=pname,
+                                                                                        ptype=ptype,
                                                                                         element=element,
                                                                                         kind=kind))
 
-    for (sym, name), used in pseudo_used.items():
-        if not used:
-            raise InputValidationError("Pseudos provided in calculation for kind {sym} ({name}),"
-                                       " but not used in input".format(sym=sym, name=name))
+    if pseudo_kw_used:
+        for (sym, name), used in pseudo_used.items():
+            if not used:
+                raise InputValidationError("Pseudos provided in calculation for kind {sym} ({name}),"
+                                           " but not used in input".format(sym=sym, name=name))
+        return
+
+    if not structure:  # no support for COORD section (yet)
+        raise InputValidationError("No explicit structure given and pseudos not referenced in input")
+
+    allowed_labels = structure.get_kind_names() + list(structure.get_symbols_set())
+
+    for label, pseudo in pseudos.items():
+        if label not in allowed_labels:
+            raise InputValidationError("Pseudo provided in calculation for kind {pseudo.element} ({pseudo.name}),"
+                                       " with label {label} could not be matched to a kind in the structure".format(
+                                           pseudo=pseudo, label=label))
+
+        if "SUBSYS" not in inp["FORCE_EVAL"]:
+            inp["FORCE_EVAL"]["SUBSYS"] = {}
+
+        if "KIND" not in inp["FORCE_EVAL"]["SUBSYS"]:
+            inp["FORCE_EVAL"]["SUBSYS"]["KIND"] = []
+
+        kind_sec = next((s for s in inp["FORCE_EVAL"]["SUBSYS"]["KIND"] if s.get("_", "") == label), None)
+
+        if not kind_sec:
+            inp["FORCE_EVAL"]["SUBSYS"]["KIND"].append({"_": label})
+            kind_sec = inp["FORCE_EVAL"]["SUBSYS"]["KIND"][-1]
+
+        kind_sec["POTENTIAL"] = "GTH {pseudo.name}".format(pseudo=pseudo)
+
+        if "ELEMENT" not in kind_sec:
+            kind_sec["ELEMENT"] = pseudo.element
 
 
 def write_pseudos(inp, pseudos, folder):

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=import-outside-toplevel
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -95,12 +96,12 @@ BSET_INPUT_MULTIPLE_O = """\
 
 
 @pytest.mark.process_execution
-def test_basisset_validation(cp2k_code, clear_database):  # pylint: disable=unused-argument
+def test_gdts_validation(cp2k_code, clear_database):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset"""
 
     import ase.build
 
-    from aiida.engine import run
+    from aiida.engine import run_get_node
     from aiida.plugins import CalculationFactory
     from aiida.orm import Dict, StructureData
 
@@ -144,12 +145,12 @@ def test_basisset_validation(cp2k_code, clear_database):  # pylint: disable=unus
                     "KIND": [
                         {
                             "_": "O",
-                            "POTENTIAL": pseudos["O"].name,
+                            "POTENTIAL": "GTH " + pseudos["O"].name,
                             "BASIS_SET": bsets["O"].name,
                         },
                         {
                             "_": "H",
-                            "POTENTIAL": pseudos["O"].name,
+                            "POTENTIAL": "GTH " + pseudos["H"].name,
                             "BASIS_SET": bsets["H"].name,
                         },
                     ]
@@ -173,13 +174,15 @@ def test_basisset_validation(cp2k_code, clear_database):  # pylint: disable=unus
             "options": options
         },
         "basissets": bsets,
+        "pseudos": pseudos,
     }
 
-    run(CalculationFactory("cp2k"), **inputs)
+    _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)
+    assert calc_node.exit_status == 0
 
 
 @pytest.mark.process_execution
-def test_basisset_validation_fail(cp2k_code, clear_database):  # pylint: disable=unused-argument
+def test_gdts_validation_fail(cp2k_code, clear_database):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset but missing"""
 
     import ase.build
@@ -261,6 +264,7 @@ def test_basisset_validation_fail(cp2k_code, clear_database):  # pylint: disable
         "basissets": {
             "H": bsets["H"]
         },
+        "pseudos": pseudos,
     }
 
     with pytest.raises(PreSubmitException):  # the InputValidationError is masked by the process runner
@@ -268,7 +272,7 @@ def test_basisset_validation_fail(cp2k_code, clear_database):  # pylint: disable
 
 
 @pytest.mark.process_execution
-def test_basisset_validation_unused(cp2k_code, clear_database):  # pylint: disable=unused-argument
+def test_gdts_validation_unused(cp2k_code, clear_database):  # pylint: disable=unused-argument
     """Pass more basissets than used in the input configuration"""
 
     import ase.build
@@ -357,7 +361,80 @@ def test_basisset_validation_unused(cp2k_code, clear_database):  # pylint: disab
             "options": options
         },
         "basissets": bsets,
+        "pseudos": pseudos,
     }
 
     with pytest.raises(PreSubmitException):  # the InputValidationError is masked by the process runner
         run(CalculationFactory("cp2k"), **inputs)
+
+
+@pytest.mark.process_execution
+def test_gdts_without_kinds(cp2k_code, clear_database):  # pylint: disable=unused-argument
+    """Testing CP2K with the Basis Set stored in gaussian.basisset but without a KIND section"""
+
+    import ase.build
+
+    from aiida.engine import run_get_node
+    from aiida.plugins import CalculationFactory
+    from aiida.orm import Dict, StructureData
+
+    # structure
+    atoms = ase.build.molecule("H2O")
+    atoms.center(vacuum=2.0)
+    structure = StructureData(ase=atoms)
+
+    fhandle_bset = StringIO(BSET_INPUT)
+    fhandle_pseudo = StringIO(PSEUDO_INPUT)
+    bsets = {b.element: b for b in BasisSet.from_cp2k(fhandle_bset)}
+    pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo)}
+
+    # parameters
+    parameters = Dict(
+        dict={
+            "FORCE_EVAL": {
+                "METHOD": "Quickstep",
+                "DFT": {
+                    "QS": {
+                        "EPS_DEFAULT": 1.0e-12,
+                        "WF_INTERPOLATION": "ps",
+                        "EXTRAPOLATION_ORDER": 3,
+                    },
+                    "MGRID": {
+                        "NGRIDS": 4,
+                        "CUTOFF": 280,
+                        "REL_CUTOFF": 30
+                    },
+                    "XC": {
+                        "XC_FUNCTIONAL": {
+                            "_": "LDA"
+                        }
+                    },
+                    "POISSON": {
+                        "PERIODIC": "none",
+                        "PSOLVER": "MT"
+                    },
+                },
+            }
+        })
+
+    options = {
+        "resources": {
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1
+        },
+        "max_wallclock_seconds": 1 * 3 * 60,
+    }
+
+    inputs = {
+        "structure": structure,
+        "parameters": parameters,
+        "code": cp2k_code,
+        "metadata": {
+            "options": options
+        },
+        "basissets": bsets,
+        "pseudos": pseudos,
+    }
+
+    _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)
+    assert calc_node.exit_status == 0

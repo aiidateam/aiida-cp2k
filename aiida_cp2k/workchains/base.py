@@ -97,21 +97,21 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
 
         # If everything is alright
         return None
-    
+
     @process_handler(priority=350, enabled=False)
-    def resubmit_cellopt_for_final_check(self, calc):    
+    def resubmit_cellopt_for_final_check(self, calc):
         """Resubmit a cell optimization if it required more than 3 steps to converge."""
 
         self.report("Entering the process handler.")
 
         content_string = calc.outputs.retrieved.get_object_content(calc.get_attribute('output_filename'))
-       
+
         steps_done = content_string.count('Informations at step')
-        
+
         self.ctx.inputs.parent_calc_folder = calc.outputs.remote_folder
-        params = self.ctx.inputs.parameters        
-            
-        too_many_steps = steps_done > 5        
+        params = self.ctx.inputs.parameters
+
+        too_many_steps = steps_done > 5
         if too_many_steps:
             try:
                 # Firts check if all the restart keys are present in the input dictionary
@@ -137,6 +137,6 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
             self.report(
                 "The CP2K cell opt converged but required more than 3 steps."
                 "I will restart it for final convergence")
-            return ProcessHandlerReport(do_break=True)   
-        
+            return ProcessHandlerReport(do_break=True)
+
         return None

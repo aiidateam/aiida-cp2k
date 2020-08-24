@@ -46,6 +46,11 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
             energy = float(line.split()[8])
             result_dict['energy'] = energy
             result_dict['energy_units'] = "a.u."
+        if line.strip().startswith('Total energy: '):
+            # In case of constrained geo opt, "ENERGY| ..." also contains the constraint energy
+            # This only contains the electronic SCF energy
+            energy_scf = float(line.split()[2])
+            result_dict['energy_scf'] = energy_scf
         if 'The number of warnings for this run is' in line:
             result_dict['nwarnings'] = int(line.split()[-1])
         if 'exceeded requested execution time' in line:

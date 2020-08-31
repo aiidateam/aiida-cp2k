@@ -15,11 +15,11 @@ from aiida.orm import Computer, Dict, SinglefileData, StructureData, RemoteData,
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 
 from ..utils.datatype_helpers import (
-    validate_basissets_namespace,
     validate_basissets,
-    write_basissets,
-    validate_pseudos_namespace,
     validate_pseudos,
+    validate_basissets_namespace,
+    validate_pseudos_namespace,
+    write_basissets,
     write_pseudos,
 )
 from ..utils import Cp2kInput

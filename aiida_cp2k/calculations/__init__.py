@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=import-outside-toplevel
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -9,6 +8,7 @@
 """AiiDA-CP2K input plugin."""
 
 import io
+from operator import add
 
 from aiida.engine import CalcJob
 from aiida.orm import Computer, Dict, SinglefileData, StructureData, RemoteData, BandsData
@@ -22,6 +22,7 @@ from ..utils.datatype_helpers import (
     validate_pseudos,
     write_pseudos,
 )
+from ..utils import Cp2kInput
 
 
 class Cp2kCalculation(CalcJob):
@@ -129,8 +130,6 @@ class Cp2kCalculation(CalcJob):
 
         # pylint: disable=too-many-statements,too-many-branches
 
-        from aiida_cp2k.utils import Cp2kInput
-
         # create cp2k input file
         inp = Cp2kInput(self.inputs.parameters.get_dict())
         inp.add_keyword("GLOBAL/PROJECT", self._DEFAULT_PROJECT_NAME)
@@ -226,7 +225,6 @@ class Cp2kCalculation(CalcJob):
         """Function that writes a structure and takes care of element tags."""
 
         # Create file with the structure.
-        from operator import add
         s_ase = structure.get_ase()
         elem_tags = ['' if t == 0 else str(t) for t in s_ase.get_tags()]
         elem_symbols = list(map(add, s_ase.get_chemical_symbols(), elem_tags))

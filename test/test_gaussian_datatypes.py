@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=import-outside-toplevel
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -11,9 +10,14 @@
 from io import StringIO
 
 import pytest
+import ase.build
 
-from aiida.plugins import DataFactory
+from aiida.plugins import CalculationFactory, DataFactory
 from aiida.common.exceptions import LoadingEntryPointError, MissingEntryPointError
+
+from aiida.engine import run, run_get_node
+from aiida.orm import Dict, StructureData
+from aiida.engine.processes.calcjobs.tasks import PreSubmitException
 
 try:
     BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
@@ -99,12 +103,6 @@ BSET_INPUT_MULTIPLE_O = """\
 def test_gdts_validation(cp2k_code, clear_database):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset"""
 
-    import ase.build
-
-    from aiida.engine import run_get_node
-    from aiida.plugins import CalculationFactory
-    from aiida.orm import Dict, StructureData
-
     # structure
     atoms = ase.build.molecule("H2O")
     atoms.center(vacuum=2.0)
@@ -184,13 +182,6 @@ def test_gdts_validation(cp2k_code, clear_database):  # pylint: disable=unused-a
 @pytest.mark.process_execution
 def test_gdts_validation_fail(cp2k_code, clear_database):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset but missing"""
-
-    import ase.build
-
-    from aiida.engine import run
-    from aiida.plugins import CalculationFactory
-    from aiida.orm import Dict, StructureData
-    from aiida.engine.processes.calcjobs.tasks import PreSubmitException
 
     # structure
     atoms = ase.build.molecule("H2O")
@@ -274,13 +265,6 @@ def test_gdts_validation_fail(cp2k_code, clear_database):  # pylint: disable=unu
 @pytest.mark.process_execution
 def test_gdts_validation_unused(cp2k_code, clear_database):  # pylint: disable=unused-argument
     """Pass more basissets than used in the input configuration"""
-
-    import ase.build
-
-    from aiida.engine import run
-    from aiida.plugins import CalculationFactory
-    from aiida.orm import Dict, StructureData
-    from aiida.engine.processes.calcjobs.tasks import PreSubmitException
 
     # structure
     atoms = ase.build.molecule("H2O")
@@ -371,12 +355,6 @@ def test_gdts_validation_unused(cp2k_code, clear_database):  # pylint: disable=u
 @pytest.mark.process_execution
 def test_gdts_without_kinds(cp2k_code, clear_database):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset but without a KIND section"""
-
-    import ase.build
-
-    from aiida.engine import run_get_node
-    from aiida.plugins import CalculationFactory
-    from aiida.orm import Dict, StructureData
 
     # structure
     atoms = ase.build.molecule("H2O")

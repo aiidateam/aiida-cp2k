@@ -28,7 +28,10 @@ except (LoadingEntryPointError, MissingEntryPointError):
 # Note: the basissets and pseudos deliberately have a prefix to avoid matching
 #       any CP2K provided entries which may creep in via the DATA_DIR
 
-BSET_INPUT = """\
+# pylint: disable=line-too-long, redefined-outer-name
+BSET_DATA = {
+    "simple":
+        """\
  H  MY-DZVP-MOLOPT-GTH MY-DZVP-MOLOPT-GTH-q1
  1
  2 0 1 7 2 1
@@ -48,24 +51,9 @@ BSET_INPUT = """\
       1.388401188741 -0.434348231700 -0.322839719400 -0.377726982800 -0.224839187800  0.732321580100
       0.496955043655 -0.852791790900 -0.095944016600 -0.454266086000  0.380324658600  0.893564918400
       0.162491615040 -0.242351537800  1.102830348700 -0.257388983000  1.054102919900  0.152954188700
-"""
-
-PSEUDO_INPUT = """\
-#
-H MY-GTH-PADE-q1 MY-GTH-LDA-q1 MY-GTH-PADE MY-GTH-LDA
-    1
-     0.20000000    2    -4.18023680     0.72507482
-    0
-
-O MY-GTH-PADE-q6 MY-GTH-LDA-q6 MY-GTH-PADE MY-GTH-LDA
-    2    4
-     0.24762086    2   -16.58031797     2.39570092
-    2
-     0.22178614    1    18.26691718
-     0.25682890    0
-"""
-
-BSET_INPUT_MULTIPLE_O = """\
+""",
+    "multiple_o":
+        """\
  H  MY-DZVP-MOLOPT-GTH MY-DZVP-MOLOPT-GTH-q1
  1
  2 0 1 7 2 1
@@ -96,22 +84,73 @@ BSET_INPUT_MULTIPLE_O = """\
       0.352316246455  0.450353782600  0.186760006700  0.722792798300  0.294708645200  0.484848376400  0.530504764700  0.307656114200
       0.142977330880  0.092715833600  0.387201458600 -0.521378340700  0.173039869300  0.717465919700 -0.436184043700  0.318346834400
       0.046760918300 -0.000255945800  0.003825849600  0.175643142900  0.009726110600  0.032498979400  0.073329259500 -0.005771736600
-"""
+""",
+}
+
+PSEUDO_DATA = {
+    "simple":
+        """\
+#
+H MY-GTH-PADE-q1 MY-GTH-LDA-q1 MY-GTH-PADE MY-GTH-LDA
+    1
+     0.20000000    2    -4.18023680     0.72507482
+    0
+
+O MY-GTH-PADE-q6 MY-GTH-LDA-q6 MY-GTH-PADE MY-GTH-LDA
+    2    4
+     0.24762086    2   -16.58031797     2.39570092
+    2
+     0.22178614    1    18.26691718
+     0.25682890    0
+""",
+}
+
+
+@pytest.fixture()
+def bsdataset():
+    """Use a fixture for the next fixtures parameter for easier overriding"""
+    return "simple"
+
+
+@pytest.fixture(scope='function')
+def cp2k_basissets(bsdataset):
+    """Returns basisset objects from the data above"""
+    fhandle = StringIO(BSET_DATA[bsdataset])
+    bsets = {}
+    for bset in BasisSet.from_cp2k(fhandle):
+        bset.store()  # store because the validator accesses it when raising an error
+
+        if bset.element in bsets:
+            # if we have multiple basissets per element, pass them as a list
+            if not isinstance(bsets[bset.element], list):
+                bsets[bset.element] = [bsets[bset.element]]
+            bsets[bset.element] += [bset]
+        else:
+            bsets[bset.element] = bset
+    return bsets
+
+
+@pytest.fixture()
+def pdataset():
+    """Use a fixture for the next fixtures parameter for easier overriding"""
+    return "simple"
+
+
+@pytest.fixture(scope='function')
+def cp2k_pseudos(pdataset):
+    """Returns pseudo objects from the data above"""
+    fhandle = StringIO(PSEUDO_DATA[pdataset])
+    return {p.element: p for p in Pseudo.from_cp2k(fhandle)}
 
 
 @pytest.mark.process_execution
-def test_gdts_validation(cp2k_code, clear_database):  # pylint: disable=unused-argument
+def test_gdts_validation(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset"""
 
     # structure
     atoms = ase.build.molecule("H2O")
     atoms.center(vacuum=2.0)
     structure = StructureData(ase=atoms)
-
-    fhandle_bset = StringIO(BSET_INPUT)
-    fhandle_pseudo = StringIO(PSEUDO_INPUT)
-    bsets = {b.element: b for b in BasisSet.from_cp2k(fhandle_bset)}
-    pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo)}
 
     # parameters
     parameters = Dict(
@@ -143,13 +182,13 @@ def test_gdts_validation(cp2k_code, clear_database):  # pylint: disable=unused-a
                     "KIND": [
                         {
                             "_": "O",
-                            "POTENTIAL": "GTH " + pseudos["O"].name,
-                            "BASIS_SET": bsets["O"].name,
+                            "POTENTIAL": "GTH " + cp2k_pseudos["O"].name,
+                            "BASIS_SET": cp2k_basissets["O"].name,
                         },
                         {
                             "_": "H",
-                            "POTENTIAL": "GTH " + pseudos["H"].name,
-                            "BASIS_SET": bsets["H"].name,
+                            "POTENTIAL": "GTH " + cp2k_pseudos["H"].name,
+                            "BASIS_SET": cp2k_basissets["H"].name,
                         },
                     ]
                 },
@@ -171,8 +210,8 @@ def test_gdts_validation(cp2k_code, clear_database):  # pylint: disable=unused-a
         "metadata": {
             "options": options
         },
-        "basissets": bsets,
-        "pseudos": pseudos,
+        "basissets": cp2k_basissets,
+        "pseudos": cp2k_pseudos,
     }
 
     _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)
@@ -180,18 +219,13 @@ def test_gdts_validation(cp2k_code, clear_database):  # pylint: disable=unused-a
 
 
 @pytest.mark.process_execution
-def test_gdts_validation_fail(cp2k_code, clear_database):  # pylint: disable=unused-argument
+def test_gdts_validation_fail(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset but missing"""
 
     # structure
     atoms = ase.build.molecule("H2O")
     atoms.center(vacuum=2.0)
     structure = StructureData(ase=atoms)
-
-    fhandle_bset = StringIO(BSET_INPUT)
-    fhandle_pseudo = StringIO(PSEUDO_INPUT)
-    bsets = {b.element: b for b in BasisSet.from_cp2k(fhandle_bset)}
-    pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo)}
 
     # parameters
     parameters = Dict(
@@ -223,13 +257,13 @@ def test_gdts_validation_fail(cp2k_code, clear_database):  # pylint: disable=unu
                     "KIND": [
                         {
                             "_": "O",
-                            "POTENTIAL": pseudos["O"].name,
-                            "BASIS_SET": bsets["O"].name,
+                            "POTENTIAL": cp2k_pseudos["O"].name,
+                            "BASIS_SET": cp2k_basissets["O"].name,
                         },
                         {
                             "_": "H",
-                            "POTENTIAL": pseudos["H"].name,
-                            "BASIS_SET": bsets["H"].name,
+                            "POTENTIAL": cp2k_pseudos["H"].name,
+                            "BASIS_SET": cp2k_basissets["H"].name,
                         },
                     ]
                 },
@@ -253,9 +287,9 @@ def test_gdts_validation_fail(cp2k_code, clear_database):  # pylint: disable=unu
         },
         # add only one of the basis sets to inputs
         "basissets": {
-            "H": bsets["H"]
+            "H": cp2k_basissets["H"]
         },
-        "pseudos": pseudos,
+        "pseudos": cp2k_pseudos,
     }
 
     with pytest.raises(PreSubmitException):  # the InputValidationError is masked by the process runner
@@ -263,28 +297,14 @@ def test_gdts_validation_fail(cp2k_code, clear_database):  # pylint: disable=unu
 
 
 @pytest.mark.process_execution
-def test_gdts_validation_unused(cp2k_code, clear_database):  # pylint: disable=unused-argument
+@pytest.mark.parametrize('bsdataset', ['multiple_o'])
+def test_gdts_validation_unused(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
     """Pass more basissets than used in the input configuration"""
 
     # structure
     atoms = ase.build.molecule("H2O")
     atoms.center(vacuum=2.0)
     structure = StructureData(ase=atoms)
-
-    fhandle = StringIO(BSET_INPUT_MULTIPLE_O)
-
-    bsets = {}
-    for bset in BasisSet.from_cp2k(fhandle):
-        bset.store()  # store because the validator accesses it when raising an error
-
-        # now we have multiple basissets per element, pass them as a list
-        if bset.element in bsets:
-            bsets[bset.element] += [bset]
-        else:
-            bsets[bset.element] = [bset]
-
-    fhandle_pseudo = StringIO(PSEUDO_INPUT)
-    pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo)}
 
     # parameters
     parameters = Dict(
@@ -316,13 +336,13 @@ def test_gdts_validation_unused(cp2k_code, clear_database):  # pylint: disable=u
                     "KIND": [
                         {
                             "_": "O",
-                            "POTENTIAL": pseudos["O"].name,
-                            "BASIS_SET": bsets["O"][0].name,
+                            "POTENTIAL": cp2k_pseudos["O"].name,
+                            "BASIS_SET": cp2k_basissets["O"][0].name,
                         },
                         {
                             "_": "H",
-                            "POTENTIAL": pseudos["H"].name,
-                            "BASIS_SET": bsets["H"][0].name,
+                            "POTENTIAL": cp2k_pseudos["H"].name,
+                            "BASIS_SET": cp2k_basissets["H"].name,
                         },
                     ]
                 },
@@ -344,8 +364,8 @@ def test_gdts_validation_unused(cp2k_code, clear_database):  # pylint: disable=u
         "metadata": {
             "options": options
         },
-        "basissets": bsets,
-        "pseudos": pseudos,
+        "basissets": cp2k_basissets,
+        "pseudos": cp2k_pseudos,
     }
 
     with pytest.raises(PreSubmitException):  # the InputValidationError is masked by the process runner
@@ -353,18 +373,13 @@ def test_gdts_validation_unused(cp2k_code, clear_database):  # pylint: disable=u
 
 
 @pytest.mark.process_execution
-def test_gdts_without_kinds(cp2k_code, clear_database):  # pylint: disable=unused-argument
+def test_gdts_without_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset but without a KIND section"""
 
     # structure
     atoms = ase.build.molecule("H2O")
     atoms.center(vacuum=2.0)
     structure = StructureData(ase=atoms)
-
-    fhandle_bset = StringIO(BSET_INPUT)
-    fhandle_pseudo = StringIO(PSEUDO_INPUT)
-    bsets = {b.element: b for b in BasisSet.from_cp2k(fhandle_bset)}
-    pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo)}
 
     # parameters
     parameters = Dict(
@@ -410,8 +425,8 @@ def test_gdts_without_kinds(cp2k_code, clear_database):  # pylint: disable=unuse
         "metadata": {
             "options": options
         },
-        "basissets": bsets,
-        "pseudos": pseudos,
+        "basissets": cp2k_basissets,
+        "pseudos": cp2k_pseudos,
     }
 
     _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)

@@ -151,12 +151,12 @@ class Cp2kCalculation(CalcJob):
             inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME, override=False)
             inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ", override=False, conflicting_keys=['COORDINATE'])
 
-        if self.inputs.basissets:
+        if 'basissets' in self.inputs:
             validate_basissets(inp, self.inputs.basissets,
                                self.inputs.structure if 'structure' in self.inputs else None)
             write_basissets(inp, self.inputs.basissets, folder)
 
-        if self.inputs.pseudos:
+        if 'pseudos' in self.inputs:
             validate_pseudos(inp, self.inputs.pseudos, self.inputs.structure if 'structure' in self.inputs else None)
             write_pseudos(inp, self.inputs.pseudos, folder)
 

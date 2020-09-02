@@ -143,8 +143,7 @@ def cp2k_pseudos(pdataset):
     return {p.element: p for p in Pseudo.from_cp2k(fhandle)}
 
 
-@pytest.mark.process_execution
-def test_gdts_validation(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+def test_validation(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset"""
 
     # structure
@@ -218,9 +217,8 @@ def test_gdts_validation(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
     assert calc_node.exit_status == 0
 
 
-@pytest.mark.process_execution
-def test_gdts_validation_fail(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
-    """Testing CP2K with the Basis Set stored in gaussian.basisset but missing"""
+def test_validation_fail(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+    """Testing CP2K with the Basis Set stored in gaussian.basisset but missing one"""
 
     # structure
     atoms = ase.build.molecule("H2O")
@@ -292,13 +290,14 @@ def test_gdts_validation_fail(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_dat
         "pseudos": cp2k_pseudos,
     }
 
-    with pytest.raises(PreSubmitException):  # the InputValidationError is masked by the process runner
+    with pytest.raises(PreSubmitException) as exc_info:  # the InputValidationError is masked by the process runner
         run(CalculationFactory("cp2k"), **inputs)
 
+    assert "not found in basissets input namespace" in str(exc_info.value.__context__)
 
-@pytest.mark.process_execution
+
 @pytest.mark.parametrize('bsdataset', ['multiple_o'])
-def test_gdts_validation_unused(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+def test_validation_unused(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
     """Pass more basissets than used in the input configuration"""
 
     # structure
@@ -368,12 +367,360 @@ def test_gdts_validation_unused(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_d
         "pseudos": cp2k_pseudos,
     }
 
-    with pytest.raises(PreSubmitException):  # the InputValidationError is masked by the process runner
+    with pytest.raises(PreSubmitException) as exc_info:  # the InputValidationError is masked by the process runner
         run(CalculationFactory("cp2k"), **inputs)
 
+    assert "not used in input" in str(exc_info.value.__context__)
 
-@pytest.mark.process_execution
-def test_gdts_without_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+
+def test_validation_mfe_noauto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+    """Test that multiple FORCE_EVAL without explicit assignment is rejected"""
+
+    # structure
+    pos = [[0.934, 2.445, 1.844], [1.882, 2.227, 1.982], [0.81, 3.165, 2.479], [3.59, 2.048, 2.436],
+           [4.352, 2.339, 1.906], [3.953, 1.304, 2.946]]
+    atoms = ase.Atoms(symbols='OH2OH2', pbc=True, cell=[5.0, 5.0, 5.0])
+    atoms.set_positions(pos)
+    structure = StructureData(ase=atoms)
+
+    # Parameters.
+    parameters = Dict(
+        dict={
+            'MULTIPLE_FORCE_EVALS': {
+                'FORCE_EVAL_ORDER': '2 3',
+                'MULTIPLE_SUBSYS': 'T',
+            },
+            'FORCE_EVAL': [
+                {
+                    'METHOD': 'MIXED',
+                    'MIXED': {
+                        'MIXING_TYPE': 'GENMIX',
+                        'GENERIC': {
+                            'ERROR_LIMIT': 1.0E-10,
+                            'MIXING_FUNCTION': 'E1+E2',
+                            'VARIABLES': 'E1 E2',
+                        },
+                        'MAPPING': {
+                            'FORCE_EVAL_MIXED': {
+                                'FRAGMENT': [
+                                    {
+                                        '_': 1,
+                                        '1': '3'
+                                    },
+                                    {
+                                        '_': 2,
+                                        '4': '6'
+                                    },
+                                ],
+                            },
+                            'FORCE_EVAL': [{
+                                '_': 1,
+                                'DEFINE_FRAGMENTS': '1 2',
+                            }, {
+                                '_': 2,
+                                'DEFINE_FRAGMENTS': '1 2',
+                            }],
+                        }
+                    },
+                },
+                {
+                    'METHOD': 'FIST',
+                    'MM': {
+                        'FORCEFIELD': {
+                            'SPLINE': {
+                                'EPS_SPLINE': 1.30E-5,
+                                'EMAX_SPLINE': 0.8,
+                            },
+                            'CHARGE': [
+                                {
+                                    'ATOM': 'H',
+                                    'CHARGE': 0.0,
+                                },
+                                {
+                                    'ATOM': 'O',
+                                    'CHARGE': 0.0,
+                                },
+                            ],
+                            'BOND': {
+                                'ATOMS': 'H O',
+                                'K': 0.0,
+                                'R0': 2.0,
+                            },
+                            'BEND': {
+                                'ATOMS': 'H O H',
+                                'K': 0.0,
+                                'THETA0': 2.0,
+                            },
+                            'NONBONDED': {
+                                'LENNARD-JONES': [
+                                    {
+                                        'ATOMS': 'H H',
+                                        'EPSILON': 0.2,
+                                        'SIGMA': 2.4,
+                                    },
+                                    {
+                                        'ATOMS': 'H O',
+                                        'EPSILON': 0.4,
+                                        'SIGMA': 3.0,
+                                    },
+                                    {
+                                        'ATOMS': 'O O',
+                                        'EPSILON': 0.8,
+                                        'SIGMA': 3.6,
+                                    },
+                                ]
+                            },
+                        },
+                        'POISSON': {
+                            'EWALD': {
+                                'EWALD_TYPE': 'none',
+                            }
+                        }
+                    },
+                    'SUBSYS': {
+                        'TOPOLOGY': {
+                            'CONNECTIVITY': 'GENERATE',
+                            'GENERATE': {
+                                'CREATE_MOLECULES': True,
+                            }
+                        }
+                    }
+                },
+                {
+                    'METHOD': 'Quickstep',
+                    'DFT': {
+                        'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
+                        'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
+                        'QS': {
+                            'EPS_DEFAULT': 1.0e-12,
+                            'WF_INTERPOLATION': 'ps',
+                            'EXTRAPOLATION_ORDER': 3,
+                        },
+                        'MGRID': {
+                            'NGRIDS': 4,
+                            'CUTOFF': 280,
+                            'REL_CUTOFF': 30,
+                        },
+                        'XC': {
+                            'XC_FUNCTIONAL': {
+                                '_': 'LDA',
+                            },
+                        },
+                        'POISSON': {
+                            'PERIODIC': 'none',
+                            'PSOLVER': 'MT',
+                        },
+                    },
+                    # SUBSYS section omitted, forcing into automated assignment mode,
+                    # which is not yet supported for multiple FORCE_EVAL
+                },
+            ]
+        })
+
+    options = {
+        "resources": {
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1
+        },
+        "max_wallclock_seconds": 1 * 3 * 60,
+    }
+
+    inputs = {
+        "structure": structure,
+        "parameters": parameters,
+        "code": cp2k_code,
+        "metadata": {
+            "options": options
+        },
+        "basissets": cp2k_basissets,
+        "pseudos": cp2k_pseudos,
+    }
+
+    with pytest.raises(PreSubmitException) as exc_info:  # the InputValidationError is masked by the process runner
+        run(CalculationFactory("cp2k"), **inputs)
+
+    assert "Automated BASIS_SET keyword creation is not yet supported with multiple FORCE_EVALs" in str(
+        exc_info.value.__context__)
+
+
+def test_validation_mfe(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+    """Test that multiple FORCE_EVAL without explicit assignment is rejected"""
+
+    # structure
+    pos = [[0.934, 2.445, 1.844], [1.882, 2.227, 1.982], [0.81, 3.165, 2.479], [3.59, 2.048, 2.436],
+           [4.352, 2.339, 1.906], [3.953, 1.304, 2.946]]
+    atoms = ase.Atoms(symbols='OH2OH2', pbc=True, cell=[5.0, 5.0, 5.0])
+    atoms.set_positions(pos)
+    structure = StructureData(ase=atoms)
+
+    # Parameters.
+    parameters = Dict(
+        dict={
+            'MULTIPLE_FORCE_EVALS': {
+                'FORCE_EVAL_ORDER': '2 3',
+                'MULTIPLE_SUBSYS': 'T',
+            },
+            'FORCE_EVAL': [
+                {
+                    'METHOD': 'MIXED',
+                    'MIXED': {
+                        'MIXING_TYPE': 'GENMIX',
+                        'GENERIC': {
+                            'ERROR_LIMIT': 1.0E-10,
+                            'MIXING_FUNCTION': 'E1+E2',
+                            'VARIABLES': 'E1 E2',
+                        },
+                        'MAPPING': {
+                            'FORCE_EVAL_MIXED': {
+                                'FRAGMENT': [
+                                    {
+                                        '_': 1,
+                                        '1': '3'
+                                    },
+                                    {
+                                        '_': 2,
+                                        '4': '6'
+                                    },
+                                ],
+                            },
+                            'FORCE_EVAL': [{
+                                '_': 1,
+                                'DEFINE_FRAGMENTS': '1 2',
+                            }, {
+                                '_': 2,
+                                'DEFINE_FRAGMENTS': '1 2',
+                            }],
+                        }
+                    },
+                },
+                {
+                    'METHOD': 'FIST',
+                    'MM': {
+                        'FORCEFIELD': {
+                            'SPLINE': {
+                                'EPS_SPLINE': 1.30E-5,
+                                'EMAX_SPLINE': 0.8,
+                            },
+                            'CHARGE': [
+                                {
+                                    'ATOM': 'H',
+                                    'CHARGE': 0.0,
+                                },
+                                {
+                                    'ATOM': 'O',
+                                    'CHARGE': 0.0,
+                                },
+                            ],
+                            'BOND': {
+                                'ATOMS': 'H O',
+                                'K': 0.0,
+                                'R0': 2.0,
+                            },
+                            'BEND': {
+                                'ATOMS': 'H O H',
+                                'K': 0.0,
+                                'THETA0': 2.0,
+                            },
+                            'NONBONDED': {
+                                'LENNARD-JONES': [
+                                    {
+                                        'ATOMS': 'H H',
+                                        'EPSILON': 0.2,
+                                        'SIGMA': 2.4,
+                                    },
+                                    {
+                                        'ATOMS': 'H O',
+                                        'EPSILON': 0.4,
+                                        'SIGMA': 3.0,
+                                    },
+                                    {
+                                        'ATOMS': 'O O',
+                                        'EPSILON': 0.8,
+                                        'SIGMA': 3.6,
+                                    },
+                                ]
+                            },
+                        },
+                        'POISSON': {
+                            'EWALD': {
+                                'EWALD_TYPE': 'none',
+                            }
+                        }
+                    },
+                    'SUBSYS': {
+                        'TOPOLOGY': {
+                            'CONNECTIVITY': 'GENERATE',
+                            'GENERATE': {
+                                'CREATE_MOLECULES': True,
+                            }
+                        }
+                    }
+                },
+                {
+                    'METHOD': 'Quickstep',
+                    'DFT': {
+                        'QS': {
+                            'EPS_DEFAULT': 1.0e-12,
+                            'WF_INTERPOLATION': 'ps',
+                            'EXTRAPOLATION_ORDER': 3,
+                        },
+                        'MGRID': {
+                            'NGRIDS': 4,
+                            'CUTOFF': 280,
+                            'REL_CUTOFF': 30,
+                        },
+                        'XC': {
+                            'XC_FUNCTIONAL': {
+                                '_': 'LDA',
+                            },
+                        },
+                        'POISSON': {
+                            'PERIODIC': 'none',
+                            'PSOLVER': 'MT',
+                        },
+                    },
+                    'SUBSYS': {
+                        'KIND': [
+                            {
+                                '_': 'O',
+                                'BASIS_SET': 'ORB MY-DZVP-MOLOPT-SR-GTH-q6',
+                                'POTENTIAL': 'GTH MY-GTH-PADE-q6'
+                            },
+                            {
+                                '_': 'H',
+                                'BASIS_SET': 'ORB MY-DZVP-MOLOPT-GTH-q1',
+                                'POTENTIAL': 'GTH MY-GTH-PADE-q1'
+                            },
+                        ],
+                    },
+                },
+            ]
+        })
+
+    options = {
+        "resources": {
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1
+        },
+        "max_wallclock_seconds": 1 * 3 * 60,
+    }
+
+    inputs = {
+        "structure": structure,
+        "parameters": parameters,
+        "code": cp2k_code,
+        "metadata": {
+            "options": options
+        },
+        "basissets": cp2k_basissets,
+        "pseudos": cp2k_pseudos,
+    }
+
+    _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)
+    assert calc_node.exit_status == 0
+
+
+def test_without_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset but without a KIND section"""
 
     # structure

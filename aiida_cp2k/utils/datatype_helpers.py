@@ -130,6 +130,11 @@ def validate_basissets(inp, basissets, structure):
     if not structure:  # no support for COORD section (yet)
         raise InputValidationError("No explicit structure given and basis sets not referenced in input")
 
+    if isinstance(inp["FORCE_EVAL"], Sequence):
+        raise InputValidationError(
+            "Automated BASIS_SET keyword creation is not yet supported with multiple FORCE_EVALs."
+            " Please explicitly reference a BASIS_SET for each KIND.")
+
     allowed_labels = structure.get_kind_names() + list(structure.get_symbols_set())
 
     for label, bset in _unpack(basissets):
@@ -218,6 +223,11 @@ def validate_pseudos(inp, pseudos, structure):
 
     if not structure:  # no support for COORD section (yet)
         raise InputValidationError("No explicit structure given and pseudos not referenced in input")
+
+    if isinstance(inp["FORCE_EVAL"], Sequence):
+        raise InputValidationError(
+            "Automated POTENTIAL keyword creation is not yet supported with multiple FORCE_EVALs."
+            " Please explicitly reference a POTENTIAL for each KIND.")
 
     allowed_labels = structure.get_kind_names() + list(structure.get_symbols_set())
 

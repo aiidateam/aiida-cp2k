@@ -10,14 +10,15 @@
 
 from io import StringIO
 
+from aiida.common.exceptions import UniquenessError
+from aiida.plugins import DataFactory
+
 
 def load_data(prefix="MY-"):
     """
     This is something the user will usually do only ONCE and most likely by
     using the CLI of the aiida-gaussian-datatypes.
     """
-
-    from aiida.plugins import DataFactory
 
     BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
     Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
@@ -65,7 +66,17 @@ def load_data(prefix="MY-"):
     fhandle_bset = StringIO(bset_input)
     fhandle_pseudo = StringIO(pseudo_input)
 
-    bsets = {b.element: b for b in BasisSet.from_cp2k(fhandle_bset)}
-    pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo)}
+    try:
+        bsets = {b.element: b for b in BasisSet.from_cp2k(fhandle_bset, duplicate_handling='error')}
+        pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo, duplicate_handling='error')}
+    except UniquenessError:  # if the user already ran the script, fetch the data from the db instead
+        bsets = {
+            "H": BasisSet.get("H", "{prefix}AUTO-DZVP-MOLOPT-GTH".format(prefix=prefix)),
+            "O": BasisSet.get("O", "{prefix}AUTO-DZVP-MOLOPT-SR-GTH".format(prefix=prefix)),
+        }
+        pseudos = {
+            "H": Pseudo.get("H", "{prefix}AUTO-GTH-PADE-q1".format(prefix=prefix)),
+            "O": Pseudo.get("O", "{prefix}AUTO-GTH-PADE-q6".format(prefix=prefix)),
+        }
 
     return bsets, pseudos

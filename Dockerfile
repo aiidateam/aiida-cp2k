@@ -19,6 +19,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends cp2k
 COPY . aiida-cp2k
 RUN pip install ./aiida-cp2k[pre-commit,test,docs]
 
+# Install the gaussian-datatypes for testing
+RUN pip install aiida-gaussian-datatypes
+
 # Install coverals.
 RUN pip install coveralls
 

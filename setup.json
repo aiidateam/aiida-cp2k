@@ -32,7 +32,8 @@
             "pgtest==1.2.0",
             "pytest>=4.4,<5.0.0",
             "pytest-cov>=2.6.1,<3.0.0",
-            "coverage"
+            "coverage",
+            "aiida-gaussian-datatypes"
         ],
         "pre-commit":[
             "pre-commit==1.18.3",

@@ -8,10 +8,21 @@
 """AiiDA-CP2K input plugin."""
 
 import io
+from operator import add
 
 from aiida.engine import CalcJob
 from aiida.orm import Computer, Dict, SinglefileData, StructureData, RemoteData, BandsData
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
+
+from ..utils.datatype_helpers import (
+    validate_basissets,
+    validate_pseudos,
+    validate_basissets_namespace,
+    validate_pseudos_namespace,
+    write_basissets,
+    write_pseudos,
+)
+from ..utils import Cp2kInput
 
 
 class Cp2kCalculation(CalcJob):
@@ -45,6 +56,26 @@ class Cp2kCalculation(CalcJob):
                              required=False,
                              help='additional input files',
                              dynamic=True)
+
+        spec.input_namespace(
+            "basissets",
+            dynamic=True,
+            required=False,
+            validator=validate_basissets_namespace,
+            help=('A dictionary of basissets to be used in the calculations: key is the atomic symbol,'
+                  ' value is either a single basisset or a list of basissets. If multiple basissets for'
+                  ' a single symbol are passed, it is mandatory to specify a KIND section with a BASIS_SET'
+                  ' keyword matching the names (or aliases) of the basissets.'))
+
+        spec.input_namespace(
+            "pseudos",
+            dynamic=True,
+            required=False,
+            validator=validate_pseudos_namespace,
+            help=('A dictionary of pseudopotentials to be used in the calculations: key is the atomic symbol,'
+                  ' value is either a single pseudopotential or a list of pseudopotentials. If multiple pseudos'
+                  ' for a single symbol are passed, it is mandatory to specify a KIND section with a PSEUDOPOTENTIAL'
+                  ' keyword matching the names (or aliases) of the pseudopotentials.'))
 
         # Specify default parser.
         spec.input('metadata.options.parser_name', valid_type=str, default=cls._DEFAULT_PARSER, non_db=True)
@@ -97,7 +128,7 @@ class Cp2kCalculation(CalcJob):
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
 
-        from aiida_cp2k.utils import Cp2kInput
+        # pylint: disable=too-many-statements,too-many-branches
 
         # create cp2k input file
         inp = Cp2kInput(self.inputs.parameters.get_dict())
@@ -119,6 +150,15 @@ class Cp2kCalculation(CalcJob):
             topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
             inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME, override=False)
             inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ", override=False, conflicting_keys=['COORDINATE'])
+
+        if 'basissets' in self.inputs:
+            validate_basissets(inp, self.inputs.basissets,
+                               self.inputs.structure if 'structure' in self.inputs else None)
+            write_basissets(inp, self.inputs.basissets, folder)
+
+        if 'pseudos' in self.inputs:
+            validate_pseudos(inp, self.inputs.pseudos, self.inputs.structure if 'structure' in self.inputs else None)
+            write_pseudos(inp, self.inputs.pseudos, folder)
 
         with io.open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8") as fobj:
             try:
@@ -185,7 +225,6 @@ class Cp2kCalculation(CalcJob):
         """Function that writes a structure and takes care of element tags."""
 
         # Create file with the structure.
-        from operator import add
         s_ase = structure.get_ase()
         elem_tags = ['' if t == 0 else str(t) for t in s_ase.get_tags()]
         elem_symbols = list(map(add, s_ase.get_chemical_symbols(), elem_tags))

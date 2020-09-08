@@ -8,10 +8,22 @@
 ###############################################################################
 """Create Gaussian basisset and pseudopotential data in the database"""
 
+import sys
 from io import StringIO
 
 from aiida.common.exceptions import UniquenessError
 from aiida.plugins import DataFactory
+from aiida.common.exceptions import LoadingEntryPointError, MissingEntryPointError
+
+try:
+    BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
+    Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
+except (LoadingEntryPointError, MissingEntryPointError):
+    if hasattr(sys, '_called_from_test'):
+        import pytest
+        pytest.skip("Gaussian Datatypes are not available", allow_module_level=True)
+    else:
+        sys.exit("For this example to run, please make sure the aiida-gaussian-datatypes package is installed")
 
 
 def load_data(prefix="MY-"):
@@ -19,9 +31,6 @@ def load_data(prefix="MY-"):
     This is something the user will usually do only ONCE and most likely by
     using the CLI of the aiida-gaussian-datatypes.
     """
-
-    BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
-    Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
 
     # Note: the basissets and pseudos deliberately have a prefix to avoid matching
     #       any CP2K provided entries which may creep in via the DATA_DIR

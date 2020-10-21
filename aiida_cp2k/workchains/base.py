@@ -74,7 +74,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
                     params = add_restart_sections(params)
 
             # If not all the restart keys are present, adding them to the input dictionary
-            except KeyError:
+            except (AttributeError, KeyError):
                 params = add_restart_sections(params)
 
             # Might be able to solve the problem

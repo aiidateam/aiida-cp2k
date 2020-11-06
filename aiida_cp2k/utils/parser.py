@@ -83,10 +83,10 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
         if line.strip().startswith("Ideal and single determinant"):
             s2_ideal, s2_expect = line.split()[-2:]
             if 'spin_square_ideal' not in result_dict:
-                result_dict['spin_square_ideal'] = s2_ideal
+                result_dict['spin_square_ideal'] = float(s2_ideal)
             if 'spin_square_expectation' not in result_dict:
                 result_dict['spin_square_expectation'] = []
-            result_dict['spin_square_expectation'].append(s2_expect)
+            result_dict['spin_square_expectation'].append(float(s2_expect))
 
         # read the number of electrons in the first scf (NOTE: it may change but it is not updated!)
         if re.search('Number of electrons: ', line):

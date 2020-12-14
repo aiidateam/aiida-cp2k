@@ -150,18 +150,18 @@ class Cp2kInput:  # pylint: disable=old-style-class
         for key, val in sorted(params.items()):
             # keys are not case-insensitive, ensure that they follow the current scheme
             if key.upper() != key:
-                raise ValueError("keyword '{}' not upper case".format(key))
+                raise ValueError(f"keyword '{key}' not upper case.")
 
             if key.startswith(("@", "$")):
-                raise ValueError("CP2K preprocessor directives not supported")
+                raise ValueError("CP2K preprocessor directives not supported.")
 
             if isinstance(val, Mapping):
-                line = "{}&{}".format(' ' * indent, key)
+                line = f"{' ' * indent}&{key}"
                 if "_" in val:  # if there is a section parameter, add it
-                    line += " {}".format(val.pop('_'))
+                    line += f" {val.pop('_')}"
                 output.append(line)
                 Cp2kInput._render_section(output, val, indent + 3)
-                output.append('{}&END {}'.format(' ' * indent, key))
+                output.append(f"{' ' * indent}&END {key}")
 
             elif isinstance(val, Sequence) and not isinstance(val, str):
                 for listitem in val:
@@ -169,10 +169,10 @@ class Cp2kInput:  # pylint: disable=old-style-class
 
             elif isinstance(val, bool):
                 val_str = '.TRUE.' if val else '.FALSE.'
-                output.append('{}{} {}'.format(' ' * indent, key, val_str))
+                output.append(f"{' ' * indent}{key} {val_str}")
 
             else:
-                output.append('{}{} {}'.format(' ' * indent, key, val))
+                output.append(f"{' ' * indent}{key} {val}")
 
 
 @calcfunction

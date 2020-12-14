@@ -37,15 +37,14 @@ def _validate_gdt_namespace(entries, gdt_cls, attr):
 
     for kind, gdt_instance in _unpack(entries):
         if not isinstance(gdt_instance, gdt_cls):
-            return "invalid {attr} for '{kind}' specified".format(attr=attr, kind=kind)
+            return f"invalid {attr} for '{kind}' specified"
 
         identifier = _identifier(gdt_instance)
 
         if identifier in identifiers:
             # note: this should be possible for basissets with different versions
             #       but at this point we should require some format for the key to match it
-            return "{attr} for kind {gdt_instance.element} ({gdt_instance.name}) specified multiple times".format(
-                attr=attr, gdt_instance=gdt_instance)
+            return f"{attr} for kind {gdt_instance.element} ({gdt_instance.name}) specified multiple times"
 
         identifiers += [identifier]
 
@@ -113,17 +112,14 @@ def validate_basissets(inp, basissets, structure):
             try:
                 basisset_used[(element, bsname)] += 1
             except KeyError:
-                raise InputValidationError(("'BASIS_SET {bstype} {bsname}' for element {element} (from kind {kind})"
-                                            " not found in basissets input namespace").format(bsname=bsname,
-                                                                                              bstype=bstype,
-                                                                                              element=element,
-                                                                                              kind=kind))
+                raise InputValidationError(f"'BASIS_SET {bstype} {bsname}' for element {element} (from kind {kind})"
+                                           " not found in basissets input namespace")
 
     if basisset_kw_used:
         for (sym, name), used in basisset_used.items():
             if not used:
-                raise InputValidationError("Basis sets provided in calculation for kind {sym} ({name}),"
-                                           " but not used in input".format(sym=sym, name=name))
+                raise InputValidationError(f"Basis sets provided in calculation for kind {sym} ({name}),"
+                                           " but not used in input")
         # if all basissets are referenced in the input, we're done
         return
 
@@ -144,9 +140,8 @@ def validate_basissets(inp, basissets, structure):
             bstype = "ORB"
 
         if label not in allowed_labels:
-            raise InputValidationError("Basis sets provided in calculation for kind {bset.element} ({bset.name}),"
-                                       " with label {label} could not be matched to a kind in the structure".format(
-                                           bset=bset, label=label))
+            raise InputValidationError(f"Basis sets provided in calculation for kind {bset.element} ({bset.name}),"
+                                       f" with label {label} could not be matched to a kind in the structure")
 
         if "SUBSYS" not in inp["FORCE_EVAL"]:
             inp["FORCE_EVAL"]["SUBSYS"] = {}
@@ -160,7 +155,7 @@ def validate_basissets(inp, basissets, structure):
             inp["FORCE_EVAL"]["SUBSYS"]["KIND"].append({"_": label})
             kind_sec = inp["FORCE_EVAL"]["SUBSYS"]["KIND"][-1]
 
-        kind_sec["BASIS_SET"] = "{bstype} {bset.name}".format(bstype=bstype, bset=bset)
+        kind_sec["BASIS_SET"] = f"{bstype} {bset.name}"
         if "ELEMENT" not in kind_sec:
             kind_sec["ELEMENT"] = bset.element
 
@@ -208,17 +203,14 @@ def validate_pseudos(inp, pseudos, structure):
         try:
             pseudo_used[(element, pname)] += 1
         except KeyError:
-            raise InputValidationError(("'POTENTIAL {ptype} {pname}' for element {element} (from kind {kind})"
-                                        " not found in pseudos input namespace").format(pname=pname,
-                                                                                        ptype=ptype,
-                                                                                        element=element,
-                                                                                        kind=kind))
+            raise InputValidationError(f"'POTENTIAL {ptype} {pname}' for element {element} (from kind {kind})"
+                                       " not found in pseudos input namespace")
 
     if pseudo_kw_used:
         for (sym, name), used in pseudo_used.items():
             if not used:
-                raise InputValidationError("Pseudos provided in calculation for kind {sym} ({name}),"
-                                           " but not used in input".format(sym=sym, name=name))
+                raise InputValidationError(f"Pseudos provided in calculation for kind {sym} ({name}),"
+                                           " but not used in input")
         return
 
     if not structure:  # no support for COORD section (yet)
@@ -233,9 +225,8 @@ def validate_pseudos(inp, pseudos, structure):
 
     for label, pseudo in pseudos.items():
         if label not in allowed_labels:
-            raise InputValidationError("Pseudo provided in calculation for kind {pseudo.element} ({pseudo.name}),"
-                                       " with label {label} could not be matched to a kind in the structure".format(
-                                           pseudo=pseudo, label=label))
+            raise InputValidationError(f"Pseudo provided in calculation for kind {pseudo.element} ({pseudo.name}),"
+                                       f" with label {label} could not be matched to a kind in the structure")
 
         if "SUBSYS" not in inp["FORCE_EVAL"]:
             inp["FORCE_EVAL"]["SUBSYS"] = {}
@@ -249,7 +240,7 @@ def validate_pseudos(inp, pseudos, structure):
             inp["FORCE_EVAL"]["SUBSYS"]["KIND"].append({"_": label})
             kind_sec = inp["FORCE_EVAL"]["SUBSYS"]["KIND"][-1]
 
-        kind_sec["POTENTIAL"] = "GTH {pseudo.name}".format(pseudo=pseudo)
+        kind_sec["POTENTIAL"] = f"GTH {pseudo.name}"
 
         if "ELEMENT" not in kind_sec:
             kind_sec["ELEMENT"] = pseudo.element

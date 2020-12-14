@@ -34,7 +34,7 @@ def load_data(prefix="MY-"):
     # Note: the basissets and pseudos deliberately have a prefix to avoid matching
     #       any CP2K provided entries which may creep in via the DATA_DIR
 
-    bset_input = """\
+    bset_input = f"""\
      H  {prefix}AUTO-DZVP-MOLOPT-GTH {prefix}AUTO-DZVP-MOLOPT-GTH-q1
      1
      2 0 1 7 2 1
@@ -54,9 +54,9 @@ def load_data(prefix="MY-"):
           1.388401188741 -0.434348231700 -0.322839719400 -0.377726982800 -0.224839187800  0.732321580100
           0.496955043655 -0.852791790900 -0.095944016600 -0.454266086000  0.380324658600  0.893564918400
           0.162491615040 -0.242351537800  1.102830348700 -0.257388983000  1.054102919900  0.152954188700
-    """.format(prefix=prefix)
+    """
 
-    pseudo_input = """\
+    pseudo_input = f"""\
     #
     H {prefix}AUTO-GTH-PADE-q1 {prefix}AUTO-GTH-LDA-q1 {prefix}AUTO-GTH-PADE {prefix}AUTO-GTH-LDA
         1
@@ -69,7 +69,7 @@ def load_data(prefix="MY-"):
         2
          0.22178614    1    18.26691718
          0.25682890    0
-    """.format(prefix=prefix)
+    """
 
     fhandle_bset = StringIO(bset_input)
     fhandle_pseudo = StringIO(pseudo_input)
@@ -79,12 +79,12 @@ def load_data(prefix="MY-"):
         pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo, duplicate_handling='error')}
     except UniquenessError:  # if the user already ran the script, fetch the data from the db instead
         bsets = {
-            "H": BasisSet.get("H", "{prefix}AUTO-DZVP-MOLOPT-GTH".format(prefix=prefix)),
-            "O": BasisSet.get("O", "{prefix}AUTO-DZVP-MOLOPT-SR-GTH".format(prefix=prefix)),
+            "H": BasisSet.get("H", f"{prefix}AUTO-DZVP-MOLOPT-GTH"),
+            "O": BasisSet.get("O", f"{prefix}AUTO-DZVP-MOLOPT-SR-GTH"),
         }
         pseudos = {
-            "H": Pseudo.get("H", "{prefix}AUTO-GTH-PADE-q1".format(prefix=prefix)),
-            "O": Pseudo.get("O", "{prefix}AUTO-GTH-PADE-q6".format(prefix=prefix)),
+            "H": Pseudo.get("H", f"{prefix}AUTO-GTH-PADE-q1"),
+            "O": Pseudo.get("O", f"{prefix}AUTO-GTH-PADE-q6"),
         }
 
     return bsets, pseudos

@@ -113,8 +113,8 @@ def example_geopt(cp2k_code):
         print("OK, energy has the expected value.")
     else:
         print("ERROR!")
-        print("Expected energy value: {}".format(expected_energy))
-        print("Actual energy value: {}".format(calc['output_parameters']['energy']))
+        print(f"Expected energy value: {expected_energy}")
+        print(f"Actual energy value: {calc['output_parameters']['energy']}")
         sys.exit(3)
 
     # Check geometry.
@@ -124,8 +124,8 @@ def example_geopt(cp2k_code):
         print("OK, H-H distance has the expected value.")
     else:
         print("ERROR!")
-        print("Expected dist value: {}".format(expected_dist))
-        print("Actual dist value: {}".format(dist))
+        print(f"Expected dist value: {expected_dist}")
+        print(f"Actual dist value: {dist}")
         sys.exit(3)
 
 
@@ -136,7 +136,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist.".format(codelabel))
+        print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)
     example_geopt(code)
 

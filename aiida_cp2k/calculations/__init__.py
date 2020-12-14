@@ -50,15 +50,17 @@ class Cp2kCalculation(CalcJob):
         super(Cp2kCalculation, cls).define(spec)
 
         # Input parameters.
-        spec.input('parameters', valid_type=Dict, help='the input parameters')
-        spec.input('structure', valid_type=StructureData, required=False, help='the main input structure')
-        spec.input('settings', valid_type=Dict, required=False, help='additional input parameters')
-        spec.input('resources', valid_type=dict, required=False, help='special settings')
-        spec.input('parent_calc_folder', valid_type=RemoteData, required=False, help='remote folder used for restarts')
+        spec.input('parameters', valid_type=Dict, help='The input parameters.')
+        spec.input('structure', valid_type=StructureData, required=False, help='The main input structure.')
+        spec.input('settings', valid_type=Dict, required=False, help='Optional input parameters.')
+        spec.input('parent_calc_folder',
+                   valid_type=RemoteData,
+                   required=False,
+                   help='Working directory of a previously ran calculation to restart from.')
         spec.input_namespace('file',
                              valid_type=(SinglefileData, StructureData),
                              required=False,
-                             help='additional input files',
+                             help='Additional input files.',
                              dynamic=True)
 
         spec.input_namespace(
@@ -105,7 +107,7 @@ class Cp2kCalculation(CalcJob):
         spec.exit_code(301, 'ERROR_OUTPUT_READ', message='The output file could not be read.')
         spec.exit_code(302, 'ERROR_OUTPUT_PARSE', message='The output file could not be parsed.')
         spec.exit_code(303, 'ERROR_OUTPUT_INCOMPLETE', message='The output file was incomplete.')
-        spec.exit_code(304, 'ERROR_OUTPUT_CONTAINS_ABORT', message='The output file contains the word "ABORT"')
+        spec.exit_code(304, 'ERROR_OUTPUT_CONTAINS_ABORT', message='The output file contains the word "ABORT".')
         spec.exit_code(312, 'ERROR_STRUCTURE_PARSE', message='The output structure could not be parsed.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION', message='The parser raised an unexpected exception.')
 
@@ -118,9 +120,12 @@ class Cp2kCalculation(CalcJob):
                        message='The ionic minimization cycle did not converge for the given thresholds.')
 
         # Output parameters.
-        spec.output('output_parameters', valid_type=Dict, required=True, help='the results of the calculation')
-        spec.output('output_structure', valid_type=StructureData, required=False, help='optional relaxed structure')
-        spec.output('output_bands', valid_type=BandsData, required=False, help='optional band structure')
+        spec.output('output_parameters',
+                    valid_type=Dict,
+                    required=True,
+                    help='The output dictionary containing results of the calculation.')
+        spec.output('output_structure', valid_type=StructureData, required=False, help='The relaxed output structure.')
+        spec.output('output_bands', valid_type=BandsData, required=False, help='Computed electronic band structure.')
         spec.default_output_node = 'output_parameters'
 
         spec.outputs.dynamic = True
@@ -218,9 +223,9 @@ class Cp2kCalculation(CalcJob):
 
         # Check for left over settings.
         if settings:
-            raise InputValidationError("The following keys have been found " +
-                                       "in the settings input node {}, ".format(self.pk) + "but were not understood: " +
-                                       ",".join(settings.keys()))
+            raise InputValidationError(
+                f"The following keys have been found in the settings input node {self.pk}, but were not understood: " +
+                ",".join(settings.keys()))
 
         return calcinfo
 
@@ -234,5 +239,5 @@ class Cp2kCalculation(CalcJob):
         elem_symbols = list(map(add, s_ase.get_chemical_symbols(), elem_tags))
         elem_coords = ['{:25.16f} {:25.16f} {:25.16f}'.format(p[0], p[1], p[2]) for p in s_ase.get_positions()]
         with io.open(folder.get_abs_path(name), mode="w", encoding="utf-8") as fobj:
-            fobj.write(u'{}\n\n'.format(len(elem_coords)))
+            fobj.write(f'{len(elem_coords)}\n\n')
             fobj.write(u'\n'.join(map(add, elem_symbols, elem_coords)))

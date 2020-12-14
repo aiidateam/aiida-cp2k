@@ -23,7 +23,7 @@ StructureData = DataFactory('structure')  # pylint: disable=invalid-name
 
 
 def example_dft(cp2k_code):
-    """Run simple DFT calculafortion."""
+    """Run simple DFT calculation."""
 
     print("Testing CP2K ENERGY on H2O (DFT)...")
 

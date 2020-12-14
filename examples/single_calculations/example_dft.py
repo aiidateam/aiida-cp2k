@@ -23,7 +23,7 @@ StructureData = DataFactory('structure')  # pylint: disable=invalid-name
 
 
 def example_dft(cp2k_code):
-    """Run simple DFT calculation."""
+    """Run simple DFT calculafortion."""
 
     print("Testing CP2K ENERGY on H2O (DFT)...")
 
@@ -109,7 +109,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist.".format(codelabel))
+        print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)
     example_dft(code)
 

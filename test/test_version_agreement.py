@@ -19,6 +19,5 @@ def test_version_agreement():
         version2 = json.load(fhandle)['version']
 
     if version1 != version2:
-        print("ERROR: Versions in aiida_cp2k/__init__.py and setup.json are inconsistent: {} vs {}".format(
-            version1, version2))
+        print(f"ERROR: Versions in aiida_cp2k/__init__.py and setup.json are inconsistent: {version1} vs {version2}")
         sys.exit(3)

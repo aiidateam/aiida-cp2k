@@ -11,9 +11,9 @@
 import sys
 import click
 
-from aiida.orm import (Code, Dict)
 from aiida.common import NotExistent
 from aiida.engine import run_get_node
+from aiida.orm import (Code, Dict)
 
 
 def example_failure(cp2k_code):

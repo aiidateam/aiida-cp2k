@@ -11,9 +11,8 @@
 import sys
 from io import StringIO
 
-from aiida.common.exceptions import UniquenessError
+from aiida.common.exceptions import LoadingEntryPointError, MissingEntryPointError, UniquenessError
 from aiida.plugins import DataFactory
-from aiida.common.exceptions import LoadingEntryPointError, MissingEntryPointError
 
 try:
     BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name

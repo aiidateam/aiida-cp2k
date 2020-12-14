@@ -14,9 +14,12 @@ import click
 
 import ase
 
-from aiida.engine import run
-from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
+from aiida.engine import run
+from aiida.orm import (Code, Dict, SinglefileData)
+from aiida.plugins import DataFactory
+
+StructureData = DataFactory('structure')  # pylint: disable=invalid-name
 
 
 def example_multiple_force_eval(cp2k_code):

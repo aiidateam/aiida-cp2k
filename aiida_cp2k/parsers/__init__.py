@@ -18,6 +18,7 @@ from aiida.orm import Dict
 from aiida.plugins import DataFactory
 
 StructureData = DataFactory('structure')  # pylint: disable=invalid-name
+BandsData = DataFactory('array.bands')  # pylint: disable=invalid-name
 
 
 class Cp2kBaseParser(Parser):
@@ -97,7 +98,6 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
     def _parse_stdout(self):
         """Advanced CP2K output file parser."""
 
-        from aiida.orm import BandsData
         from aiida_cp2k.utils import parse_cp2k_output_advanced
 
         fname = self.node.process_class._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access

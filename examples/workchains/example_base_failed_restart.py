@@ -14,11 +14,12 @@ import ase.io
 import click
 
 from aiida.engine import run_get_node
-from aiida.orm import (Code, Dict, SinglefileData, StructureData)
+from aiida.orm import (Code, Dict, SinglefileData)
 from aiida.common import NotExistent
-from aiida.plugins import WorkflowFactory
+from aiida.plugins import DataFactory, WorkflowFactory
 
 Cp2kBaseWorkChain = WorkflowFactory('cp2k.base')
+StructureData = DataFactory('structure')  # pylint: disable=invalid-name
 
 
 def example_base(cp2k_code):

@@ -14,9 +14,9 @@ import sys
 import ase.io
 import click
 
-from aiida.orm import (Code, Dict, SinglefileData)
-from aiida.engine import run
 from aiida.common import NotExistent
+from aiida.engine import run
+from aiida.orm import (Code, Dict, SinglefileData)
 
 
 def example_mm(cp2k_code):

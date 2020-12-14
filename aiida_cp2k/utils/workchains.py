@@ -8,7 +8,10 @@
 """AiiDA-CP2K utilities for workchains"""
 
 from aiida.engine import calcfunction
-from aiida.orm import Dict, StructureData
+from aiida.orm import Dict
+from aiida.plugins import DataFactory
+
+StructureData = DataFactory('structure')  # pylint: disable=invalid-name
 
 HARTREE2EV = 27.211399
 HARTREE2KJMOL = 2625.500

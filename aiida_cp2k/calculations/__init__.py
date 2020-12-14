@@ -11,8 +11,9 @@ import io
 from operator import add
 
 from aiida.engine import CalcJob
-from aiida.orm import Computer, Dict, SinglefileData, StructureData, RemoteData, BandsData
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
+from aiida.orm import Computer, Dict, RemoteData, SinglefileData
+from aiida.plugins import DataFactory
 
 from ..utils.datatype_helpers import (
     validate_basissets,
@@ -23,6 +24,9 @@ from ..utils.datatype_helpers import (
     write_pseudos,
 )
 from ..utils import Cp2kInput
+
+BandsData = DataFactory('array.bands')  # pylint: disable=invalid-name
+StructureData = DataFactory('structure')  # pylint: disable=invalid-name
 
 
 class Cp2kCalculation(CalcJob):

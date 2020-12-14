@@ -16,9 +16,12 @@ import click
 
 import ase.io
 
-from aiida.orm import (Code, Dict, SinglefileData, StructureData)
-from aiida.engine import run
 from aiida.common import NotExistent
+from aiida.engine import run
+from aiida.orm import (Code, Dict, SinglefileData)
+from aiida.plugins import DataFactory
+
+StructureData = DataFactory('structure')  # pylint: disable=invalid-name
 
 
 def example_restart(cp2k_code):

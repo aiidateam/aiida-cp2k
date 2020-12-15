@@ -27,6 +27,7 @@ from ..utils import Cp2kInput
 
 BandsData = DataFactory('array.bands')  # pylint: disable=invalid-name
 StructureData = DataFactory('structure')  # pylint: disable=invalid-name
+KpointsData = DataFactory('array.kpoints')  # pylint: disable=invalid-name
 
 
 class Cp2kCalculation(CalcJob):
@@ -57,6 +58,7 @@ class Cp2kCalculation(CalcJob):
                    valid_type=RemoteData,
                    required=False,
                    help='Working directory of a previously ran calculation to restart from.')
+        spec.input('kpoints', valid_type=KpointsData, required=False, help='Input kpoint mesh.')
         spec.input_namespace('file',
                              valid_type=(SinglefileData, StructureData),
                              required=False,
@@ -139,7 +141,7 @@ class Cp2kCalculation(CalcJob):
 
         # pylint: disable=too-many-statements,too-many-branches
 
-        # create cp2k input file
+        # Create cp2k input file.
         inp = Cp2kInput(self.inputs.parameters.get_dict())
         inp.add_keyword("GLOBAL/PROJECT", self._DEFAULT_PROJECT_NAME)
 
@@ -168,6 +170,16 @@ class Cp2kCalculation(CalcJob):
         if 'pseudos' in self.inputs:
             validate_pseudos(inp, self.inputs.pseudos, self.inputs.structure if 'structure' in self.inputs else None)
             write_pseudos(inp, self.inputs.pseudos, folder)
+
+        # Kpoints.
+        if 'kpoints' in self.inputs:
+            try:
+                mesh, _ = self.inputs.kpoints.get_kpoints_mesh()
+            except AttributeError:
+                raise InputValidationError("K-point sampling for SCF must be given in mesh form.")
+
+            inp.add_keyword('FORCE_EVAL/DFT/KPOINTS', {'WAVEFUNCTIONS': ' COMPLEX', 'FULL_GRID': '.TRUE.'})
+            inp.add_keyword('FORCE_EVAL/DFT/KPOINTS/SCHEME MONKHORST-PACK', f'{mesh[0]} {mesh[1]} {mesh[2]}')
 
         with io.open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8") as fobj:
             try:

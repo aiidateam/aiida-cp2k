@@ -58,7 +58,7 @@ class Cp2kCalculation(CalcJob):
                    valid_type=RemoteData,
                    required=False,
                    help='Working directory of a previously ran calculation to restart from.')
-        spec.input('kpoints', valid_type=KpointsData, help='Input kpoint mesh or kpoint path.')
+        spec.input('kpoints', valid_type=KpointsData, help='Input kpoint mesh.')
         spec.input_namespace('file',
                              valid_type=(SinglefileData, StructureData),
                              required=False,

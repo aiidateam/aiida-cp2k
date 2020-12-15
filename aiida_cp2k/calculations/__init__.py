@@ -250,14 +250,26 @@ class Cp2kCalculation(CalcJob):
             fobj.write(xyz)
 
 
+def kind_names(atoms):
+    """Get atom kind names from ASE atoms based on tags.
+
+     Simply append the tag to element symbol. E.g., 'H' with tag 1 becomes 'H1'.
+     Note: This mirrors the behavior of StructureData.get_kind_names()
+
+     :param atoms: ASE atoms instance
+     :returns: list of kind names
+     """
+    elem_tags = ['' if t == 0 else str(t) for t in atoms.get_tags()]
+    return list(map(add, atoms.get_chemical_symbols(), elem_tags))
+
+
 def _atoms_to_xyz(atoms):
-    """Function that converts ASE atoms to string and takes care of element tags.
+    """Converts ASE atoms to string, taking care of element tags.
 
     :param atoms: ASE Atoms instance
     :returns: str (in xyz format)
     """
-    elem_tags = ['' if t == 0 else str(t) for t in atoms.get_tags()]
-    elem_symbols = list(map(add, atoms.get_chemical_symbols(), elem_tags))
+    elem_symbols = kind_names(atoms)
     elem_coords = ['{:25.16f} {:25.16f} {:25.16f}'.format(p[0], p[1], p[2]) for p in atoms.get_positions()]
     xyz = f'{len(elem_coords)}\n\n'
     xyz += u'\n'.join(map(add, elem_symbols, elem_coords))

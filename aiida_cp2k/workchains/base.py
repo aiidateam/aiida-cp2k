@@ -3,6 +3,7 @@
 
 from aiida.common import AttributeDict
 from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, process_handler, while_
+from aiida.orm import Dict
 from aiida.plugins import CalculationFactory
 
 from ..utils import add_restart_sections
@@ -31,6 +32,8 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         )
 
         spec.expose_outputs(Cp2kCalculation)
+        spec.output('final_input_parameters', valid_type=Dict, required=False,
+            help='The input parameters used for the final calculation.')
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
@@ -41,6 +44,12 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
 
         super(Cp2kBaseWorkChain, self).setup()
         self.ctx.inputs = AttributeDict(self.exposed_inputs(Cp2kCalculation, 'cp2k'))
+
+    def results(self):
+        super().results()
+        if self.inputs.cp2k.parameters != self.ctx.inputs.parameters:
+            self.out('final_input_parameters', self.ctx.inputs.parameters)
+
 
 
     @process_handler(priority=400, enabled=False)

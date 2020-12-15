@@ -115,7 +115,13 @@ def example_base(cp2k_code):
     builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")
-    run(builder)
+    calc = run(builder)
+
+    if 'EXT_RESTART' in calc['final_input_parameters'].dict:
+        print("OK, EXT_RESTART section is present in the final_input_parameters.")
+    else:
+        print("ERROR, EXT_RESTART section is NOT present in the final_input_parameters.")
+        sys.exit(3)
 
 
 @click.command('cli')

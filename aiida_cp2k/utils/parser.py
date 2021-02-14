@@ -42,6 +42,9 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
     bohr2ang = 0.529177208590000
 
     for i_line, line in enumerate(lines):
+        if line.startswith(' CP2K| version string:'):
+            cp2k_version = float(line.split()[5])
+            result_dict['cp2k_version'] = cp2k_version
         if line.startswith(' ENERGY| '):
             energy = float(line.split()[8])
             result_dict['energy'] = energy
@@ -58,7 +61,10 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
         if "ABORT" in line:
             result_dict["aborted"] = True
         if "KPOINTS| Band Structure Calculation" in line:
-            kpoints, labels, bands = _parse_bands(lines, i_line)
+            if cp2k_version < 8.1:
+                kpoints, labels, bands = _parse_bands(lines, i_line)
+            else:
+                kpoints, labels, bands = _parse_bands_cp2k81(lines, i_line)
             result_dict["kpoint_data"] = {
                 "kpoints": kpoints,
                 "labels": labels,
@@ -325,6 +331,55 @@ def _parse_bands(lines, n_start):
 
     return np.array(kpoints), labels, np.array(bands)
 
+def _parse_bands_cp2k81(lines, n_start):
+    """Parse band structure from cp2k output for version 8.1"""
+
+    import numpy as np
+
+    kpoints = []
+    labels = []
+    bands_s1 = []
+    bands_s2 = []
+    known_kpoints = {}
+    read_band_values = False
+
+    selected_lines = lines[n_start:]
+    for line in selected_lines:
+        splitted = line.split()
+
+        if read_band_values and not (splitted[0] == "KPOINTS|" or splitted[0] == "#"):
+            band.append(float(splitted[1]))
+            continue
+        elif read_band_values:
+            read_band_values = False
+            if spin == 1:
+                if kpoint in known_kpoints:
+                    labels.append((len(kpoints), known_kpoints[kpoint]))
+                kpoints.append(kpoint)
+                bands_s1.append(band)
+            elif spin == 2:
+                bands_s2.append(band)
+
+        if line.startswith(" KPOINTS| Special point"):
+            kpoint = tuple(float(p) for p in splitted[-3:])
+            if " ".join(splitted[-5:-3]) != "not specified":
+                label = splitted[-4]
+                known_kpoints[kpoint] = label
+        elif line.startswith("#  Point"):
+            spin = int(splitted[4][0])
+            kpoint = tuple(float(p) for p in splitted[-4:-1])
+            print(splitted[2], spin, kpoint)
+        elif "#   Band    Energy [eV]     Occupation" in line:
+            read_band_values = True
+            band = []
+
+    if bands_s2:
+        bands = [bands_s1, bands_s2]
+        print(len(bands_s1), len(bands_s2))
+    else:
+        bands = bands_s1
+        print(len(bands_s1), len(bands_s1[0]))
+    return np.array(kpoints), labels, np.array(bands)
 
 def parse_cp2k_trajectory(content):
     """CP2K trajectory parser."""

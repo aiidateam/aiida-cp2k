@@ -331,6 +331,7 @@ def _parse_bands(lines, n_start):
 
     return np.array(kpoints), labels, np.array(bands)
 
+
 def _parse_bands_cp2k81(lines, n_start):
     """Parse band structure from cp2k output for version 8.1"""
 
@@ -380,6 +381,7 @@ def _parse_bands_cp2k81(lines, n_start):
         bands = bands_s1
         print(len(bands_s1), len(bands_s1[0]))
     return np.array(kpoints), labels, np.array(bands)
+
 
 def parse_cp2k_trajectory(content):
     """CP2K trajectory parser."""

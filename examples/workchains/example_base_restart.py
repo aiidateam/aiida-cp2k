@@ -14,11 +14,12 @@ import ase.io
 import click
 
 from aiida.engine import run
-from aiida.orm import (Code, Dict, SinglefileData, StructureData)
+from aiida.orm import (Code, Dict, SinglefileData)
 from aiida.common import NotExistent
-from aiida.plugins import WorkflowFactory
+from aiida.plugins import DataFactory, WorkflowFactory
 
 Cp2kBaseWorkChain = WorkflowFactory('cp2k.base')
+StructureData = DataFactory('structure')  # pylint: disable=invalid-name
 
 
 def example_base(cp2k_code):
@@ -114,7 +115,13 @@ def example_base(cp2k_code):
     builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")
-    run(builder)
+    calc = run(builder)
+
+    if 'EXT_RESTART' in calc['final_input_parameters'].dict:
+        print("OK, EXT_RESTART section is present in the final_input_parameters.")
+    else:
+        print("ERROR, EXT_RESTART section is NOT present in the final_input_parameters.")
+        sys.exit(3)
 
 
 @click.command('cli')
@@ -124,7 +131,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print(f"The code '{codelabel}' does not exist")
         sys.exit(1)
     example_base(code)
 

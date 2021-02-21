@@ -11,8 +11,9 @@ import io
 from operator import add
 
 from aiida.engine import CalcJob
-from aiida.orm import Computer, Dict, SinglefileData, StructureData, RemoteData, BandsData
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
+from aiida.orm import Computer, Dict, RemoteData, SinglefileData
+from aiida.plugins import DataFactory
 
 from ..utils.datatype_helpers import (
     validate_basissets,
@@ -23,6 +24,10 @@ from ..utils.datatype_helpers import (
     write_pseudos,
 )
 from ..utils import Cp2kInput
+
+BandsData = DataFactory('array.bands')  # pylint: disable=invalid-name
+StructureData = DataFactory('structure')  # pylint: disable=invalid-name
+KpointsData = DataFactory('array.kpoints')  # pylint: disable=invalid-name
 
 
 class Cp2kCalculation(CalcJob):
@@ -46,15 +51,18 @@ class Cp2kCalculation(CalcJob):
         super(Cp2kCalculation, cls).define(spec)
 
         # Input parameters.
-        spec.input('parameters', valid_type=Dict, help='the input parameters')
-        spec.input('structure', valid_type=StructureData, required=False, help='the main input structure')
-        spec.input('settings', valid_type=Dict, required=False, help='additional input parameters')
-        spec.input('resources', valid_type=dict, required=False, help='special settings')
-        spec.input('parent_calc_folder', valid_type=RemoteData, required=False, help='remote folder used for restarts')
+        spec.input('parameters', valid_type=Dict, help='The input parameters.')
+        spec.input('structure', valid_type=StructureData, required=False, help='The main input structure.')
+        spec.input('settings', valid_type=Dict, required=False, help='Optional input parameters.')
+        spec.input('parent_calc_folder',
+                   valid_type=RemoteData,
+                   required=False,
+                   help='Working directory of a previously ran calculation to restart from.')
+        spec.input('kpoints', valid_type=KpointsData, required=False, help='Input kpoint mesh.')
         spec.input_namespace('file',
                              valid_type=(SinglefileData, StructureData),
                              required=False,
-                             help='additional input files',
+                             help='Additional input files.',
                              dynamic=True)
 
         spec.input_namespace(
@@ -101,7 +109,7 @@ class Cp2kCalculation(CalcJob):
         spec.exit_code(301, 'ERROR_OUTPUT_READ', message='The output file could not be read.')
         spec.exit_code(302, 'ERROR_OUTPUT_PARSE', message='The output file could not be parsed.')
         spec.exit_code(303, 'ERROR_OUTPUT_INCOMPLETE', message='The output file was incomplete.')
-        spec.exit_code(304, 'ERROR_OUTPUT_CONTAINS_ABORT', message='The output file contains the word "ABORT"')
+        spec.exit_code(304, 'ERROR_OUTPUT_CONTAINS_ABORT', message='The output file contains the word "ABORT".')
         spec.exit_code(312, 'ERROR_STRUCTURE_PARSE', message='The output structure could not be parsed.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION', message='The parser raised an unexpected exception.')
 
@@ -114,9 +122,12 @@ class Cp2kCalculation(CalcJob):
                        message='The ionic minimization cycle did not converge for the given thresholds.')
 
         # Output parameters.
-        spec.output('output_parameters', valid_type=Dict, required=True, help='the results of the calculation')
-        spec.output('output_structure', valid_type=StructureData, required=False, help='optional relaxed structure')
-        spec.output('output_bands', valid_type=BandsData, required=False, help='optional band structure')
+        spec.output('output_parameters',
+                    valid_type=Dict,
+                    required=True,
+                    help='The output dictionary containing results of the calculation.')
+        spec.output('output_structure', valid_type=StructureData, required=False, help='The relaxed output structure.')
+        spec.output('output_bands', valid_type=BandsData, required=False, help='Computed electronic band structure.')
         spec.default_output_node = 'output_parameters'
 
         spec.outputs.dynamic = True
@@ -130,7 +141,7 @@ class Cp2kCalculation(CalcJob):
 
         # pylint: disable=too-many-statements,too-many-branches
 
-        # create cp2k input file
+        # Create cp2k input file.
         inp = Cp2kInput(self.inputs.parameters.get_dict())
         inp.add_keyword("GLOBAL/PROJECT", self._DEFAULT_PROJECT_NAME)
 
@@ -159,6 +170,16 @@ class Cp2kCalculation(CalcJob):
         if 'pseudos' in self.inputs:
             validate_pseudos(inp, self.inputs.pseudos, self.inputs.structure if 'structure' in self.inputs else None)
             write_pseudos(inp, self.inputs.pseudos, folder)
+
+        # Kpoints.
+        if 'kpoints' in self.inputs:
+            try:
+                mesh, _ = self.inputs.kpoints.get_kpoints_mesh()
+            except AttributeError:
+                raise InputValidationError("K-point sampling for SCF must be given in mesh form.")
+
+            inp.add_keyword('FORCE_EVAL/DFT/KPOINTS', {'WAVEFUNCTIONS': ' COMPLEX', 'FULL_GRID': '.TRUE.'})
+            inp.add_keyword('FORCE_EVAL/DFT/KPOINTS/SCHEME MONKHORST-PACK', f'{mesh[0]} {mesh[1]} {mesh[2]}')
 
         with io.open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8") as fobj:
             try:
@@ -214,9 +235,9 @@ class Cp2kCalculation(CalcJob):
 
         # Check for left over settings.
         if settings:
-            raise InputValidationError("The following keys have been found " +
-                                       "in the settings input node {}, ".format(self.pk) + "but were not understood: " +
-                                       ",".join(settings.keys()))
+            raise InputValidationError(
+                f"The following keys have been found in the settings input node {self.pk}, but were not understood: " +
+                ",".join(settings.keys()))
 
         return calcinfo
 
@@ -224,11 +245,32 @@ class Cp2kCalculation(CalcJob):
     def _write_structure(structure, folder, name):
         """Function that writes a structure and takes care of element tags."""
 
-        # Create file with the structure.
-        s_ase = structure.get_ase()
-        elem_tags = ['' if t == 0 else str(t) for t in s_ase.get_tags()]
-        elem_symbols = list(map(add, s_ase.get_chemical_symbols(), elem_tags))
-        elem_coords = ['{:25.16f} {:25.16f} {:25.16f}'.format(p[0], p[1], p[2]) for p in s_ase.get_positions()]
+        xyz = _atoms_to_xyz(structure.get_ase())
         with io.open(folder.get_abs_path(name), mode="w", encoding="utf-8") as fobj:
-            fobj.write(u'{}\n\n'.format(len(elem_coords)))
-            fobj.write(u'\n'.join(map(add, elem_symbols, elem_coords)))
+            fobj.write(xyz)
+
+
+def kind_names(atoms):
+    """Get atom kind names from ASE atoms based on tags.
+
+     Simply append the tag to element symbol. E.g., 'H' with tag 1 becomes 'H1'.
+     Note: This mirrors the behavior of StructureData.get_kind_names()
+
+     :param atoms: ASE atoms instance
+     :returns: list of kind names
+     """
+    elem_tags = ['' if t == 0 else str(t) for t in atoms.get_tags()]
+    return list(map(add, atoms.get_chemical_symbols(), elem_tags))
+
+
+def _atoms_to_xyz(atoms):
+    """Converts ASE atoms to string, taking care of element tags.
+
+    :param atoms: ASE Atoms instance
+    :returns: str (in xyz format)
+    """
+    elem_symbols = kind_names(atoms)
+    elem_coords = ['{:25.16f} {:25.16f} {:25.16f}'.format(p[0], p[1], p[2]) for p in atoms.get_positions()]
+    xyz = f'{len(elem_coords)}\n\n'
+    xyz += u'\n'.join(map(add, elem_symbols, elem_coords))
+    return xyz

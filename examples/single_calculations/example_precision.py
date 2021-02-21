@@ -15,9 +15,12 @@ import click
 import ase
 import numpy as np
 
-from aiida.orm import (Code, Dict, SinglefileData, StructureData)
-from aiida.engine import run
 from aiida.common import NotExistent
+from aiida.engine import run
+from aiida.orm import (Code, Dict, SinglefileData)
+from aiida.plugins import DataFactory
+
+StructureData = DataFactory('structure')  # pylint: disable=invalid-name
 
 
 def example_precision(cp2k_code):
@@ -132,7 +135,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist.".format(codelabel))
+        print("The code '{codelabel}' does not exist.")
         sys.exit(1)
     example_precision(code)
 

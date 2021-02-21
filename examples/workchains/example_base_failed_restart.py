@@ -14,11 +14,12 @@ import ase.io
 import click
 
 from aiida.engine import run_get_node
-from aiida.orm import (Code, Dict, SinglefileData, StructureData)
+from aiida.orm import (Code, Dict, SinglefileData)
 from aiida.common import NotExistent
-from aiida.plugins import WorkflowFactory
+from aiida.plugins import DataFactory, WorkflowFactory
 
 Cp2kBaseWorkChain = WorkflowFactory('cp2k.base')
+StructureData = DataFactory('structure')  # pylint: disable=invalid-name
 
 
 def example_base(cp2k_code):
@@ -131,7 +132,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print(f"The code '{codelabel}' does not exist")
         sys.exit(1)
     example_base(code)
 

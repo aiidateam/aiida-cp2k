@@ -1,0 +1,39 @@
+name: Continuous Integration
+
+on:
+  [push, pull_request]
+
+jobs:
+
+  test-plugin:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Install docker
+      run: |
+        sudo apt-get update
+        sudo apt-get install apt-transport-https ca-certificates curl software-properties-common
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu  $(lsb_release -cs)  stable"
+        sudo apt-get update
+        sudo apt-get install docker-ce
+
+    - name: Build the Docker image
+      run: |
+        docker build -t aiida_cp2k_test .
+
+    - name: Run aiida_cp2k_test image and test the plugin inside the corresponding container.
+      run: |
+        export DOCKERID=`docker run -d aiida_cp2k_test`
+        docker exec --tty $DOCKERID wait-for-services
+        docker logs $DOCKERID
+        docker exec --tty --user aiida $DOCKERID /bin/bash -l -c 'cd /opt/aiida-cp2k/ && pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )'
+        docker exec --tty --user aiida $DOCKERID /bin/bash -l -c 'cd /opt/aiida-cp2k/ && py.test --cov aiida_cp2k --cov-append .'
+        docker exec --tty --user aiida $DOCKERID /bin/bash -l -c 'cd /opt/aiida-cp2k/docs && make'
+
+

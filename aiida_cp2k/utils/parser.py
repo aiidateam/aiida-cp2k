@@ -75,6 +75,19 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
         if line.startswith(' DFT| ') and 'dft_type' not in result_dict.keys():
             result_dict['dft_type'] = line.split()[-1]  # RKS, UKS or ROKS
 
+        if line.strip().startswith("Integrated absolute spin density"):
+            if 'integrated_abs_spin_dens' not in result_dict:
+                result_dict['integrated_abs_spin_dens'] = []
+            result_dict['integrated_abs_spin_dens'].append(float(line.split()[-1]))
+
+        if line.strip().startswith("Ideal and single determinant"):
+            s2_ideal, s2_expect = line.split()[-2:]
+            if 'spin_square_ideal' not in result_dict:
+                result_dict['spin_square_ideal'] = float(s2_ideal)
+            if 'spin_square_expectation' not in result_dict:
+                result_dict['spin_square_expectation'] = []
+            result_dict['spin_square_expectation'].append(float(s2_expect))
+
         # read the number of electrons in the first scf (NOTE: it may change but it is not updated!)
         if re.search('Number of electrons: ', line):
             if 'init_nel_spin1' not in result_dict.keys():

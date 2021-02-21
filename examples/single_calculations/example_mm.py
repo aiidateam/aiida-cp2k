@@ -14,9 +14,9 @@ import sys
 import ase.io
 import click
 
-from aiida.orm import (Code, Dict, SinglefileData)
-from aiida.engine import run
 from aiida.common import NotExistent
+from aiida.engine import run
+from aiida.orm import (Code, Dict, SinglefileData)
 
 
 def example_mm(cp2k_code):
@@ -125,8 +125,8 @@ def example_mm(cp2k_code):
         print("OK, energy has the expected value.")
     else:
         print("ERROR!")
-        print("Expected energy value: {}".format(expected_energy))
-        print("Actual energy value: {}".format(calc['output_parameters']['energy']))
+        print(f"Expected energy value: {expected_energy}")
+        print(f"Actual energy value: {calc['output_parameters']['energy']}")
         sys.exit(3)
 
     # Check if callgraph is there.
@@ -145,7 +145,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist.".format(codelabel))
+        print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)
     example_mm(code)
 

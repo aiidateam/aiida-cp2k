@@ -15,9 +15,13 @@ import click
 from ase.atoms import Atoms
 import numpy as np
 
-from aiida.engine import run
-from aiida.orm import (Code, Dict, SinglefileData, StructureData)
 from aiida.common import NotExistent
+from aiida.engine import run
+from aiida.orm import (Code, Dict, SinglefileData)
+from aiida.plugins import DataFactory
+
+StructureData = DataFactory('structure')  # pylint: disable=invalid-name
+KpointsData = DataFactory('array.kpoints')  # pylint: disable=invalid-name
 
 
 def example_bands(cp2k_code):
@@ -40,6 +44,11 @@ def example_bands(cp2k_code):
     atoms = Atoms('Si2', positions=positions, cell=cell)
     structure = StructureData(ase=atoms)
 
+    # kpoints
+    kpoints_mesh = KpointsData()
+    kpoints_mesh.set_cell(cell)
+    kpoints_mesh.set_kpoints_mesh_from_density(distance=0.5)
+
     # basis set
     basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
 
@@ -53,13 +62,6 @@ def example_bands(cp2k_code):
                 'METHOD': 'Quickstep',
                 'DFT': {
                     'CHARGE': 0,
-                    'KPOINTS': {
-                        'SCHEME MONKHORST-PACK': '1 1 1',
-                        'SYMMETRY': 'OFF',
-                        'WAVEFUNCTIONS': 'REAL',
-                        'FULL_GRID': '.TRUE.',
-                        'PARALLEL_GROUP_SIZE': 0,
-                    },
                     'MGRID': {
                         'CUTOFF': 600,
                         'NGRIDS': 4,
@@ -185,6 +187,7 @@ def example_bands(cp2k_code):
     builder = cp2k_code.get_builder()
     builder.structure = structure
     builder.parameters = parameters
+    builder.kpoints = kpoints_mesh
     builder.code = cp2k_code
     builder.file = {
         'basis': basis_file,
@@ -196,13 +199,15 @@ def example_bands(cp2k_code):
     }
     builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
+    builder.metadata.options.parser_name = 'cp2k_advanced_parser'
+
     print("submitted calculation...")
     calc = run(builder)
 
     bands = calc['output_bands']
 
     # check bands
-    expected_gamma_kpoint = np.array([-5.71237757, 6.5718575, 6.5718575, 6.5718575, 8.88653953])
+    expected_gamma_kpoint = np.array([-6.84282475, 5.23143741, 5.23143741, 5.23143741, 7.89232311])
 
     if bands.get_kpoints().shape == (66, 3):
         print("OK, got expected kpoints set size.")
@@ -220,6 +225,8 @@ def example_bands(cp2k_code):
         print("Ok, got expected energy levels at GAMMA point.")
     else:
         print("Got unexpected energy levels at GAMMA point.")
+        print(bands.get_bands()[0])
+        print(expected_gamma_kpoint)
         sys.exit(3)
 
     sys.exit(0)
@@ -232,7 +239,7 @@ def cli(codelabel):
     try:
         code = Code.get_from_string(codelabel)
     except NotExistent:
-        print("The code '{}' does not exist".format(codelabel))
+        print("The code '{codelabel}' does not exist.")
         sys.exit(1)
     example_bands(code)
 

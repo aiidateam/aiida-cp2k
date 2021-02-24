@@ -61,10 +61,7 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
         if "ABORT" in line:
             result_dict["aborted"] = True
         if "KPOINTS| Band Structure Calculation" in line:
-            if cp2k_version < 8.1:
-                kpoints, labels, bands = _parse_bands(lines, i_line)
-            else:
-                kpoints, labels, bands = _parse_bands_cp2k81(lines, i_line)
+            kpoints, labels, bands = _parse_bands(lines, i_line, cp2k_version)
             result_dict["kpoint_data"] = {
                 "kpoints": kpoints,
                 "labels": labels,

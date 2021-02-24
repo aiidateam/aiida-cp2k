@@ -376,7 +376,6 @@ def _parse_bands_cp2k81(lines, n_start):
 
     if bands_s2:
         bands = [bands_s1, bands_s2]
-        print(len(bands_s1), len(bands_s2))
     else:
         bands = bands_s1
         print(len(bands_s1), len(bands_s1[0]))

@@ -326,9 +326,7 @@ def _parse_band_before81(band_lines):
             spin = int(splitted[3])
             kpoint = tuple(float(p) for p in splitted[-3:])
             kpoint_n_lines = int(math.ceil(int(band_lines[current_line + 1]) / 4))
-            band = [
-                float(v) for v in " ".join(band_lines[current_line + 2:current_line + 2 + kpoint_n_lines]).split()
-            ]
+            band = [float(v) for v in " ".join(band_lines[current_line + 2:current_line + 2 + kpoint_n_lines]).split()]
 
             if spin == 1:
                 if kpoint in known_kpoints:

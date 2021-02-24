@@ -292,9 +292,9 @@ def _parse_bands(lines, n_start, cp2k_version):
 
     selected_lines = lines[n_start:]
     if cp2k_version < 8.1:
-        kpoints, labels, bands_s1, bands_s2, known_kpoints = _parse_band_before81(selected_lines)
+        kpoints, labels, bands_s1, bands_s2 = _parse_band_before81(selected_lines)
     else:
-        kpoints, labels, bands_s1, bands_s2, known_kpoints = _parse_band_after81(selected_lines)
+        kpoints, labels, bands_s1, bands_s2 = _parse_band_after81(selected_lines)
 
     if bands_s2:
         bands = [bands_s1, bands_s2]
@@ -305,6 +305,7 @@ def _parse_bands(lines, n_start, cp2k_version):
 
 
 def _parse_band_before81(band_lines):
+    """ Parse bands from cp2k version 7.1 and downwards. """
     kpoints = []
     labels = []
     bands_s1 = []
@@ -332,10 +333,11 @@ def _parse_band_before81(band_lines):
                 bands_s1.append(band)
             elif spin == 2:
                 bands_s2.append(band)
-    return kpoints, labels, bands_s1, bands_s2, known_kpoints
+    return kpoints, labels, bands_s1, bands_s2
 
 
 def _parse_band_after81(band_lines):
+    """ Parse bands from cp2k version 8.1 and upwars. """
     kpoints = []
     labels = []
     bands_s1 = []
@@ -370,7 +372,7 @@ def _parse_band_after81(band_lines):
         elif "#   Band    Energy [eV]     Occupation" in line:
             read_band_values = True
             band = []
-    return kpoints, labels, bands_s1, bands_s2, known_kpoints
+    return kpoints, labels, bands_s1, bands_s2
 
 
 def parse_cp2k_trajectory(content):

@@ -325,16 +325,18 @@ def _parse_bands(lines, n_start, cp2k_version):
     if cp2k_version < 8.1:
         parse_one_band = _parse_bands_cp2k_lower_81
         pattern = re.compile(".*?Nr.*?Spin.*?K-Point.*?", re.DOTALL)
+        unspecified = ["not", "specified"]
     else:
         parse_one_band = _parse_bands_cp2k_greater_81
         pattern = re.compile(".*?Point.*?Spin.*?", re.DOTALL)
+        unspecified = ["not", "specifi"]
 
     selected_lines = lines[n_start:]
     for line_n, line in enumerate(selected_lines):
         if "KPOINTS| Special" in line:
             splitted = line.split()
             kpoint = tuple(float(p) for p in splitted[-3:])
-            if splitted[-5:-3] != ["not", "specified"]:
+            if splitted[-5:-3] != unspecified:
                 label = splitted[-4]
                 known_kpoints[kpoint] = label
 

@@ -285,7 +285,7 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
     return result_dict
 
 
-def _parse_one_band_before_81(lines, line_n):
+def _parse_bands_cp2k_lower_81(lines, line_n):
     """Parse bands in the output of CP2K <8.1"""
 
     splitted = lines[line_n].split()

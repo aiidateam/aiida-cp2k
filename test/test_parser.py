@@ -5,7 +5,7 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k        #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Test parsing band structure."""
+"""Test output parser."""
 import os
 from aiida_cp2k.utils.parser import _parse_bands
 

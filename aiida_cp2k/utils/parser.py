@@ -323,10 +323,10 @@ def _parse_bands(lines, n_start, cp2k_version):
     known_kpoints = {}
 
     if cp2k_version < 8.1:
-        parse_one_band = _parse_one_band_before_81
+        parse_one_band = _parse_bands_cp2k_lower_81
         pattern = re.compile(".*?Nr.*?Spin.*?K-Point.*?", re.DOTALL)
     else:
-        parse_one_band = _parse_one_band_after_81
+        parse_one_band = _parse_bands_cp2k_greater_81
         pattern = re.compile(".*?Point.*?Spin.*?", re.DOTALL)
 
     selected_lines = lines[n_start:]

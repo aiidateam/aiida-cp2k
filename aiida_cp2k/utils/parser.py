@@ -296,7 +296,7 @@ def _parse_one_band_before_81(lines, line_n):
     return spin, kpoint, bands
 
 
-def _parse_one_band_after_81(lines, line_n):
+def _parse_bands_cp2k_greater_81(lines, line_n):
     """Parse bands in the output of CP2K >=8.1"""
 
     splitted = lines[line_n].split()

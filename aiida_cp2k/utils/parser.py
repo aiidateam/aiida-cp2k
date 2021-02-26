@@ -285,8 +285,8 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
     return result_dict
 
 
-def _parse_bands_cp2k_lower_81(lines, line_n):
-    """Parse bands in the output of CP2K <8.1"""
+def _parse_kpoint_cp2k_lower_81(lines, line_n):
+    """Parse one k-point in the output of CP2K <8.1"""
 
     splitted = lines[line_n].split()
     spin = int(splitted[3])
@@ -297,7 +297,7 @@ def _parse_bands_cp2k_lower_81(lines, line_n):
 
 
 def _parse_bands_cp2k_greater_81(lines, line_n):
-    """Parse bands in the output of CP2K >=8.1"""
+    """Parse one k-point in the output of CP2K >=8.1"""
 
     splitted = lines[line_n].split()
     spin = int(splitted[4][:-1])
@@ -312,7 +312,7 @@ def _parse_bands_cp2k_greater_81(lines, line_n):
 
 
 def _parse_bands(lines, n_start, cp2k_version):
-    """Parse band structure from cp2k output."""
+    """Parse band structure from the CP2K output."""
 
     import numpy as np
 
@@ -323,11 +323,11 @@ def _parse_bands(lines, n_start, cp2k_version):
     known_kpoints = {}
 
     if cp2k_version < 8.1:
-        parse_one_band = _parse_bands_cp2k_lower_81
+        parse_one_kpoint = _parse_kpoint_cp2k_lower_81
         pattern = re.compile(".*?Nr.*?Spin.*?K-Point.*?", re.DOTALL)
         unspecified = ["not", "specified"]
     else:
-        parse_one_band = _parse_bands_cp2k_greater_81
+        parse_one_kpoint = _parse_bands_cp2k_greater_81
         pattern = re.compile(".*?Point.*?Spin.*?", re.DOTALL)
         unspecified = ["not", "specifi"]
 
@@ -341,7 +341,7 @@ def _parse_bands(lines, n_start, cp2k_version):
                 known_kpoints[kpoint] = label
 
         elif pattern.match(line):
-            spin, kpoint, bands = parse_one_band(selected_lines, line_n)
+            spin, kpoint, bands = parse_one_kpoint(selected_lines, line_n)
 
             if spin == 1:
                 if kpoint in known_kpoints:

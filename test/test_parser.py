@@ -13,9 +13,8 @@ THISDIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def test_bands_parser_51():
-    """Test that band structure is parsed correctly."""
+    """Test parsing bands in the output of CP2K 5.1"""
 
-    # Test parsing bands in the the output of CP2K 5.1
     with open(f"{THISDIR}/outputs/BANDS_output_v5.1.out") as fobj:
         lines = fobj.readlines()
         for i_line, line in enumerate(lines):
@@ -28,8 +27,8 @@ def test_bands_parser_51():
 
 
 def test_bands_parser_81():
-    """Test that band structure is parsed correctly."""
-    # Test parsing bands in the the output of CP2K 8.1
+    """Test parsing bands in the the output of CP2K 8.1"""
+
     with open(f"{THISDIR}/outputs/BANDS_output_v8.1.out") as fobj:
         lines = fobj.readlines()
         for i_line, line in enumerate(lines):

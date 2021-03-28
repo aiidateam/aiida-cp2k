@@ -158,6 +158,12 @@ class Cp2kCalculation(CalcJob):
                                 override=False,
                                 conflicting_keys=['ABC', 'ALPHA_BETA_GAMMA', 'CELL_FILE_NAME'])
 
+            # Add periodic boundary conditions from structure
+            pbc = ''.join([dir_str for dir_b,dir_str in zip(self.inputs.structure.pbc, ['X', 'Y', 'Z']) if dir_b])
+            if pbc == '':
+                pbc = 'NONE'
+            inp.add_keyword('FORCE_EVAL/SUBSYS/CELL/PERIODIC', pbc, override=False)
+
             topo = "FORCE_EVAL/SUBSYS/TOPOLOGY"
             inp.add_keyword(topo + "/COORD_FILE_NAME", self._DEFAULT_COORDS_FILE_NAME, override=False)
             inp.add_keyword(topo + "/COORD_FILE_FORMAT", "XYZ", override=False, conflicting_keys=['COORDINATE'])

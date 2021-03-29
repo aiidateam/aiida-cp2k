@@ -108,7 +108,7 @@ def example_geopt(cp2k_code):
     assert calc['output_parameters']['exceeded_walltime'] is False
 
     # Check energy.
-    expected_energy = -1.17212345935
+    expected_energy = -1.161185369765792
     if abs(calc['output_parameters']['energy'] - expected_energy) < 1e-10:
         print("OK, energy has the expected value.")
     else:
@@ -118,7 +118,7 @@ def example_geopt(cp2k_code):
         sys.exit(3)
 
     # Check geometry.
-    expected_dist = 0.732594809575
+    expected_dist = 0.7208835405895
     dist = calc['output_structure'].get_ase().get_distance(0, 1)
     if abs(dist - expected_dist) < 1e-7:
         print("OK, H-H distance has the expected value.")

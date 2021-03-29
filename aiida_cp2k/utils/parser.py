@@ -392,7 +392,7 @@ def parse_cp2k_trajectory(content):
     cell = np.array(cell_str, np.float64)
 
     # parse periodic boundary conditions
-    cell_pbc = [True, True, True] # In case keyword is not set: Default in cp2k is XYZ
+    cell_pbc = [True, True, True]  # In case keyword is not set: Default in cp2k is XYZ
     for line in cell_lines:
         if line[0] == 'PERIODIC':
             cell_pbc_str = line[-1]

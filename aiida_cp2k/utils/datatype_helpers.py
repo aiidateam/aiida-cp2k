@@ -160,6 +160,31 @@ def validate_basissets(inp, basissets, structure):
             kind_sec["ELEMENT"] = bset.element
 
 
+def estimate_added_mos(basissets, structure, fraction=0.3):
+    """Calculate an estimate for ADDED_MOS based on used basis sets"""
+
+    symbols = [structure.get_kind(s.kind_name).get_symbols_string() for s in structure.sites]
+    n_mos = 0
+
+    # We are currently overcounting in the following cases:
+    #   * if we get a mix of ORB basissets for the same chemical symbol but different sites
+    #   * if we get multiple basissets for one element (merged within CP2K)
+
+    for label, bset in _unpack(basissets):
+        try:
+            _, bstype = label.split("_", maxsplit=1)
+        except ValueError:
+            bstype = "ORB"
+
+        if bstype != "ORB":  # ignore non-ORB basissets
+            continue
+
+        n_mos += symbols.count(bset.element) * bset.n_orbital_functions
+
+    # at least one additional MO per site, otherwise a fraction of the total number of orbital functions
+    return max(len(symbols), int(fraction * n_mos))
+
+
 def write_basissets(inp, basissets, folder):
     """Writes the unified BASIS_SETS file with the used basissets"""
     _write_gdt(inp, basissets, folder, "BASIS_SET_FILE_NAME", "BASIS_SETS")

@@ -778,3 +778,86 @@ def test_without_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
 
     _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)
     assert calc_node.exit_status == 0
+
+
+def test_added_mos(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+    """Testing CP2K with the Basis Set stored in gaussian.basisset and a smearing section but no predefined ADDED_MOS"""
+
+    structure = StructureData(cell=[[4.00759, 0.0, 0.0], [-2.003795, 3.47067475, 0.0],
+                                    [3.06349683e-16, 5.30613216e-16, 5.00307]],
+                              pbc=True)
+    structure.append_atom(position=(-0.00002004, 2.31379473, 0.87543719), symbols="H")
+    structure.append_atom(position=(2.00381504, 1.15688001, 4.12763281), symbols="H")
+    structure.append_atom(position=(2.00381504, 1.15688001, 3.37697219), symbols="H")
+    structure.append_atom(position=(-0.00002004, 2.31379473, 1.62609781), symbols="H")
+
+    # parameters
+    parameters = Dict(
+        dict={
+            'GLOBAL': {
+                'RUN_TYPE': 'ENERGY',
+            },
+            'FORCE_EVAL': {
+                'METHOD': 'Quickstep',
+                'DFT': {
+                    "XC": {
+                        "XC_FUNCTIONAL": {
+                            "_": "PBE",
+                        },
+                    },
+                    "MGRID": {
+                        "CUTOFF": 100.0,
+                        "REL_CUTOFF": 10.0,
+                    },
+                    "QS": {
+                        "METHOD": "GPW",
+                        "EXTRAPOLATION": "USE_GUESS",
+                    },
+                    "SCF": {
+                        "EPS_SCF": 1e-05,
+                        "MAX_SCF": 3,
+                        "MIXING": {
+                            "METHOD": "BROYDEN_MIXING",
+                            "ALPHA": 0.4,
+                        },
+                        "SMEAR": {
+                            "METHOD": "FERMI_DIRAC",
+                            "ELECTRONIC_TEMPERATURE": 300.0,
+                        },
+                    },
+                    "KPOINTS": {
+                        "SCHEME": "MONKHORST-PACK 2 2 1",
+                        "FULL_GRID": False,
+                        "SYMMETRY": False,
+                        "PARALLEL_GROUP_SIZE": -1,
+                    },
+                },
+            },
+        })
+
+    options = {
+        "resources": {
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1
+        },
+        "max_wallclock_seconds": 1 * 3 * 60,
+    }
+
+    inputs = {
+        "structure": structure,
+        "parameters": parameters,
+        "code": cp2k_code,
+        "metadata": {
+            "options": options,
+        },
+        "basissets": {label: b for label, b in cp2k_basissets.items() if label == "H"},
+        "pseudos": {label: p for label, p in cp2k_pseudos.items() if label == "H"},
+    }
+
+    _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)
+
+    assert calc_node.exit_status == 0
+
+    # check that the ADDED_MOS keyword was added within the calculation
+    with calc_node.open("aiida.inp") as fhandle:
+        assert any("ADDED_MOS" in line for line in fhandle), "ADDED_MOS not found in the generated CP2K input file"

@@ -185,3 +185,42 @@ def test_invalid_preprocessor():
     inp = Cp2kInput({"@SET": "bar"})
     with pytest.raises(ValueError):
         inp.render()
+
+
+def test_get_keyword_value():
+    """Test get_keyword_value()"""
+    inp = Cp2kInput({"FOO": "bar", "A": {"KW1": "val1"}})
+    assert inp.get_keyword_value("FOO") == "bar"
+    assert inp.get_keyword_value("/FOO") == "bar"
+    assert inp.get_keyword_value("A/KW1") == "val1"
+    assert inp.get_keyword_value("/A/KW1") == "val1"
+    assert inp.get_keyword_value(["A", "KW1"]) == "val1"
+    with pytest.raises(TypeError):
+        inp.get_keyword_value("A")
+    with pytest.raises(KeyError):
+        inp.get_keyword_value("B")
+
+
+def test_get_section_dict():
+    """Test get_section_dict()"""
+    orig_dict = {"FOO": "bar", "A": {"KW1": "val1"}}
+    inp = Cp2kInput(orig_dict)
+    assert inp.get_section_dict("/") == orig_dict
+    assert inp.get_section_dict("////") == orig_dict
+    assert inp.get_section_dict("") == orig_dict
+    assert inp.get_section_dict() == orig_dict
+    assert inp.get_section_dict("/") is not orig_dict  # make sure we get a distinct object
+    assert inp.get_section_dict("A") == orig_dict["A"]
+    assert inp.get_section_dict("/A") == orig_dict["A"]
+    assert inp.get_section_dict(["A"]) == orig_dict["A"]
+    with pytest.raises(TypeError):
+        inp.get_section_dict("FOO")
+    with pytest.raises(KeyError):
+        inp.get_section_dict("BAR")
+
+
+def test_get_section_dict_repeated():
+    """Test NotImplementedError for repeated sections in get_section_dict()"""
+    inp = Cp2kInput({"FOO": [{"KW1": "val1_1"}, {"KW1": "val1_2"}]})
+    with pytest.raises(NotImplementedError):
+        inp.get_keyword_value("/FOO/KW1")

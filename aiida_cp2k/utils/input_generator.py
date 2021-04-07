@@ -56,6 +56,74 @@ class Cp2kInput:  # pylint: disable=old-style-class
 
         Cp2kInput._add_keyword(kwpath, value, self._params, ovrd=override, cfct=conflicting_keys)
 
+    @staticmethod
+    def _stringify_path(kwpath):
+        """Stringify a kwpath argument"""
+        if isinstance(kwpath, str):
+            return kwpath
+
+        assert isinstance(kwpath, Sequence), "path is neither Sequence nor String"
+        return "/".join(kwpath)
+
+    def get_section_dict(self, kwpath=""):
+        """Get a copy of a section from the current input structure
+
+        Args:
+
+            kwpath: Can be a single keyword, a path with `/` as divider for sections & key,
+                    or a sequence with sections and key.
+        """
+
+        section = self._get_section_or_kw(kwpath)
+
+        if not isinstance(section, Mapping):
+            raise TypeError(f"Section '{self._stringify_path(kwpath)}' requested, but keyword found")
+
+        return deepcopy(section)
+
+    def get_keyword_value(self, kwpath):
+        """Get the value of a keyword from the current input structure
+
+        Args:
+
+            kwpath: Can be a single keyword, a path with `/` as divider for sections & key,
+                    or a sequence with sections and key.
+        """
+
+        keyword = self._get_section_or_kw(kwpath)
+
+        if isinstance(keyword, Mapping):
+            raise TypeError(f"Keyword '{self._stringify_path(kwpath)}' requested, but section found")
+
+        return keyword
+
+    def _get_section_or_kw(self, kwpath):
+        """Retrieve either a section or a keyword given a path"""
+
+        if isinstance(kwpath, str):
+            kwpath = kwpath.split("/")  # convert to list of sections if string
+
+        # get a copy of the path in a mutable sequence
+        # accept any case, but internally we use uppercase
+        # strip empty strings to accept leading "/", "//", etc.
+        path = [k.upper() for k in kwpath if k]
+
+        # start with a reference to the root of the parameters
+        current = self._params
+
+        try:
+            while path:
+                current = current[path.pop(0)]
+        except KeyError:
+            raise KeyError(f"Section '{self._stringify_path(kwpath)}' not found in parameters")
+        except TypeError:
+            if isinstance(current, Sequence) and not isinstance(current, str):
+                raise NotImplementedError(f"Repeated sections are not yet supported when retrieving data"
+                                          f" with path '{self._stringify_path(kwpath)}'")
+            raise
+
+        return current
+
     def render(self):
         output = [self.DISCLAIMER]
         self._render_section(output, deepcopy(self._params))

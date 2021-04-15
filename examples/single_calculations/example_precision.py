@@ -35,7 +35,7 @@ def example_precision(cp2k_code):
     dist = 0.74 + epsilon
     positions = [(0, 0, 0), (0, 0, dist)]
     cell = np.diag([4, -4, 4 + epsilon])
-    atoms = ase.Atoms('H2', positions=positions, cell=cell, pbc=True)
+    atoms = ase.Atoms('H2', positions=positions, cell=cell)
     structure = StructureData(ase=atoms)
 
     # Basis set.

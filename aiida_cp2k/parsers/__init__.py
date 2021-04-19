@@ -163,7 +163,7 @@ class Cp2kToolsParser(Cp2kBaseParser):
 
         fname = self.node.process_class._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
         if fname not in self.retrieved.list_object_names():
-            raise OutputParsingError("CP2K output file not retrieved")
+            raise OutputParsingError("CP2K output file not retrieved.")
 
         try:
             output_string = self.retrieved.get_object_content(fname)

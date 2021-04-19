@@ -102,7 +102,7 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
 
         fname = self.node.process_class._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
         if fname not in self.retrieved.list_object_names():
-            raise OutputParsingError("Cp2k output file not retrieved")
+            raise OutputParsingError("CP2K output file not retrieved.")
 
         try:
             output_string = self.retrieved.get_object_content(fname)
@@ -148,6 +148,50 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
             )
             self.out("output_bands", bnds)
             del result_dict["kpoint_data"]
+
+        self.out("output_parameters", Dict(dict=result_dict))
+        return None
+
+
+class Cp2kToolsParser(Cp2kBaseParser):
+    """AiiDA parser class for the output of CP2K based on the cp2k-output-tools project."""
+
+    def _parse_stdout(self):
+        """Very advanced CP2K output file parser."""
+
+        from cp2k_output_tools import parse_iter
+
+        fname = self.node.process_class._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
+        if fname not in self.retrieved.list_object_names():
+            raise OutputParsingError("CP2K output file not retrieved.")
+
+        try:
+            output_string = self.retrieved.get_object_content(fname)
+        except IOError:
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+
+        result_dict = {}
+
+        # the CP2K output parser is a block-based parser return blocks of data, each under a block key
+        # merge them into one dict
+        for match in parse_iter(output_string, key_mangling=True):
+            result_dict.update(match)
+
+        # nwarnings is the last thing to be printed in the CP2K output file:
+        # if it is not there, CP2K didn't finish properly most likely
+        if 'nwarnings' not in result_dict:
+            raise OutputParsingError("CP2K did not finish properly")
+
+        if "aborted" in result_dict:
+            return self.exit_codes.ERROR_OUTPUT_CONTAINS_ABORT
+
+        try:
+            # the cp2k-output-tools parser is more hierarchical, be compatible with
+            # the basic parser here and provide the total force eval energy as energy
+            result_dict["energy"] = result_dict["energies"]["total_force_eval"]
+            result_dict["energy_units"] = "a.u."
+        except KeyError:
+            pass
 
         self.out("output_parameters", Dict(dict=result_dict))
         return None

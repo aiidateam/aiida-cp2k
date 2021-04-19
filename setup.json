@@ -21,7 +21,8 @@
         ],
         "aiida.parsers": [
             "cp2k_base_parser = aiida_cp2k.parsers:Cp2kBaseParser",
-            "cp2k_advanced_parser = aiida_cp2k.parsers:Cp2kAdvancedParser"
+            "cp2k_advanced_parser = aiida_cp2k.parsers:Cp2kAdvancedParser",
+            "cp2k_tools_parser = aiida_cp2k.parsers:Cp2kToolsParser"
         ],
         "aiida.workflows": [
             "cp2k.base = aiida_cp2k.workchains:Cp2kBaseWorkChain"
@@ -33,7 +34,8 @@
             "pytest>=4.4,<5.0.0",
             "pytest-cov>=2.6.1,<3.0.0",
             "coverage",
-            "aiida-gaussian-datatypes"
+            "aiida-gaussian-datatypes",
+            "cp2k-output-tools"
         ],
         "pre-commit":[
             "pre-commit==1.18.3",

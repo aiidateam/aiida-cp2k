@@ -8,21 +8,10 @@
 ###############################################################################
 """Create Gaussian basisset and pseudopotential data in the database"""
 
-import sys
 from io import StringIO
 
-from aiida.common.exceptions import LoadingEntryPointError, MissingEntryPointError, UniquenessError
+from aiida.common.exceptions import UniquenessError
 from aiida.plugins import DataFactory
-
-try:
-    BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
-    Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
-except (LoadingEntryPointError, MissingEntryPointError):
-    if hasattr(sys, '_called_from_test'):
-        import pytest
-        pytest.skip("Gaussian Datatypes are not available", allow_module_level=True)
-    else:
-        sys.exit("For this example to run, please make sure the aiida-gaussian-datatypes package is installed")
 
 
 def load_data(prefix="MY-"):
@@ -70,6 +59,9 @@ def load_data(prefix="MY-"):
          0.22178614    1    18.26691718
          0.25682890    0
     """
+
+    BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
+    Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
 
     fhandle_bset = StringIO(bset_input)
     fhandle_pseudo = StringIO(pseudo_input)

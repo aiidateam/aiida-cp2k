@@ -13,17 +13,10 @@ import pytest
 import ase.build
 
 from aiida.plugins import CalculationFactory, DataFactory
-from aiida.common.exceptions import LoadingEntryPointError, MissingEntryPointError
 
 from aiida.engine import run, run_get_node
 from aiida.orm import Dict, StructureData
 from aiida.engine.processes.calcjobs.tasks import PreSubmitException
-
-try:
-    BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
-    Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
-except (LoadingEntryPointError, MissingEntryPointError):
-    pytest.skip("Gaussian Datatypes are not available", allow_module_level=True)
 
 # Note: the basissets and pseudos deliberately have a prefix to avoid matching
 #       any CP2K provided entries which may creep in via the DATA_DIR
@@ -116,6 +109,7 @@ def bsdataset():
 def cp2k_basissets(bsdataset):
     """Returns basisset objects from the data above"""
     fhandle = StringIO(BSET_DATA[bsdataset])
+    BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
     bsets = {}
     for bset in BasisSet.from_cp2k(fhandle):
         bset.store()  # store because the validator accesses it when raising an error
@@ -140,6 +134,7 @@ def pdataset():
 def cp2k_pseudos(pdataset):
     """Returns pseudo objects from the data above"""
     fhandle = StringIO(PSEUDO_DATA[pdataset])
+    Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
     return {p.element: p for p in Pseudo.from_cp2k(fhandle)}
 
 

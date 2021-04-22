@@ -19,3 +19,8 @@ repos:
     name: prospector
     description: "This hook runs Prospector: https://github.com/landscapeio/prospector"
     entry: prospector
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v3.4.0  # Use the ref you want to point at
+  hooks:
+  - id: check-json

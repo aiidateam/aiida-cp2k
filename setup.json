@@ -12,8 +12,10 @@
     "description": "The official AiiDA plugin for CP2K.",
     "install_requires": [
         "aiida-core>=1.1.0,<2.0.0",
+        "aiida-gaussian-datatypes",
         "ase",
-        "ruamel.yaml>=0.16.5"
+        "ruamel.yaml>=0.16.5",
+        "cp2k-output-tools"
     ],
     "entry_points": {
         "aiida.calculations": [
@@ -33,9 +35,7 @@
             "pgtest==1.2.0",
             "pytest>=4.4,<5.0.0",
             "pytest-cov>=2.6.1,<3.0.0",
-            "coverage",
-            "aiida-gaussian-datatypes",
-            "cp2k-output-tools"
+            "coverage"
         ],
         "pre-commit":[
             "pre-commit==1.18.3",

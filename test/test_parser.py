@@ -7,7 +7,7 @@
 ###############################################################################
 """Test output parser."""
 import os
-from aiida_cp2k.utils.parser import _parse_bands
+from aiida_cp2k.utils.parser import _parse_bands, parse_cp2k_trajectory
 
 THISDIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -38,3 +38,16 @@ def test_bands_parser_81():
         assert labels == [(0, 'GAMMA'), (10, 'X'), (11, 'X'), (21, 'U'), (22, 'K'), (32, 'GAMMA'), (33, 'GAMMA'),
                           (43, 'L'), (44, 'L'), (54, 'W'), (55, 'W'), (65, 'X')]
         assert (bands[0] == [-6.84282475, 5.23143741, 5.23143741, 5.23143741, 7.89232311]).all()
+
+
+def test_trajectory_parser_pbc():
+    """Test parsing of boundary conditions from the restart-file"""
+    files = ["PBC_output_xyz.restart", "PBC_output_xz.restart", "PBC_output_none.restart"]
+    boundary_conditions = [[True, True, True], [True, False, True], [False, False, False]]
+
+    for file, boundary_cond in zip(files, boundary_conditions):
+        with open(f"{THISDIR}/outputs/{file}") as fobj:
+            content = fobj.read()
+            structure_data = parse_cp2k_trajectory(content)
+
+            assert structure_data["pbc"] == boundary_cond

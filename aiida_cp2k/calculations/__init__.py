@@ -22,6 +22,7 @@ from ..utils.datatype_helpers import (
     validate_pseudos_namespace,
     write_basissets,
     write_pseudos,
+    estimate_added_mos,
 )
 from ..utils import Cp2kInput
 
@@ -139,7 +140,7 @@ class Cp2kCalculation(CalcJob):
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
 
-        # pylint: disable=too-many-statements,too-many-branches
+        # pylint: disable=too-many-statements,too-many-branches,too-many-locals
 
         # Create cp2k input file.
         inp = Cp2kInput(self.inputs.parameters.get_dict())
@@ -166,6 +167,20 @@ class Cp2kCalculation(CalcJob):
             validate_basissets(inp, self.inputs.basissets,
                                self.inputs.structure if 'structure' in self.inputs else None)
             write_basissets(inp, self.inputs.basissets, folder)
+
+        # if we have both basissets and structure we can start helping the user :)
+        if 'basissets' in self.inputs and 'structure' in self.inputs:
+            try:
+                scf_section = inp.get_section_dict('FORCE_EVAL/DFT/SCF')
+            except (KeyError, NotImplementedError):
+                pass  # if not found or multiple FORCE_EVAL, do nothing (yet)
+            else:
+                if 'SMEAR' in scf_section and 'ADDED_MOS' not in scf_section:
+                    # now is our time to shine!
+                    added_mos = estimate_added_mos(self.inputs.basissets, self.inputs.structure)
+                    inp.add_keyword('FORCE_EVAL/DFT/SCF/ADDED_MOS', added_mos)
+                    self.logger.info(f'The FORCE_EVAL/DFT/SCF/ADDED_MOS was added'
+                                     f' with an automatically estimated value of {added_mos}')
 
         if 'pseudos' in self.inputs:
             validate_pseudos(inp, self.inputs.pseudos, self.inputs.structure if 'structure' in self.inputs else None)

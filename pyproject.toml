@@ -1,0 +1,37 @@
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint.messages_control]
+disable = [
+    "too-many-ancestors",
+    "duplicate-code",
+    "import-outside-toplevel",
+]
+module-naming-style="any"
+
+[tool.pytest.ini_options]
+python_files = "test_*.py example_*.py"
+python_functions = "example_* test_*"
+filterwarnings = [
+    "ignore::DeprecationWarning:aiida:",
+    "ignore::DeprecationWarning:plumpy:",
+    "ignore::DeprecationWarning:django:",
+    "ignore::DeprecationWarning:frozendict:",
+    "ignore::DeprecationWarning:sqlalchemy:",
+    "ignore::DeprecationWarning:yaml:",
+    "ignore::DeprecationWarning:pymatgen:",
+]
+
+[tool.pylint.basic]
+good-names = [
+    "_",
+    "x",
+    "y",
+    "z",
+    "i",
+    "j",
+    "k",
+    "pk",
+]
+no-docstring-rgx = "^_,setUp,tearDown"
+docstring-min-length = 5

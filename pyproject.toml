@@ -4,6 +4,7 @@ max-line-length = 120
 [tool.pylint.messages_control]
 disable = [
     "too-many-ancestors",
+    "too-many-locals",
     "duplicate-code",
     "import-outside-toplevel",
 ]

@@ -2,23 +2,26 @@
 # pre-commit install
 
 repos:
-- repo: local
+- repo: https://github.com/pre-commit/mirrors-yapf
+  rev: v0.30.0
   hooks:
   # yapf = yet another python formatter
   - id: yapf
     name: yapf
-    entry: yapf
-    language: system
     types: [python]
-    args: ["-i"]
+    exclude: >
+      (?x)^(
+          docs/.*|
+      )$
+    args: ['-i']
 
-  # prospector: collection of linters
-  - id: prospector
+- repo: local
+  hooks:
+  - id: pylint
     language: system
     types: [file, python]
-    name: prospector
-    description: "This hook runs Prospector: https://github.com/landscapeio/prospector"
-    entry: prospector
+    name: pylint
+    entry: pylint
 
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v3.4.0  # Use the ref you want to point at

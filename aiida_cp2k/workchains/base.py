@@ -27,6 +27,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
             while_(cls.should_run_process)(
                 cls.run_process,
                 cls.inspect_process,
+                cls.overwrite_input_structure,
             ),
             cls.results,
         )
@@ -49,6 +50,9 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         super().results()
         if self.inputs.cp2k.parameters != self.ctx.inputs.parameters:
             self.out('final_input_parameters', self.ctx.inputs.parameters)
+
+    def overwrite_input_structure(self):
+        self.ctx.inputs.structure = self.ctx.children[self.ctx.iteration-1].outputs.output_structure
 
 
 
@@ -108,3 +112,18 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         self.report("The geometry seem to be converged.")
         # If everything is alright
         return None
+
+    def restart_cell_opt(self, calc):
+        self.report("Checking the cell convergence.")
+        input_structure = calc.inputs.structure
+        output_structure = calc.outputs.output_structure
+        delta_volume= abs(input_structure.get_cell_volume()-output_structure.get_cell_volume())
+        delta_l = 0
+        delta_angle = 0
+        for i in range(3):
+            delta_l = max(delta_l, abs(input_structure.cell_lengths[i]-output_structure.cell_lengths[i])/abs(input_structure.cell_lengths[i]))
+            delta_angle = max(delta_angle, abs(input_structure.cell_angles[i]-output_structure.cell_angles[i])/abs(input_structure.cell_angles[i]))
+        if delta_volume > 0.01 or delta_l > 0.01 or delta_angle > 0.05:
+            return ProcessHandlerReport(False, ExitCode(1))
+        else:
+            return None

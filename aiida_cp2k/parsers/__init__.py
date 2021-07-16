@@ -99,6 +99,7 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
         """Advanced CP2K output file parser."""
 
         from aiida_cp2k.utils import parse_cp2k_output_advanced
+        from aiida_cp2k.utils import parse_cp2k_forces
 
         fname = self.node.process_class._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
         if fname not in self.retrieved.list_object_names():
@@ -148,6 +149,13 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
             )
             self.out("output_bands", bnds)
             del result_dict["kpoint_data"]
+
+        if result_dict["run_type"] == 'ENERGY_FORCE':
+            force_array = parse_cp2k_forces(output_string)
+            ArrayData = DataFactory('array')
+            array = ArrayData()
+            array.set_array('forces', force_array)
+            self.out("atomic_forces", array)
 
         self.out("output_parameters", Dict(dict=result_dict))
         return None

@@ -9,7 +9,8 @@
 
 import re
 import math
-
+import numpy as np
+import ase
 
 def parse_cp2k_output(fstring):
     """Parse CP2K output into a dictionary."""
@@ -399,3 +400,40 @@ def parse_cp2k_trajectory(content):
             cell_pbc = [(dir in cell_pbc_str) for dir in ['X', 'Y', 'Z']]
 
     return {"symbols": symbols, "positions": positions, "cell": cell, "tags": tags, "pbc": cell_pbc}
+
+def parse_cp2k_forces(string):
+    """ CP2K atomic force parser """
+    lines = string.splitlines()
+    # definition of all lists and variables to be called in the future
+    natoms = 0
+    force_line = 0
+    atoms, elements, x_force, y_force, z_force = [], [], [], [], []
+
+    # iteration over all the lines within the standard output file
+    for n, line in enumerate(lines):
+        if '- Atoms: ' in line:
+            atoms_line = line.split()
+            natoms = atoms_line[2]
+        if 'Atom   Kind   Element          X              Y              Z' in line:
+            force_line = n + 1
+        if n in range(force_line, force_line + int(natoms)):
+            al = line.split()
+            atoms.append(int(al[0]))
+            elements.append(al[2])
+            x_force.append(float(al[3]))
+            y_force.append(float(al[4]))
+            z_force.append(float(al[5]))
+
+    # convert element list to atom kind list
+    kinds = []
+    for i in range(len(elements)):
+        atom = ase.Atoms(f'{elements[i]}')
+        kind = atom.get_atomic_numbers()[0] 
+        kinds.append(int(kind))
+    
+    list_of_lists = [atoms, kinds, x_force, y_force, z_force]
+    force_array = np.array(list_of_lists)
+    force_array = force_array.T
+
+    # return the force array
+    return force_array

@@ -11,6 +11,7 @@ from .input_generator import Cp2kInput, add_restart_sections
 from .parser import parse_cp2k_output
 from .parser import parse_cp2k_output_advanced
 from .parser import parse_cp2k_trajectory
+from .parser import parse_cp2k_forces
 from .workchains import merge_dict
 from .workchains import merge_Dict
 from .workchains import get_kinds_section

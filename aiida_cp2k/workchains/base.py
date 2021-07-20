@@ -113,17 +113,20 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         # If everything is alright
         return None
 
+    @process_handler(priority=300, enabled=False)
     def restart_cell_opt(self, calc):
+        """Checking the cell convergence"""
         self.report("Checking the cell convergence.")
         input_structure = calc.inputs.structure
         output_structure = calc.outputs.output_structure
-        delta_volume= abs(input_structure.get_cell_volume()-output_structure.get_cell_volume())
+        delta_volume = abs(input_structure.get_cell_volume()-output_structure.get_cell_volume())
         delta_l = 0
         delta_angle = 0
         for i in range(3):
-            delta_l = max(delta_l, abs(input_structure.cell_lengths[i]-output_structure.cell_lengths[i])/abs(input_structure.cell_lengths[i]))
-            delta_angle = max(delta_angle, abs(input_structure.cell_angles[i]-output_structure.cell_angles[i])/abs(input_structure.cell_angles[i]))
+            abs_length = abs(input_structure.cell_lengths[i]-output_structure.cell_lengths[i])
+            delta_l = max(delta_l, abs_length/abs(input_structure.cell_lengths[i]))
+            abs_angle = abs(input_structure.cell_angles[i]-output_structure.cell_angles[i])
+            delta_angle = max(delta_angle, abs_angle/abs(input_structure.cell_angles[i]))
         if delta_volume > 0.01 or delta_l > 0.01 or delta_angle > 0.05:
             return ProcessHandlerReport(False, ExitCode(1))
-        else:
-            return None
+        return None

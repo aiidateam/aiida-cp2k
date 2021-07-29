@@ -344,7 +344,7 @@ def validate_pseudos(inp, pseudos, structure):
                                        f" for kind '{kind.name}' (of '{kind.symbol}').")
 
         kind_section = _prepare_kind_section(inp, kind)
-        kind_section["PSEUDOPOTENTIAL"] = f"GTH {pseudo.name}"
+        kind_section["POTENTIAL"] = f"GTH {pseudo.name}"
 
         explicit_kinds += [kind.name]
         pseudos_used.add(pseudo)

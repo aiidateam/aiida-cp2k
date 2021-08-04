@@ -138,16 +138,16 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
             result_dict['bandgap_spin1_au'] = lumo_spin1 - homo_spin1
             result_dict['bandgap_spin2_au'] = lumo_spin2 - homo_spin2
 
-        if "kpoint_data" in result_dict:
+        kpoint_data = result_dict.pop("kpoint_data", None)
+        if kpoint_data:
             bnds = BandsData()
-            bnds.set_kpoints(result_dict["kpoint_data"]["kpoints"])
-            bnds.labels = result_dict["kpoint_data"]["labels"]
+            bnds.set_kpoints(kpoint_data["kpoints"])
+            bnds.labels = kpoint_data["labels"]
             bnds.set_bands(
-                result_dict["kpoint_data"]["bands"],
-                units=result_dict["kpoint_data"]["bands_unit"],
+                kpoint_data["bands"],
+                units=kpoint_data["bands_unit"],
             )
             self.out("output_bands", bnds)
-            del result_dict["kpoint_data"]
 
         self.out("output_parameters", Dict(dict=result_dict))
         return None

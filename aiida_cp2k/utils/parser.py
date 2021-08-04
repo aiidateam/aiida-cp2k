@@ -300,8 +300,9 @@ def _parse_bands_cp2k_greater_81(lines, line_n):
     """Parse one k-point in the output of CP2K >=8.1"""
 
     splitted = lines[line_n].split()
-    spin = int(splitted[4][:-1])
-    kpoint = tuple(float(p) for p in splitted[-4:-1])
+    assert splitted[1] == 'Point' and splitted[3] == 'Spin', 'Did not find required keywords in kpoint line'
+    spin = int(splitted[4][:-1])  # strip the ':'
+    kpoint = tuple(float(p) for p in splitted[5:8])  # ignore optional weight
     bands = []
     for line in lines[line_n + 2:]:
         try:

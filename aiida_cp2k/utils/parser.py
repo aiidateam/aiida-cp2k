@@ -324,11 +324,11 @@ def _parse_bands(lines, n_start, cp2k_version):
 
     if cp2k_version < 8.1:
         parse_one_kpoint = _parse_kpoint_cp2k_lower_81
-        pattern = re.compile(".*?Nr.*?Spin.*?K-Point.*?", re.DOTALL)
+        pattern = re.compile(r".*?Nr.*?Spin.*?K-Point.*?", re.DOTALL)
         unspecified = ["not", "specified"]
     else:
         parse_one_kpoint = _parse_bands_cp2k_greater_81
-        pattern = re.compile(".*?Point.*?Spin.*?", re.DOTALL)
+        pattern = re.compile(r".*?Point.*?Spin.*?", re.DOTALL)
         unspecified = ["not", "specifi"]
 
     selected_lines = lines[n_start:]
@@ -342,6 +342,13 @@ def _parse_bands(lines, n_start, cp2k_version):
 
         elif pattern.match(line):
             spin, kpoint, bands = parse_one_kpoint(selected_lines, line_n)
+
+            # When doing a path Γ-X-K, CP2K does Γ-X, X-K and we would
+            # end up with repeated points in the path. If we already have
+            # kpoints in the the list and we got exactly the same KP again,
+            # skip adding the kpoint, the label and the bands.
+            if kpoints and (kpoints[-1] == kpoint):
+                continue
 
             if spin == 1:
                 if kpoint in known_kpoints:

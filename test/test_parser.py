@@ -21,8 +21,7 @@ def test_bands_parser_51():
             if "KPOINTS| Band Structure Calculation" in line:
                 kpoints, labels, bands = _parse_bands(lines, i_line, 5.1)
         assert (kpoints[4] == [0.2, 0., 0.2]).all()
-        assert labels == [(0, 'GAMMA'), (10, 'X'), (11, 'X'), (21, 'U'), (22, 'K'), (32, 'GAMMA'), (33, 'GAMMA'),
-                          (43, 'L'), (44, 'L'), (54, 'W'), (55, 'W'), (65, 'X')]
+        assert labels == [(0, 'GAMMA'), (10, 'X'), (20, 'U'), (21, 'K'), (31, 'GAMMA'), (41, 'L'), (51, 'W'), (61, 'X')]
         assert (bands[0] == [-6.84282475, 5.23143741, 5.23143741, 5.23143741, 7.89232311]).all()
 
 
@@ -35,8 +34,7 @@ def test_bands_parser_81():
             if "KPOINTS| Band Structure Calculation" in line:
                 kpoints, labels, bands = _parse_bands(lines, i_line, 8.1)
         assert (kpoints[4] == [0.2, 0., 0.2]).all()
-        assert labels == [(0, 'GAMMA'), (10, 'X'), (11, 'X'), (21, 'U'), (22, 'K'), (32, 'GAMMA'), (33, 'GAMMA'),
-                          (43, 'L'), (44, 'L'), (54, 'W'), (55, 'W'), (65, 'X')]
+        assert labels == [(0, 'GAMMA'), (10, 'X'), (20, 'U'), (21, 'K'), (31, 'GAMMA'), (41, 'L'), (51, 'W'), (61, 'X')]
         assert (bands[0] == [-6.84282475, 5.23143741, 5.23143741, 5.23143741, 7.89232311]).all()
 
 

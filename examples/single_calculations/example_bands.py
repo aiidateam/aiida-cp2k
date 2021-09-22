@@ -229,8 +229,6 @@ def example_bands(cp2k_code):
         print(expected_gamma_kpoint)
         sys.exit(3)
 
-    sys.exit(0)
-
 
 @click.command('cli')
 @click.argument('codelabel')

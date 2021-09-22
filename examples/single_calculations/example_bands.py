@@ -209,13 +209,13 @@ def example_bands(cp2k_code):
     # check bands
     expected_gamma_kpoint = np.array([-6.84282475, 5.23143741, 5.23143741, 5.23143741, 7.89232311])
 
-    if bands.get_kpoints().shape == (66, 3):
+    if bands.get_kpoints().shape == (62, 3):
         print("OK, got expected kpoints set size.")
     else:
         print("Got unexpected kpoints set.")
         sys.exit(3)
 
-    if bands.get_bands().shape == (66, 5):
+    if bands.get_bands().shape == (62, 5):
         print("OK, got expected bands set size.")
     else:
         print("Got unexpected bands set.")

@@ -27,6 +27,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
             while_(cls.should_run_process)(
                 cls.run_process,
                 cls.inspect_process,
+                cls.overwrite_input_structure,
             ),
             cls.results,
         )
@@ -49,8 +50,9 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         super().results()
         if self.inputs.cp2k.parameters != self.ctx.inputs.parameters:
             self.out('final_input_parameters', self.ctx.inputs.parameters)
-
-
+    
+    def overwrite_input_structure(self):
+        self.ctx.inputs.structure = self.ctx.children[self.ctx.iteration-1].outputs.output_structure
 
     @process_handler(priority=400, enabled=False)
     def resubmit_unconverged_geometry(self, calc):

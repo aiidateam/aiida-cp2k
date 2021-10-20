@@ -50,7 +50,6 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         super().results()
         if self.inputs.cp2k.parameters != self.ctx.inputs.parameters:
             self.out('final_input_parameters', self.ctx.inputs.parameters)
-    
     def overwrite_input_structure(self):
         self.ctx.inputs.structure = self.ctx.children[self.ctx.iteration-1].outputs.output_structure
 

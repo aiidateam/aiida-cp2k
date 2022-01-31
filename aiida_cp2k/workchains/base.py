@@ -27,13 +27,14 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
             while_(cls.should_run_process)(
                 cls.run_process,
                 cls.inspect_process,
+                cls.overwrite_input_structure,
             ),
             cls.results,
         )
 
         spec.expose_outputs(Cp2kCalculation)
         spec.output('final_input_parameters', valid_type=Dict, required=False,
-            help='The input parameters used for the final calculation.')
+                    help='The input parameters used for the final calculation.')
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
@@ -49,8 +50,8 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         super().results()
         if self.inputs.cp2k.parameters != self.ctx.inputs.parameters:
             self.out('final_input_parameters', self.ctx.inputs.parameters)
-
-
+    def overwrite_input_structure(self):
+        self.ctx.inputs.structure = self.ctx.children[self.ctx.iteration-1].outputs.output_structure
 
     @process_handler(priority=400, enabled=False)
     def resubmit_unconverged_geometry(self, calc):
@@ -76,8 +77,8 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
 
                 # Also check if they all have the right value
                 if not (wf_rest_fname_pointer == './parent_calc/aiida-RESTART.wfn' and
-                    scf_guess_pointer == 'RESTART' and
-                    restart_fname_pointer == './parent_calc/aiida-1.restart'):
+                        scf_guess_pointer == 'RESTART' and
+                        restart_fname_pointer == './parent_calc/aiida-1.restart'):
 
                     # If some values are incorrect add them to the input dictionary
                     params = add_restart_sections(params)

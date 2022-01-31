@@ -130,7 +130,7 @@ def example_mm(cp2k_code):
         sys.exit(3)
 
     # Check if callgraph is there.
-    if "runtime.callgraph" in calc['retrieved']._repository.list_object_names():  # pylint: disable=protected-access
+    if "runtime.callgraph" in calc['retrieved'].list_object_names():
         print("OK, callgraph file was retrived.")
     else:
         print("ERROR!")

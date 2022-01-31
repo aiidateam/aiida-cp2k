@@ -42,6 +42,9 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
     bohr2ang = 0.529177208590000
 
     for i_line, line in enumerate(lines):
+        if line.startswith(' CP2K| version string:'):
+            cp2k_version = float(line.split()[5])
+            result_dict['cp2k_version'] = cp2k_version
         if line.startswith(' ENERGY| '):
             energy = float(line.split()[8])
             result_dict['energy'] = energy
@@ -58,7 +61,7 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
         if "ABORT" in line:
             result_dict["aborted"] = True
         if "KPOINTS| Band Structure Calculation" in line:
-            kpoints, labels, bands = _parse_bands(lines, i_line)
+            kpoints, labels, bands = _parse_bands(lines, i_line, cp2k_version)
             result_dict["kpoint_data"] = {
                 "kpoints": kpoints,
                 "labels": labels,
@@ -282,8 +285,35 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
     return result_dict
 
 
-def _parse_bands(lines, n_start):
-    """Parse band structure from cp2k output"""
+def _parse_kpoint_cp2k_lower_81(lines, line_n):
+    """Parse one k-point in the output of CP2K <8.1"""
+
+    splitted = lines[line_n].split()
+    spin = int(splitted[3])
+    kpoint = tuple(float(p) for p in splitted[-3:])
+    nlines = int(math.ceil(int(lines[line_n + 1]) / 4))
+    bands = [float(v) for v in " ".join(lines[line_n + 2:line_n + 2 + nlines]).split()]
+    return spin, kpoint, bands
+
+
+def _parse_bands_cp2k_greater_81(lines, line_n):
+    """Parse one k-point in the output of CP2K >=8.1"""
+
+    splitted = lines[line_n].split()
+    assert splitted[1] == 'Point' and splitted[3] == 'Spin', 'Did not find required keywords in kpoint line'
+    spin = int(splitted[4][:-1])  # strip the ':'
+    kpoint = tuple(float(p) for p in splitted[5:8])  # ignore optional weight
+    bands = []
+    for line in lines[line_n + 2:]:
+        try:
+            bands.append(float(line.split()[1]))
+        except ValueError:
+            break
+    return spin, kpoint, bands
+
+
+def _parse_bands(lines, n_start, cp2k_version):
+    """Parse band structure from the CP2K output."""
 
     import numpy as np
 
@@ -292,31 +322,42 @@ def _parse_bands(lines, n_start):
     bands_s1 = []
     bands_s2 = []
     known_kpoints = {}
-    pattern = re.compile(".*?Nr.*?Spin.*?K-Point.*?", re.DOTALL)
+
+    if cp2k_version < 8.1:
+        parse_one_kpoint = _parse_kpoint_cp2k_lower_81
+        pattern = re.compile(r".*?Nr.*?Spin.*?K-Point.*?", re.DOTALL)
+        unspecified = ["not", "specified"]
+    else:
+        parse_one_kpoint = _parse_bands_cp2k_greater_81
+        pattern = re.compile(r".*?Point.*?Spin.*?", re.DOTALL)
+        unspecified = ["not", "specifi"]
 
     selected_lines = lines[n_start:]
-    for current_line, line in enumerate(selected_lines):
-        splitted = line.split()
-        if "KPOINTS| Special K-Point" in line:
+    for line_n, line in enumerate(selected_lines):
+        if "KPOINTS| Special" in line:
+            splitted = line.split()
             kpoint = tuple(float(p) for p in splitted[-3:])
-            if " ".join(splitted[-5:-3]) != "not specified":
+            if splitted[-5:-3] != unspecified:
                 label = splitted[-4]
                 known_kpoints[kpoint] = label
+
         elif pattern.match(line):
-            spin = int(splitted[3])
-            kpoint = tuple(float(p) for p in splitted[-3:])
-            kpoint_n_lines = int(math.ceil(int(selected_lines[current_line + 1]) / 4))
-            band = [
-                float(v) for v in " ".join(selected_lines[current_line + 2:current_line + 2 + kpoint_n_lines]).split()
-            ]
+            spin, kpoint, bands = parse_one_kpoint(selected_lines, line_n)
+
+            # When doing a path Γ-X-K, CP2K does Γ-X, X-K and we would
+            # end up with repeated points in the path. If we already have
+            # kpoints in the the list and we got exactly the same KP again,
+            # skip adding the kpoint, the label and the bands.
+            if kpoints and (kpoints[-1] == kpoint):
+                continue
 
             if spin == 1:
                 if kpoint in known_kpoints:
                     labels.append((len(kpoints), known_kpoints[kpoint]))
                 kpoints.append(kpoint)
-                bands_s1.append(band)
+                bands_s1.append(bands)
             elif spin == 2:
-                bands_s2.append(band)
+                bands_s2.append(bands)
 
     if bands_s2:
         bands = [bands_s1, bands_s2]
@@ -358,4 +399,11 @@ def parse_cp2k_trajectory(content):
     cell_str = [line[1:] for line in cell_lines if line[0] in "ABC"]
     cell = np.array(cell_str, np.float64)
 
-    return {"symbols": symbols, "positions": positions, "cell": cell, "tags": tags}
+    # parse periodic boundary conditions
+    cell_pbc = [True, True, True]  # In case keyword is not set: Default in cp2k is XYZ
+    for line in cell_lines:
+        if line[0] == 'PERIODIC':
+            cell_pbc_str = line[-1]
+            cell_pbc = [(dir in cell_pbc_str) for dir in ['X', 'Y', 'Z']]
+
+    return {"symbols": symbols, "positions": positions, "cell": cell, "tags": tags, "pbc": cell_pbc}

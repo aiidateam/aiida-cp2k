@@ -13,17 +13,11 @@ import pytest
 import ase.build
 
 from aiida.plugins import CalculationFactory, DataFactory
-from aiida.common.exceptions import LoadingEntryPointError, MissingEntryPointError
 
 from aiida.engine import run, run_get_node
 from aiida.orm import Dict, StructureData
+from aiida.orm.nodes.data.structure import Kind, Site
 from aiida.engine.processes.calcjobs.tasks import PreSubmitException
-
-try:
-    BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
-    Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
-except (LoadingEntryPointError, MissingEntryPointError):
-    pytest.skip("Gaussian Datatypes are not available", allow_module_level=True)
 
 # Note: the basissets and pseudos deliberately have a prefix to avoid matching
 #       any CP2K provided entries which may creep in via the DATA_DIR
@@ -116,6 +110,7 @@ def bsdataset():
 def cp2k_basissets(bsdataset):
     """Returns basisset objects from the data above"""
     fhandle = StringIO(BSET_DATA[bsdataset])
+    BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
     bsets = {}
     for bset in BasisSet.from_cp2k(fhandle):
         bset.store()  # store because the validator accesses it when raising an error
@@ -140,6 +135,7 @@ def pdataset():
 def cp2k_pseudos(pdataset):
     """Returns pseudo objects from the data above"""
     fhandle = StringIO(PSEUDO_DATA[pdataset])
+    Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
     return {p.element: p for p in Pseudo.from_cp2k(fhandle)}
 
 
@@ -370,7 +366,7 @@ def test_validation_unused(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_databa
     with pytest.raises(PreSubmitException) as exc_info:  # the InputValidationError is masked by the process runner
         run(CalculationFactory("cp2k"), **inputs)
 
-    assert "not used in input" in str(exc_info.value.__context__)
+    assert "not referenced" in str(exc_info.value.__context__)
 
 
 def test_validation_mfe_noauto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
@@ -544,7 +540,7 @@ def test_validation_mfe_noauto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_da
 
 
 def test_validation_mfe(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
-    """Test that multiple FORCE_EVAL without explicit assignment is rejected"""
+    """Test that multiple FORCE_EVAL with explicit assignment is accepted"""
 
     # structure
     pos = [[0.934, 2.445, 1.844], [1.882, 2.227, 1.982], [0.81, 3.165, 2.479], [3.59, 2.048, 2.436],
@@ -778,3 +774,206 @@ def test_without_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
 
     _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)
     assert calc_node.exit_status == 0
+
+
+def test_multiple_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+    """Testing CP2K with multiple KIND sections for the same symbol"""
+
+    # structure
+    atoms = ase.build.molecule("H2O")
+    atoms.center(vacuum=2.0)
+
+    structure = StructureData(ase=atoms)
+
+    structure = StructureData(cell=atoms.cell, pbc=atoms.pbc)
+    structure.append_kind(Kind(name="O", symbols="O"))
+    structure.append_kind(Kind(name="H1", symbols="H"))
+    structure.append_kind(Kind(name="H2", symbols="H"))
+
+    # ASE stores it as OHH
+    assert all(atoms.numbers == [8, 1, 1]), "ASE changed positions of atoms in generated structure"
+    structure.append_site(Site(kind_name="O", position=atoms.positions[0]))
+    structure.append_site(Site(kind_name="H1", position=atoms.positions[1]))
+    structure.append_site(Site(kind_name="H2", position=atoms.positions[2]))
+
+    # parameters
+    parameters = Dict(
+        dict={
+            "FORCE_EVAL": {
+                "METHOD": "Quickstep",
+                "DFT": {
+                    "QS": {
+                        "EPS_DEFAULT": 1.0e-12,
+                        "WF_INTERPOLATION": "ps",
+                        "EXTRAPOLATION_ORDER": 3,
+                    },
+                    "MGRID": {
+                        "NGRIDS": 4,
+                        "CUTOFF": 280,
+                        "REL_CUTOFF": 30
+                    },
+                    "XC": {
+                        "XC_FUNCTIONAL": {
+                            "_": "LDA"
+                        }
+                    },
+                    "POISSON": {
+                        "PERIODIC": "none",
+                        "PSOLVER": "MT"
+                    },
+                },
+                "SUBSYS": {
+                    "KIND": [
+                        {
+                            "_": "O",
+                            "POTENTIAL": "GTH " + cp2k_pseudos["O"].name,
+                            "BASIS_SET": cp2k_basissets["O"].name,
+                        },
+                        {
+                            "_": "H1",
+                            "ELEMENT": "H",
+                            "POTENTIAL": "GTH " + cp2k_pseudos["H"].name,
+                            "BASIS_SET": cp2k_basissets["H"].name,
+                        },
+                        {
+                            "_": "H2",
+                            # ELEMENT keyword is not even necessary since CP2K guesses from KIND section parameter
+                            "POTENTIAL": "GTH " + cp2k_pseudos["H"].name,
+                            "BASIS_SET": cp2k_basissets["H"].name,
+                        },
+                    ]
+                },
+            }
+        })
+
+    options = {
+        "resources": {
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1
+        },
+        "max_wallclock_seconds": 1 * 3 * 60,
+    }
+
+    inputs = {
+        "structure": structure,
+        "parameters": parameters,
+        "code": cp2k_code,
+        "metadata": {
+            "options": options
+        },
+        "basissets": cp2k_basissets,
+        "pseudos": cp2k_pseudos,
+    }
+
+    _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)
+    assert calc_node.exit_status == 0
+
+    with calc_node.open("aiida.inp") as fhandle:
+        lines = fhandle.readlines()
+
+    assert any("&KIND H1" in line for line in lines), "&KIND H1 not found in generated input"
+    assert any("&KIND H2" in line for line in lines), "&KIND H2 not found in generated input"
+    assert len([True for line in lines if '&KIND H' in line
+               ]) < 3, "More than the expected 2 &KIND H sections found in generated input"
+
+
+def test_multiple_kinds_auto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+    """Testing CP2K with multiple KIND sections for the same symbol, auto-assigned"""
+
+    # structure
+    atoms = ase.build.molecule("H2O")
+    atoms.center(vacuum=2.0)
+
+    structure = StructureData(ase=atoms)
+
+    structure = StructureData(cell=atoms.cell, pbc=atoms.pbc)
+    structure.append_kind(Kind(name="O", symbols="O"))
+    structure.append_kind(Kind(name="H1", symbols="H"))
+    structure.append_kind(Kind(name="H2", symbols="H"))
+
+    # ASE stores it as OHH
+    assert all(atoms.numbers == [8, 1, 1]), "ASE changed positions of atoms in generated structure"
+    structure.append_site(Site(kind_name="O", position=atoms.positions[0]))
+    structure.append_site(Site(kind_name="H1", position=atoms.positions[1]))
+    structure.append_site(Site(kind_name="H2", position=atoms.positions[2]))
+
+    # parameters
+    parameters = Dict(
+        dict={
+            "FORCE_EVAL": {
+                "METHOD": "Quickstep",
+                "DFT": {
+                    "QS": {
+                        "EPS_DEFAULT": 1.0e-12,
+                        "WF_INTERPOLATION": "ps",
+                        "EXTRAPOLATION_ORDER": 3,
+                    },
+                    "MGRID": {
+                        "NGRIDS": 4,
+                        "CUTOFF": 280,
+                        "REL_CUTOFF": 30
+                    },
+                    "XC": {
+                        "XC_FUNCTIONAL": {
+                            "_": "LDA"
+                        }
+                    },
+                    "POISSON": {
+                        "PERIODIC": "none",
+                        "PSOLVER": "MT"
+                    },
+                },
+                "SUBSYS": {
+                    "KIND": [
+                        {
+                            "_": "O",
+                            "POTENTIAL": "GTH " + cp2k_pseudos["O"].name,
+                            "BASIS_SET": cp2k_basissets["O"].name,
+                        },
+                        {
+                            "_": "H1",
+                            "ELEMENT": "H",
+                        },
+                        {
+                            "_": "H2",
+                            # ELEMENT keyword is not even necessary since CP2K guesses from KIND section parameter
+                            # these KIND sections are occasionally encountered when specifying MAGNETIZATION
+                            # for different sites
+                        },
+                    ]
+                },
+            }
+        })
+
+    options = {
+        "resources": {
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1
+        },
+        "max_wallclock_seconds": 1 * 3 * 60,
+    }
+
+    inputs = {
+        "structure": structure,
+        "parameters": parameters,
+        "code": cp2k_code,
+        "metadata": {
+            "options": options
+        },
+        "basissets": cp2k_basissets,
+        "pseudos": cp2k_pseudos,
+    }
+
+    _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)
+
+    with calc_node.open("aiida.inp") as fhandle:
+        lines = fhandle.readlines()
+
+    for line in lines:
+        print(line)
+    assert calc_node.exit_status == 0
+
+    assert any("&KIND H1" in line for line in lines), "&KIND H1 not found in generated input"
+    assert any("&KIND H2" in line for line in lines), "&KIND H2 not found in generated input"
+    assert len([True for line in lines if '&KIND H' in line
+               ]) < 3, "More than the expected 2 &KIND H sections found in generated input"

@@ -46,9 +46,7 @@ jobs:
     publish-test:
 
         name: Build and publish on TestPyPI
-        if: >
-            startsWith(github.ref, 'refs/heads/release/') ||
-            startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/heads/release/')
         needs: [build]
         runs-on: ubuntu-latest
 
@@ -76,7 +74,6 @@ jobs:
 
         name: Build and publish on PyPI
         if: startsWith(github.ref, 'refs/tags')
-
         needs: [build]
         runs-on: ubuntu-latest
 

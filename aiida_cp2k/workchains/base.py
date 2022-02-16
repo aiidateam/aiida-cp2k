@@ -42,7 +42,6 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         This `self.ctx.inputs` dictionary will be used by the `BaseRestartWorkChain` to submit the calculations in the
         internal loop.
         """
-
         super(Cp2kBaseWorkChain, self).setup()
         self.ctx.inputs = AttributeDict(self.exposed_inputs(Cp2kCalculation, 'cp2k'))
 
@@ -50,8 +49,10 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         super().results()
         if self.inputs.cp2k.parameters != self.ctx.inputs.parameters:
             self.out('final_input_parameters', self.ctx.inputs.parameters)
+
     def overwrite_input_structure(self):
-        self.ctx.inputs.structure = self.ctx.children[self.ctx.iteration-1].outputs.output_structure
+        if "output_structure" in self.ctx.children[self.ctx.iteration-1].outputs:
+            self.ctx.inputs.structure = self.ctx.children[self.ctx.iteration-1].outputs.output_structure
 
     @process_handler(priority=400, enabled=False)
     def resubmit_unconverged_geometry(self, calc):

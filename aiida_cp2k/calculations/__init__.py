@@ -178,11 +178,13 @@ class Cp2kCalculation(CalcJob):
             except AttributeError:
                 raise InputValidationError("K-point sampling for SCF must be given in mesh form.")
 
-            inp.add_keyword('FORCE_EVAL/DFT/KPOINTS', {
-                'SCHEME': f'MONKHORST-PACK {mesh[0]} {mesh[1]} {mesh[2]}',
-                'EPS_GEO': '1.0E-8',
-                'FULL_GRID': 'OFF',
-                'SYMMETRY': 'OFF'})
+            inp.add_keyword(
+                'FORCE_EVAL/DFT/KPOINTS', {
+                    'SCHEME': f'MONKHORST-PACK {mesh[0]} {mesh[1]} {mesh[2]}',
+                    'EPS_GEO': '1.0E-8',
+                    'FULL_GRID': 'OFF',
+                    'SYMMETRY': 'OFF'
+                })
 
         with io.open(folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8") as fobj:
             try:

@@ -25,9 +25,9 @@ from ..utils.datatype_helpers import (
 )
 from ..utils import Cp2kInput
 
-BandsData = DataFactory('array.bands')  # pylint: disable=invalid-name
-StructureData = DataFactory('structure')  # pylint: disable=invalid-name
-KpointsData = DataFactory('array.kpoints')  # pylint: disable=invalid-name
+BandsData = DataFactory('core.array.bands')  # pylint: disable=invalid-name
+StructureData = DataFactory('core.structure')  # pylint: disable=invalid-name
+KpointsData = DataFactory('core.array.kpoints')  # pylint: disable=invalid-name
 
 
 class Cp2kCalculation(CalcJob):

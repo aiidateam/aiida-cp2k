@@ -11,7 +11,7 @@
     ],
     "description": "The official AiiDA plugin for CP2K.",
     "install_requires": [
-        "aiida-core>=1.1.0,<2.0.0",
+        "aiida-core>=1.1.0,<3.0.0",
         "aiida-gaussian-datatypes",
         "ase",
         "ruamel.yaml>=0.16.5",

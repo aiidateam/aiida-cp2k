@@ -6,11 +6,12 @@ from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, p
 from aiida.orm import Dict
 from aiida.plugins import CalculationFactory
 
-from ..utils import add_restart_sections
+from ..utils import add_restart_sections, add_ext_restart_section, add_wfn_restart_section
 
 Cp2kCalculation = CalculationFactory('cp2k')  # pylint: disable=invalid-name
 
 
+# +
 class Cp2kBaseWorkChain(BaseRestartWorkChain):
     """Workchain to run a CP2K calculation with automated error handling and restarts."""
 
@@ -35,6 +36,11 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         spec.expose_outputs(Cp2kCalculation)
         spec.output('final_input_parameters', valid_type=Dict, required=False,
                     help='The input parameters used for the final calculation.')
+        spec.exit_code(400, 'NO_RESTART_DATA', message="The calculation didn't produce any data to restart from.")
+        spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
+                       message='The calculation failed with an unidentified unrecoverable error.')
+        spec.exit_code(310, 'ERROR_KNOWN_UNRECOVERABLE_FAILURE',
+                       message='The calculation failed with a known unrecoverable error.')
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
@@ -110,3 +116,66 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         self.report("The geometry seem to be converged.")
         # If everything is alright
         return None
+
+    @process_handler(priority=401, exit_codes=[
+        Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
+        Cp2kCalculation.exit_codes.ERROR_OUTPUT_INCOMPLETE,
+    ], enabled=False)
+    def restart_incomplete_calculation(self, calc):
+        """This handler restarts incomplete calculations."""
+
+        content_string = calc.outputs.retrieved.get_object_content(calc.get_attribute('output_filename'))
+        one_step_done = "Max. gradient              ="
+        restart_written = "Writing RESTART"
+        self.ctx.inputs.parent_calc_folder = calc.outputs.remote_folder
+        params = self.ctx.inputs.parameters
+
+        # The message is written in the log file when the CP2K input parameter `LOG_PRINT_KEY` is set to True.
+        restart_scf = restart_written in content_string
+
+        # CP2K was updating geometry - continue with that.
+        restart_geometry_transformation = False
+        if one_step_done in content_string:
+            restart_scf = True
+            restart_geometry_transformation = True
+
+        if restart_scf:
+            try:
+                # Firts make sure that the required restart keys are present in the input dictionary.
+                wf_rest_fname_pointer = params['FORCE_EVAL']['DFT']['RESTART_FILE_NAME']
+                scf_guess_pointer = params['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS']
+
+                # Second, check that they have right values.
+                if not ('./parent_calc/aiida-RESTART.' in wf_rest_fname_pointer and
+                        scf_guess_pointer == 'RESTART'):
+                    params = add_wfn_restart_section(params, self.ctx.inputs.kpoints)
+            except (AttributeError, KeyError):
+                params = add_wfn_restart_section(params, self.ctx.inputs.kpoints)
+
+        if restart_geometry_transformation:
+            try:
+                # Firts check if all the restart keys are present in the input dictionary
+                restart_fname_pointer = params['EXT_RESTART']['RESTART_FILE_NAME']
+
+                # Second, check that they have right values.
+                if restart_fname_pointer != './parent_calc/aiida-1.restart':
+                    params = add_ext_restart_section(params)
+            except (AttributeError, KeyError):
+                params = add_ext_restart_section(params)
+
+        # If the problem is not recoverable.
+        if any([restart_scf, restart_geometry_transformation]):
+
+            self.ctx.inputs.parameters = params  # params (new or old ones) that
+            # include the necessary restart information.
+            self.report(
+                "The CP2K calculation wasn't completed. The restart of the calculation might be able to "
+                "fix the problem.")
+            return ProcessHandlerReport(False)
+
+        self.report("It seems that the restart of CP2K calculation wouldn't be able to fix the problem as the "
+                    "previous calculation didn't produce any output to restart from. "
+                    "Sending a signal to stop the Base work chain.")
+
+        # Signaling to the base work chain that the problem could not be recovered.
+        return ProcessHandlerReport(True, self.exit_code.NO_RESTART_DATA)

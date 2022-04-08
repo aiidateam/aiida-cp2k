@@ -193,3 +193,30 @@ def add_restart_sections(input_dict):
     merge_dict(params, restart_wfn_dict)
     params['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
     return Dict(dict=params)
+
+
+@calcfunction
+def add_wfn_restart_section(input_dict, kpoints):
+    """Add wavefunction restart section to the input dictionary."""
+    params = input_dict.get_dict()
+    fname = './parent_calc/aiida-RESTART.kp' if kpoints else './parent_calc/aiida-RESTART.wfn'
+    restart_wfn_dict = {
+        'FORCE_EVAL': {
+            'DFT': {
+                'RESTART_FILE_NAME': fname,
+                'SCF': {
+                    'SCF_GUESS': 'RESTART',
+                },
+            },
+        },
+    }
+    merge_dict(params, restart_wfn_dict)
+    return Dict(dict=params)
+
+
+@calcfunction
+def add_ext_restart_section(input_dict):
+    """Add external restart section to the input dictionary."""
+    params = input_dict.get_dict()
+    params['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
+    return Dict(dict=params)

@@ -7,7 +7,10 @@
 ###############################################################################
 """AiiDA-CP2K utils"""
 
-from .input_generator import Cp2kInput, add_restart_sections
+from .input_generator import Cp2kInput
+from .input_generator import add_ext_restart_section
+from .input_generator import add_restart_sections
+from .input_generator import add_wfn_restart_section
 from .parser import parse_cp2k_output
 from .parser import parse_cp2k_output_advanced
 from .parser import parse_cp2k_trajectory

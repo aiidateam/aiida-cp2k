@@ -8,7 +8,7 @@
 """AiiDA-CP2K input generator."""
 
 from copy import deepcopy
-from collections.abc import Mapping, Sequence, MutableSequence
+from collections.abc import Mapping, Sequence, MutableSequence, MutableMapping
 
 from aiida.orm import Dict
 from aiida.engine import calcfunction
@@ -155,7 +155,7 @@ class Cp2kInput:
             if key.startswith(("@", "$")):
                 raise ValueError("CP2K preprocessor directives not supported.")
 
-            if isinstance(val, Mapping):
+            if isinstance(val, MutableMapping):
                 line = f"{' ' * indent}&{key}"
                 if "_" in val:  # if there is a section parameter, add it
                     line += f" {val.pop('_')}"

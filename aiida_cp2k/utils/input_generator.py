@@ -191,6 +191,8 @@ def add_restart_sections(input_dict):
         },
     }
     merge_dict(params, restart_wfn_dict)
+
+    # overwrite the complete EXT_RESTART section if present
     params['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
     return Dict(dict=params)
 
@@ -218,5 +220,6 @@ def add_wfn_restart_section(input_dict, kpoints):
 def add_ext_restart_section(input_dict):
     """Add external restart section to the input dictionary."""
     params = input_dict.get_dict()
+    # overwrite the complete EXT_RESTART section if present
     params['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
     return Dict(dict=params)

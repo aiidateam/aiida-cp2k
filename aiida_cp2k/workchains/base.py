@@ -20,7 +20,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
     @classmethod
     def define(cls, spec):
         # yapf: disable
-        super(Cp2kBaseWorkChain, cls).define(spec)
+        super().define(spec)
         spec.expose_inputs(Cp2kCalculation, namespace='cp2k')
 
         spec.outline(
@@ -48,7 +48,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         This `self.ctx.inputs` dictionary will be used by the `BaseRestartWorkChain` to submit the calculations in the
         internal loop.
         """
-        super(Cp2kBaseWorkChain, self).setup()
+        super().setup()
         self.ctx.inputs = AttributeDict(self.exposed_inputs(Cp2kCalculation, 'cp2k'))
 
     def results(self):
@@ -68,31 +68,15 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
 
         content_string = calc.outputs.retrieved.get_object_content(calc.get_attribute('output_filename'))
 
-        time_not_exceeded = "PROGRAM ENDED AT"
+        calc_finished = "PROGRAM ENDED AT"
         time_exceeded = "exceeded requested execution time"
         one_step_done = "Max. gradient              ="
         self.ctx.inputs.parent_calc_folder = calc.outputs.remote_folder
         params = self.ctx.inputs.parameters
 
         # If the problem is recoverable then do restart
-        if (time_not_exceeded not in content_string or time_exceeded in content_string) and one_step_done in content_string:  # pylint: disable=line-too-long
-            try:
-                # Firts check if all the restart keys are present in the input dictionary
-                wf_rest_fname_pointer = params['FORCE_EVAL']['DFT']['RESTART_FILE_NAME']
-                scf_guess_pointer = params['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS']
-                restart_fname_pointer = params['EXT_RESTART']['RESTART_FILE_NAME']
-
-                # Also check if they all have the right value
-                if not (wf_rest_fname_pointer == './parent_calc/aiida-RESTART.wfn' and
-                        scf_guess_pointer == 'RESTART' and
-                        restart_fname_pointer == './parent_calc/aiida-1.restart'):
-
-                    # If some values are incorrect add them to the input dictionary
-                    params = add_restart_sections(params)
-
-            # If not all the restart keys are present, adding them to the input dictionary
-            except (AttributeError, KeyError):
-                params = add_restart_sections(params)
+        if (calc_finished not in content_string or time_exceeded in content_string) and one_step_done in content_string:  # pylint: disable=line-too-long
+            params = add_restart_sections(params)
 
             # Might be able to solve the problem
             self.ctx.inputs.parameters = params  # params (new or old ones) that for sure
@@ -103,7 +87,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
             return ProcessHandlerReport(False)
 
         # If the problem is not recoverable
-        if (time_not_exceeded not in content_string or
+        if (calc_finished not in content_string or
                 time_exceeded in content_string) and one_step_done not in content_string:
 
             self.report("It seems that the restart of CP2K calculation wouldn't be able to fix the problem as the "

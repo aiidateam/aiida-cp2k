@@ -125,57 +125,28 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         """This handler restarts incomplete calculations."""
 
         content_string = calc.outputs.retrieved.get_object_content(calc.get_attribute('output_filename'))
-        one_step_done = "Max. gradient              ="
-        restart_written = "Writing RESTART"
+
+        # CP2K was updating geometry - continue with that.
+        restart_geometry_transformation = "Max. gradient              =" in content_string
+        # The message is written in the log file when the CP2K input parameter `LOG_PRINT_KEY` is set to True.
+        if not (restart_geometry_transformation or "Writing RESTART" in content_string):
+            self.report("It seems that the restart of CP2K calculation wouldn't be able to fix the problem as the "
+                        "previous calculation didn't produce any output to restart from. "
+                        "Sending a signal to stop the Base work chain.")
+
+            # Signaling to the base work chain that the problem could not be recovered.
+            return ProcessHandlerReport(True, self.exit_code.NO_RESTART_DATA)
+
         self.ctx.inputs.parent_calc_folder = calc.outputs.remote_folder
         params = self.ctx.inputs.parameters
 
-        # The message is written in the log file when the CP2K input parameter `LOG_PRINT_KEY` is set to True.
-        restart_scf = restart_written in content_string
-
-        # CP2K was updating geometry - continue with that.
-        restart_geometry_transformation = False
-        if one_step_done in content_string:
-            restart_scf = True
-            restart_geometry_transformation = True
-
-        if restart_scf:
-            try:
-                # Firts make sure that the required restart keys are present in the input dictionary.
-                wf_rest_fname_pointer = params['FORCE_EVAL']['DFT']['RESTART_FILE_NAME']
-                scf_guess_pointer = params['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS']
-
-                # Second, check that they have right values.
-                if not ('./parent_calc/aiida-RESTART.' in wf_rest_fname_pointer and
-                        scf_guess_pointer == 'RESTART'):
-                    params = add_wfn_restart_section(params, self.ctx.inputs.kpoints)
-            except (AttributeError, KeyError):
-                params = add_wfn_restart_section(params, self.ctx.inputs.kpoints)
+        params = add_wfn_restart_section(params, self.ctx.inputs.kpoints)
 
         if restart_geometry_transformation:
-            try:
-                # Firts check if all the restart keys are present in the input dictionary
-                restart_fname_pointer = params['EXT_RESTART']['RESTART_FILE_NAME']
+            params = add_ext_restart_section(params)
 
-                # Second, check that they have right values.
-                if restart_fname_pointer != './parent_calc/aiida-1.restart':
-                    params = add_ext_restart_section(params)
-            except (AttributeError, KeyError):
-                params = add_ext_restart_section(params)
-
-        # If the problem is not recoverable.
-        if any([restart_scf, restart_geometry_transformation]):
-
-            self.ctx.inputs.parameters = params  # params (new or old ones) that
-            # include the necessary restart information.
-            self.report(
-                "The CP2K calculation wasn't completed. The restart of the calculation might be able to "
-                "fix the problem.")
-            return ProcessHandlerReport(False)
-
-        self.report("It seems that the restart of CP2K calculation wouldn't be able to fix the problem as the "
-                    "previous calculation didn't produce any output to restart from. "
-                    "Sending a signal to stop the Base work chain.")
-
-        # Signaling to the base work chain that the problem could not be recovered.
-        return ProcessHandlerReport(True, self.exit_code.NO_RESTART_DATA)
+        self.ctx.inputs.parameters = params  # params (new or old ones) that include the necessary restart information.
+        self.report(
+            "The CP2K calculation wasn't completed. The restart of the calculation might be able to "
+            "fix the problem.")
+        return ProcessHandlerReport(False)

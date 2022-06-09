@@ -27,12 +27,11 @@ def merge_dict(dct, merge_dct):
     :param merge_dct: dct merged into dct (overwrites dct data if in both)
     :return: None
     """
-    import collections
     # Consider change of the collections interface in Python 3.10 and keep the code backwards compatible
     try:
-        from collections.abc import Mapping
+        from collections.abc import Mapping  # pylint: disable=deprecated-class
     except ImportError:
-        from collections import Mapping
+        from collections import Mapping  # pylint: disable=deprecated-class
     for k, _ in merge_dct.items():  # it was .iteritems() in python2
         if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping)):
             merge_dict(dct[k], merge_dct[k])
@@ -160,5 +159,5 @@ def check_resize_unit_cell(struct, threshold):  #pylint: disable=too-many-locals
 @calcfunction
 def resize_unit_cell(struct, resize):
     """Resize the StructureData according to the resize Dict"""
-    resize_tuple = tuple([resize[x] for x in ['nx', 'ny', 'nz']])
+    resize_tuple = tuple(resize[x] for x in ['nx', 'ny', 'nz'])
     return StructureData(ase=struct.get_ase().repeat(resize_tuple))

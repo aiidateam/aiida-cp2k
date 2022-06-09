@@ -28,8 +28,13 @@ def merge_dict(dct, merge_dct):
     :return: None
     """
     import collections
+    # Consider change of the collections interface in Python 3.10 and keep the code backwards compatible
+    try:
+        from collections.abc import Mapping
+    except ImportError:
+        from collections import Mapping
     for k, _ in merge_dct.items():  # it was .iteritems() in python2
-        if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], collections.Mapping)):
+        if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping)):
             merge_dict(dct[k], merge_dct[k])
         else:
             dct[k] = merge_dct[k]

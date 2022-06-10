@@ -28,7 +28,7 @@ def merge_dict(dct, merge_dct):
     :return: None
     """
     # Consider change of the collections interface in Python 3.10
-    from collections.abc import Mapping  # pylint: disable=deprecated-class
+    from collections.abc import Mapping
     for k, _ in merge_dct.items():  # it was .iteritems() in python2
         if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping)):
             merge_dict(dct[k], merge_dct[k])

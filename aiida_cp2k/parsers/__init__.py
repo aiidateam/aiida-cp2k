@@ -11,11 +11,15 @@ import io
 import os
 from aiida.common import exceptions
 
+# +
 from aiida.parsers import Parser
 from aiida.common import OutputParsingError, NotExistent
 from aiida.engine import ExitCode
 from aiida.orm import Dict
 from aiida.plugins import DataFactory
+
+from aiida_cp2k import utils
+# -
 
 StructureData = DataFactory('structure')  # pylint: disable=invalid-name
 BandsData = DataFactory('array.bands')  # pylint: disable=invalid-name
@@ -50,33 +54,25 @@ class Cp2kBaseParser(Parser):
     def _parse_stdout(self):
         """Basic CP2K output file parser."""
 
-        from aiida_cp2k.utils import parse_cp2k_output
+        # Read the standard output of CP2K.
+        exit_code, output_string = self._read_stdout()
+        if exit_code:
+            return exit_code
 
-        fname = self.node.get_attribute('output_filename')
+        # Check the standard output for errors.
+        exit_code = self._check_stdout_for_errors(output_string)
+        if exit_code:
+            return exit_code
 
-        if fname not in self.retrieved.list_object_names():
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
-
-        try:
-            output_string = self.retrieved.get_object_content(fname)
-        except IOError:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
-
-        result_dict = parse_cp2k_output(output_string)
-
-        if "aborted" in result_dict:
-            return self.exit_codes.ERROR_OUTPUT_CONTAINS_ABORT
-
+        # Parse the standard output.
+        result_dict = utils.parse_cp2k_output(output_string)
         self.out("output_parameters", Dict(dict=result_dict))
-
         return None
 
     def _parse_trajectory(self):
         """CP2K trajectory parser."""
 
         from ase import Atoms
-        from aiida_cp2k.utils import parse_cp2k_trajectory
-
         fname = self.node.process_class._DEFAULT_RESTART_FILE_NAME  # pylint: disable=protected-access
 
         # Check if the restart file is present.
@@ -89,7 +85,35 @@ class Cp2kBaseParser(Parser):
         except IOError:
             return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
-        return StructureData(ase=Atoms(**parse_cp2k_trajectory(output_string)))
+        return StructureData(ase=Atoms(**utils.parse_cp2k_trajectory(output_string)))
+
+    def _check_stdout_for_errors(self, output_string):
+        """This function checks the CP2K output file for some basic errors."""
+
+        if "ABORT" in output_string:
+            return self.exit_codes.ERROR_OUTPUT_CONTAINS_ABORT
+
+        if "exceeded requested execution time" in output_string:
+            return self.exit_codes.ERROR_OUT_OF_WALLTIME
+
+        if "PROGRAM STOPPED IN" not in output_string:
+            return self.exit_codes.ERROR_OUTPUT_INCOMPLETE
+
+        return None
+
+    def _read_stdout(self):
+        """Read the standard output file. If impossible, return a non-zero exit code."""
+
+        fname = self.node.get_attribute('output_filename')
+
+        if fname not in self.retrieved.list_object_names():
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING, None
+        try:
+            output_string = self.retrieved.get_object_content(fname)
+        except IOError:
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ, None
+
+        return None, output_string
 
 
 class Cp2kAdvancedParser(Cp2kBaseParser):
@@ -98,26 +122,18 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
     def _parse_stdout(self):
         """Advanced CP2K output file parser."""
 
-        from aiida_cp2k.utils import parse_cp2k_output_advanced
+        # Read the standard output of CP2K.
+        exit_code, output_string = self._read_stdout()
+        if exit_code:
+            return exit_code
 
-        fname = self.node.process_class._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
-        if fname not in self.retrieved.list_object_names():
-            raise OutputParsingError("CP2K output file not retrieved.")
+        # Check the standard output for errors.
+        exit_code = self._check_stdout_for_errors(output_string)
+        if exit_code:
+            return exit_code
 
-        try:
-            output_string = self.retrieved.get_object_content(fname)
-        except IOError:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
-
-        result_dict = parse_cp2k_output_advanced(output_string)
-
-        # nwarnings is the last thing to be printed in th eCP2K output file:
-        # if it is not there, CP2K didn't finish properly
-        if 'nwarnings' not in result_dict:
-            raise OutputParsingError("CP2K did not finish properly.")
-
-        if "aborted" in result_dict:
-            return self.exit_codes.ERROR_OUTPUT_CONTAINS_ABORT
+        # Parse the standard output.
+        result_dict = utils.parse_cp2k_output_advanced(output_string)
 
         # Compute the bandgap for Spin1 and Spin2 if eigen was parsed (works also with smearing!)
         if 'eigen_spin1_au' in result_dict:
@@ -161,14 +177,17 @@ class Cp2kToolsParser(Cp2kBaseParser):
 
         from cp2k_output_tools import parse_iter
 
-        fname = self.node.process_class._DEFAULT_OUTPUT_FILE  # pylint: disable=protected-access
-        if fname not in self.retrieved.list_object_names():
-            raise OutputParsingError("CP2K output file not retrieved.")
+        # Read the standard output of CP2K.
+        exit_code, output_string = self._read_stdout()
+        if exit_code:
+            return exit_code
 
-        try:
-            output_string = self.retrieved.get_object_content(fname)
-        except IOError:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+        # Check the standard output for errors.
+        exit_code = self._check_stdout_for_errors(output_string)
+        if exit_code:
+            return exit_code
+
+        # Parse the standard output.
 
         result_dict = {}
 
@@ -176,14 +195,6 @@ class Cp2kToolsParser(Cp2kBaseParser):
         # merge them into one dict
         for match in parse_iter(output_string, key_mangling=True):
             result_dict.update(match)
-
-        # nwarnings is the last thing to be printed in the CP2K output file:
-        # if it is not there, CP2K didn't finish properly most likely
-        if 'nwarnings' not in result_dict:
-            raise OutputParsingError("CP2K did not finish properly")
-
-        if "aborted" in result_dict:
-            return self.exit_codes.ERROR_OUTPUT_CONTAINS_ABORT
 
         try:
             # the cp2k-output-tools parser is more hierarchical, be compatible with

@@ -8,7 +8,7 @@
 """AiiDA-CP2K input generator."""
 
 from copy import deepcopy
-from collections.abc import Mapping, Sequence, MutableSequence
+from collections.abc import Mapping, Sequence, MutableSequence, MutableMapping
 
 from aiida.orm import Dict
 from aiida.engine import calcfunction
@@ -155,7 +155,7 @@ class Cp2kInput:
             if key.startswith(("@", "$")):
                 raise ValueError("CP2K preprocessor directives not supported.")
 
-            if isinstance(val, Mapping):
+            if isinstance(val, MutableMapping):
                 line = f"{' ' * indent}&{key}"
                 if "_" in val:  # if there is a section parameter, add it
                     line += f" {val.pop('_')}"
@@ -191,5 +191,35 @@ def add_restart_sections(input_dict):
         },
     }
     merge_dict(params, restart_wfn_dict)
+
+    # overwrite the complete EXT_RESTART section if present
+    params['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
+    return Dict(dict=params)
+
+
+@calcfunction
+def add_wfn_restart_section(input_dict, is_kpoints):
+    """Add wavefunction restart section to the input dictionary."""
+    params = input_dict.get_dict()
+    fname = './parent_calc/aiida-RESTART.kp' if is_kpoints else './parent_calc/aiida-RESTART.wfn'
+    restart_wfn_dict = {
+        'FORCE_EVAL': {
+            'DFT': {
+                'RESTART_FILE_NAME': fname,
+                'SCF': {
+                    'SCF_GUESS': 'RESTART',
+                },
+            },
+        },
+    }
+    merge_dict(params, restart_wfn_dict)
+    return Dict(dict=params)
+
+
+@calcfunction
+def add_ext_restart_section(input_dict):
+    """Add external restart section to the input dictionary."""
+    params = input_dict.get_dict()
+    # overwrite the complete EXT_RESTART section if present
     params['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
     return Dict(dict=params)

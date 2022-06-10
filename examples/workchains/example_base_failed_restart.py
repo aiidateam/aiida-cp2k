@@ -98,7 +98,7 @@ def example_base(cp2k_code):
     builder = Cp2kBaseWorkChain.get_builder()
 
     # Switch on resubmit_unconverged_geometry disabled by default.
-    builder.handler_overrides = Dict(dict={'resubmit_unconverged_geometry': True})
+    builder.handler_overrides = Dict(dict={'restart_incomplete_calculation': True})
 
     # Input structure.
     builder.cp2k.structure = structure
@@ -117,7 +117,7 @@ def example_base(cp2k_code):
     print("Submitted calculation...")
     _, process_node = run_get_node(builder)
 
-    if process_node.exit_status == 1:
+    if process_node.exit_status == 400:
         print("Work chain failure correctly recognized.")
     else:
         print("ERROR!")

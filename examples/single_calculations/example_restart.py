@@ -17,7 +17,7 @@ import click
 import ase.io
 
 from aiida.common import NotExistent
-from aiida.engine import run
+from aiida.engine import run, run_get_node
 from aiida.orm import (Code, Dict, SinglefileData)
 from aiida.plugins import DataFactory
 
@@ -121,17 +121,14 @@ def example_restart(cp2k_code):
     builder.metadata.options.max_wallclock_seconds = 1 * 2 * 60
 
     print("Submitted calculation 1.")
-    calc1 = run(builder)
+    calc1_outputs, calc1 = run_get_node(builder)
 
     # Check walltime exceeded.
-    assert calc1['output_parameters']['exceeded_walltime'] is True
-    assert calc1['output_parameters']['energy'] is not None
-    if 'output_structure' not in calc1:
-        print("There is no 'output_structure' in the process outputs. "
-              "Most probably the calculation did not reach the first geometry optimization step.")
+    if calc1.exit_status == 400:
+        print("OK, walltime exceeded as expected.")
+    else:
+        print("FAIL, walltime wasn't exceeded as it should.")
         sys.exit(1)
-
-    print("OK, walltime exceeded as expected.")
 
     # ------------------------------------------------------------------------------
     # Set up and start the second calculation.
@@ -154,7 +151,7 @@ def example_restart(cp2k_code):
     # Update the process builder.
     builder.structure = structure2
     builder.parameters = params2
-    builder.parent_calc_folder = calc1['remote_folder']
+    builder.parent_calc_folder = calc1_outputs['remote_folder']
 
     print("Submitted calculation 2.")
     calc2 = run(builder)

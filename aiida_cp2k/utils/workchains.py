@@ -27,9 +27,9 @@ def merge_dict(dct, merge_dct):
     :param merge_dct: dct merged into dct (overwrites dct data if in both)
     :return: None
     """
-    import collections
+    from collections.abc import Mapping
     for k, _ in merge_dct.items():  # it was .iteritems() in python2
-        if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], collections.Mapping)):
+        if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping)):
             merge_dict(dct[k], merge_dct[k])
         else:
             dct[k] = merge_dct[k]
@@ -155,5 +155,5 @@ def check_resize_unit_cell(struct, threshold):  #pylint: disable=too-many-locals
 @calcfunction
 def resize_unit_cell(struct, resize):
     """Resize the StructureData according to the resize Dict"""
-    resize_tuple = tuple([resize[x] for x in ['nx', 'ny', 'nz']])
+    resize_tuple = tuple(resize[x] for x in ['nx', 'ny', 'nz'])
     return StructureData(ase=struct.get_ase().repeat(resize_tuple))

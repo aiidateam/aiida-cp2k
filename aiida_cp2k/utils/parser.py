@@ -23,10 +23,6 @@ def parse_cp2k_output(fstring):
             result_dict["energy_units"] = "a.u."
         if "The number of warnings for this run is" in line:
             result_dict["nwarnings"] = int(line.split()[-1])
-        if "exceeded requested execution time" in line:
-            result_dict["exceeded_walltime"] = True
-        if "ABORT" in line:
-            result_dict["aborted"] = True
 
     return result_dict
 
@@ -56,10 +52,6 @@ def parse_cp2k_output_advanced(fstring):  # pylint: disable=too-many-locals, too
             result_dict['energy_scf'] = energy_scf
         if 'The number of warnings for this run is' in line:
             result_dict['nwarnings'] = int(line.split()[-1])
-        if 'exceeded requested execution time' in line:
-            result_dict['exceeded_walltime'] = True
-        if "ABORT" in line:
-            result_dict["aborted"] = True
         if "KPOINTS| Band Structure Calculation" in line:
             kpoints, labels, bands = _parse_bands(lines, i_line, cp2k_version)
             result_dict["kpoint_data"] = {

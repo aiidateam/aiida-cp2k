@@ -27,11 +27,8 @@ def merge_dict(dct, merge_dct):
     :param merge_dct: dct merged into dct (overwrites dct data if in both)
     :return: None
     """
-    # Consider change of the collections interface in Python 3.10 and keep the code backwards compatible
-    try:
-        from collections.abc import Mapping  # pylint: disable=deprecated-class
-    except ImportError:
-        from collections import Mapping  # pylint: disable=deprecated-class
+    # Consider change of the collections interface in Python 3.10
+    from collections.abc import Mapping  # pylint: disable=deprecated-class
     for k, _ in merge_dct.items():  # it was .iteritems() in python2
         if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping)):
             merge_dict(dct[k], merge_dct[k])

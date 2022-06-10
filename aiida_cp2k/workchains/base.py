@@ -62,7 +62,12 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
 
     @process_handler(priority=400, enabled=False)
     def resubmit_unconverged_geometry(self, calc):
-        """Resubmit a calculation it is not converged, but can be recovered."""
+        """
+        Deprecated!
+
+        Please use `restart_incomplete_calculation` handler instead.
+        This hanlder will be removed in the version 2.0 of the plugin.
+        """
 
         self.report("Checking the geometry convergence.")
 

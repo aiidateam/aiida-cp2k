@@ -98,7 +98,7 @@ def example_base(cp2k_code):
     builder = Cp2kBaseWorkChain.get_builder()
 
     # Switch on resubmit_unconverged_geometry disabled by default.
-    builder.handler_overrides = Dict(dict={'resubmit_unconverged_geometry': True})
+    builder.handler_overrides = Dict(dict={'restart_incomplete_calculation': True})
 
     # Input structure.
     builder.cp2k.structure = structure

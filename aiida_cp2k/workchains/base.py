@@ -3,7 +3,7 @@
 
 from aiida.common import AttributeDict
 from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, process_handler, while_
-from aiida.orm import Dict
+from aiida.orm import Bool, Dict
 from aiida.plugins import CalculationFactory
 
 from ..utils import add_restart_sections, add_ext_restart_section, add_wfn_restart_section
@@ -119,12 +119,12 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
                         "Sending a signal to stop the Base work chain.")
 
             # Signaling to the base work chain that the problem could not be recovered.
-            return ProcessHandlerReport(True, self.exit_code.NO_RESTART_DATA)
+            return ProcessHandlerReport(True, self.exit_codes.NO_RESTART_DATA)  # pylint: disable=no-member
 
         self.ctx.inputs.parent_calc_folder = calc.outputs.remote_folder
         params = self.ctx.inputs.parameters
 
-        params = add_wfn_restart_section(params, self.ctx.inputs.kpoints)
+        params = add_wfn_restart_section(params, Bool('kpoints' in self.ctx.inputs))
 
         if restart_geometry_transformation:
             params = add_ext_restart_section(params)

@@ -198,10 +198,10 @@ def add_restart_sections(input_dict):
 
 
 @calcfunction
-def add_wfn_restart_section(input_dict, kpoints):
+def add_wfn_restart_section(input_dict, is_kpoints):
     """Add wavefunction restart section to the input dictionary."""
     params = input_dict.get_dict()
-    fname = './parent_calc/aiida-RESTART.kp' if kpoints else './parent_calc/aiida-RESTART.wfn'
+    fname = './parent_calc/aiida-RESTART.kp' if is_kpoints else './parent_calc/aiida-RESTART.wfn'
     restart_wfn_dict = {
         'FORCE_EVAL': {
             'DFT': {

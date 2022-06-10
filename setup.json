@@ -52,5 +52,5 @@
     "license": "MIT License",
     "name": "aiida_cp2k",
     "url": "https://github.com/aiidateam/aiida-cp2k",
-    "version": "1.4.1"
+    "version": "1.5.0"
 }

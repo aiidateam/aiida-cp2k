@@ -13,7 +13,7 @@ import click
 
 from aiida.common import NotExistent
 from aiida.engine import run_get_node
-from aiida.orm import (Code, Dict)
+from aiida.orm import Code, Dict
 
 
 def example_failure(cp2k_code):
@@ -22,7 +22,7 @@ def example_failure(cp2k_code):
     print("Testing CP2K failure...")
 
     # a broken CP2K input
-    parameters = Dict(dict={'GLOBAL': {'FOO_BAR_QUUX': 42}})
+    parameters = Dict(dict={"GLOBAL": {"FOO_BAR_QUUX": 42}})
 
     print("Submitted calculation...")
 
@@ -46,8 +46,8 @@ def example_failure(cp2k_code):
         sys.exit(3)
 
 
-@click.command('cli')
-@click.argument('codelabel')
+@click.command("cli")
+@click.argument("codelabel")
 def cli(codelabel):
     """Click interface."""
     try:
@@ -58,5 +58,5 @@ def cli(codelabel):
     example_failure(code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter

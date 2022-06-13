@@ -16,7 +16,7 @@ import click
 
 from aiida.common import NotExistent
 from aiida.engine import run
-from aiida.orm import (Code, Dict, SinglefileData)
+from aiida.orm import Code, Dict, SinglefileData
 
 
 def example_mm(cp2k_code):
@@ -26,7 +26,8 @@ def example_mm(cp2k_code):
 
     # Force field.
     with open(os.path.join("/tmp", "water.pot"), "w") as f:
-        f.write("""BONDS
+        f.write(
+            """BONDS
     H    H       0.000     1.5139
     O    H     450.000     0.9572
 
@@ -43,14 +44,17 @@ def example_mm(cp2k_code):
 
     HBOND CUTHB 0.5
 
-    END""")
+    END"""
+        )
 
-    water_pot = SinglefileData(file=os.path.join("/tmp", "water.pot"))  # pylint: disable=no-value-for-parameter
+    water_pot = SinglefileData(
+        file=os.path.join("/tmp", "water.pot")
+    )  # pylint: disable=no-value-for-parameter
 
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # structure using pdb format, because it also carries topology information
-    atoms = ase.io.read(os.path.join(thisdir, '..', 'files', 'h2o.xyz'))
+    atoms = ase.io.read(os.path.join(thisdir, "..", "files", "h2o.xyz"))
     atoms.center(vacuum=10.0)
     atoms.write(os.path.join("/tmp", "coords.pdb"), format="proteindatabank")
     coords_pdb = SinglefileData(file=os.path.join("/tmp", "coords.pdb"))
@@ -59,47 +63,42 @@ def example_mm(cp2k_code):
     # Based on cp2k/tests/Fist/regtest-1-1/water_1.inp
     parameters = Dict(
         dict={
-            'FORCE_EVAL': {
-                'METHOD': 'fist',
-                'MM': {
-                    'FORCEFIELD': {
-                        'PARM_FILE_NAME': 'water.pot',
-                        'PARMTYPE': 'CHM',
-                        'CHARGE': [{
-                            'ATOM': 'O',
-                            'CHARGE': -0.8476
-                        }, {
-                            'ATOM': 'H',
-                            'CHARGE': 0.4238
-                        }]
+            "FORCE_EVAL": {
+                "METHOD": "fist",
+                "MM": {
+                    "FORCEFIELD": {
+                        "PARM_FILE_NAME": "water.pot",
+                        "PARMTYPE": "CHM",
+                        "CHARGE": [
+                            {"ATOM": "O", "CHARGE": -0.8476},
+                            {"ATOM": "H", "CHARGE": 0.4238},
+                        ],
                     },
-                    'POISSON': {
-                        'EWALD': {
-                            'EWALD_TYPE': 'spme',
-                            'ALPHA': 0.44,
-                            'GMAX': 24,
-                            'O_SPLINE': 6
+                    "POISSON": {
+                        "EWALD": {
+                            "EWALD_TYPE": "spme",
+                            "ALPHA": 0.44,
+                            "GMAX": 24,
+                            "O_SPLINE": 6,
                         }
-                    }
-                },
-                'SUBSYS': {
-                    'CELL': {
-                        'ABC': '%f  %f  %f' % tuple(atoms.cell.diagonal()),
                     },
-                    'TOPOLOGY': {
-                        'COORD_FILE_NAME': 'coords.pdb',
-                        'COORD_FILE_FORMAT': 'PDB',
+                },
+                "SUBSYS": {
+                    "CELL": {
+                        "ABC": "%f  %f  %f" % tuple(atoms.cell.diagonal()),
+                    },
+                    "TOPOLOGY": {
+                        "COORD_FILE_NAME": "coords.pdb",
+                        "COORD_FILE_FORMAT": "PDB",
                     },
                 },
             },
-            'GLOBAL': {
-                'CALLGRAPH': 'master',
-                'CALLGRAPH_FILE_NAME': 'runtime'
-            }
-        })
+            "GLOBAL": {"CALLGRAPH": "master", "CALLGRAPH_FILE_NAME": "runtime"},
+        }
+    )
 
     # Settings.
-    settings = Dict(dict={'additional_retrieve_list': ["runtime.callgraph"]})
+    settings = Dict(dict={"additional_retrieve_list": ["runtime.callgraph"]})
 
     # Construct process builder.
     builder = cp2k_code.get_builder()
@@ -107,8 +106,8 @@ def example_mm(cp2k_code):
     builder.settings = settings
     builder.code = cp2k_code
     builder.file = {
-        'water_pot': water_pot,
-        'coords_pdb': coords_pdb,
+        "water_pot": water_pot,
+        "coords_pdb": coords_pdb,
     }
     builder.metadata.options.resources = {
         "num_machines": 1,
@@ -121,7 +120,7 @@ def example_mm(cp2k_code):
 
     # Check energy.
     expected_energy = 0.146927412614e-3
-    if abs(calc['output_parameters']['energy'] - expected_energy) < 1e-10:
+    if abs(calc["output_parameters"]["energy"] - expected_energy) < 1e-10:
         print("OK, energy has the expected value.")
     else:
         print("ERROR!")
@@ -130,7 +129,7 @@ def example_mm(cp2k_code):
         sys.exit(3)
 
     # Check if callgraph is there.
-    if "runtime.callgraph" in calc['retrieved'].list_object_names():
+    if "runtime.callgraph" in calc["retrieved"].list_object_names():
         print("OK, callgraph file was retrived.")
     else:
         print("ERROR!")
@@ -138,8 +137,8 @@ def example_mm(cp2k_code):
         sys.exit(3)
 
 
-@click.command('cli')
-@click.argument('codelabel')
+@click.command("cli")
+@click.argument("codelabel")
 def cli(codelabel):
     """Click interface."""
     try:
@@ -150,5 +149,5 @@ def cli(codelabel):
     example_mm(code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter

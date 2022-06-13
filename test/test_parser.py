@@ -20,9 +20,20 @@ def test_bands_parser_51():
         for i_line, line in enumerate(lines):
             if "KPOINTS| Band Structure Calculation" in line:
                 kpoints, labels, bands = _parse_bands(lines, i_line, 5.1)
-        assert (kpoints[4] == [0.2, 0., 0.2]).all()
-        assert labels == [(0, 'GAMMA'), (10, 'X'), (20, 'U'), (21, 'K'), (31, 'GAMMA'), (41, 'L'), (51, 'W'), (61, 'X')]
-        assert (bands[0] == [-6.84282475, 5.23143741, 5.23143741, 5.23143741, 7.89232311]).all()
+        assert (kpoints[4] == [0.2, 0.0, 0.2]).all()
+        assert labels == [
+            (0, "GAMMA"),
+            (10, "X"),
+            (20, "U"),
+            (21, "K"),
+            (31, "GAMMA"),
+            (41, "L"),
+            (51, "W"),
+            (61, "X"),
+        ]
+        assert (
+            bands[0] == [-6.84282475, 5.23143741, 5.23143741, 5.23143741, 7.89232311]
+        ).all()
 
 
 def test_bands_parser_81():
@@ -33,15 +44,34 @@ def test_bands_parser_81():
         for i_line, line in enumerate(lines):
             if "KPOINTS| Band Structure Calculation" in line:
                 kpoints, labels, bands = _parse_bands(lines, i_line, 8.1)
-        assert (kpoints[4] == [0.2, 0., 0.2]).all()
-        assert labels == [(0, 'GAMMA'), (10, 'X'), (20, 'U'), (21, 'K'), (31, 'GAMMA'), (41, 'L'), (51, 'W'), (61, 'X')]
-        assert (bands[0] == [-6.84282475, 5.23143741, 5.23143741, 5.23143741, 7.89232311]).all()
+        assert (kpoints[4] == [0.2, 0.0, 0.2]).all()
+        assert labels == [
+            (0, "GAMMA"),
+            (10, "X"),
+            (20, "U"),
+            (21, "K"),
+            (31, "GAMMA"),
+            (41, "L"),
+            (51, "W"),
+            (61, "X"),
+        ]
+        assert (
+            bands[0] == [-6.84282475, 5.23143741, 5.23143741, 5.23143741, 7.89232311]
+        ).all()
 
 
 def test_trajectory_parser_pbc():
     """Test parsing of boundary conditions from the restart-file"""
-    files = ["PBC_output_xyz.restart", "PBC_output_xz.restart", "PBC_output_none.restart"]
-    boundary_conditions = [[True, True, True], [True, False, True], [False, False, False]]
+    files = [
+        "PBC_output_xyz.restart",
+        "PBC_output_xz.restart",
+        "PBC_output_none.restart",
+    ]
+    boundary_conditions = [
+        [True, True, True],
+        [True, False, True],
+        [False, False, False],
+    ]
 
     for file, boundary_cond in zip(files, boundary_conditions):
         with open(f"{THISDIR}/outputs/{file}") as fobj:

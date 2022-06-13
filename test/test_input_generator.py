@@ -29,42 +29,56 @@ def test_add_keyword():
     assert inp.render() == f"{inp.DISCLAIMER}\nBAR boo\nFOO bar"
 
     inp.add_keyword("BOO/BAZ", "boo")
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 BAR boo
 &BOO
    BAZ boo
 &END BOO
 FOO bar"""
+    )
 
     inp.add_keyword(["BOO", "BII"], "boo")
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 BAR boo
 &BOO
    BAZ boo
    BII boo
 &END BOO
 FOO bar"""
+    )
 
     inp.add_keyword("BOO/BII", "bzzzzzz", override=False)
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 BAR boo
 &BOO
    BAZ boo
    BII boo
 &END BOO
 FOO bar"""
+    )
 
     inp.add_keyword("BOO/BII/BCC", "bcr", override=False)
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 BAR boo
 &BOO
    BAZ boo
    BII boo
 &END BOO
 FOO bar"""
+    )
 
     inp.add_keyword("BOO/BII/BCC", "bcr")
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 BAR boo
 &BOO
    BAZ boo
@@ -73,9 +87,12 @@ BAR boo
    &END BII
 &END BOO
 FOO bar"""
+    )
 
     inp.add_keyword("BOO/BII", "boo", override=False)
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 BAR boo
 &BOO
    BAZ boo
@@ -84,36 +101,48 @@ BAR boo
    &END BII
 &END BOO
 FOO bar"""
+    )
 
     inp.add_keyword("BOO/BII", "boo", override=True)
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 BAR boo
 &BOO
    BAZ boo
    BII boo
 &END BOO
 FOO bar"""
+    )
 
     inp.add_keyword("BOO/BII", "boo", override=True)
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 BAR boo
 &BOO
    BAZ boo
    BII boo
 &END BOO
 FOO bar"""
+    )
 
-    inp.add_keyword("BOO/BIP", "bzz", override=False, conflicting_keys=['BII'])
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    inp.add_keyword("BOO/BIP", "bzz", override=False, conflicting_keys=["BII"])
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 BAR boo
 &BOO
    BAZ boo
    BII boo
 &END BOO
 FOO bar"""
+    )
 
     inp.add_keyword("BOO/BIP", "bzz", override=False, conflicting_keys=[])
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 BAR boo
 &BOO
    BAZ boo
@@ -121,15 +150,19 @@ BAR boo
    BIP bzz
 &END BOO
 FOO bar"""
+    )
 
-    inp.add_keyword("BOO/BEE", "bee", override=True, conflicting_keys=['BAZ', 'BII'])
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    inp.add_keyword("BOO/BEE", "bee", override=True, conflicting_keys=["BAZ", "BII"])
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 BAR boo
 &BOO
    BEE bee
    BIP bzz
 &END BOO
 FOO bar"""
+    )
 
 
 def test_add_keyword_invariant_inp():
@@ -143,7 +176,9 @@ def test_add_keyword_invariant_inp():
 
 def test_multiple_force_eval():
     inp = Cp2kInput({"FORCE_EVAL": [{"FOO": "bar"}, {"FOO": "bar"}, {"FOO": "bar"}]})
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 &FORCE_EVAL
    FOO bar
 &END FORCE_EVAL
@@ -153,15 +188,19 @@ def test_multiple_force_eval():
 &FORCE_EVAL
    FOO bar
 &END FORCE_EVAL"""
+    )
 
 
 def test_kinds():
     inp = Cp2kInput({"KIND": [{"_": "H"}, {"_": "O"}]})
-    assert inp.render() == f"""{inp.DISCLAIMER}
+    assert (
+        inp.render()
+        == f"""{inp.DISCLAIMER}
 &KIND H
 &END KIND
 &KIND O
 &END KIND"""
+    )
 
 
 def test_invariant_under_render():

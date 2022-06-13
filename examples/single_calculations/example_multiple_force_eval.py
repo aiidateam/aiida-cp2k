@@ -16,10 +16,10 @@ import ase
 
 from aiida.common import NotExistent
 from aiida.engine import run
-from aiida.orm import (Code, Dict, SinglefileData)
+from aiida.orm import Code, Dict, SinglefileData
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory('structure')  # pylint: disable=invalid-name
+StructureData = DataFactory("structure")  # pylint: disable=invalid-name
 
 
 def example_multiple_force_eval(cp2k_code):
@@ -30,163 +30,171 @@ def example_multiple_force_eval(cp2k_code):
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # structure
-    pos = [[0.934, 2.445, 1.844], [1.882, 2.227, 1.982], [0.81, 3.165, 2.479], [3.59, 2.048, 2.436],
-           [4.352, 2.339, 1.906], [3.953, 1.304, 2.946]]
-    atoms = ase.Atoms(symbols='OH2OH2', pbc=True, cell=[5.0, 5.0, 5.0])
+    pos = [
+        [0.934, 2.445, 1.844],
+        [1.882, 2.227, 1.982],
+        [0.81, 3.165, 2.479],
+        [3.59, 2.048, 2.436],
+        [4.352, 2.339, 1.906],
+        [3.953, 1.304, 2.946],
+    ]
+    atoms = ase.Atoms(symbols="OH2OH2", pbc=True, cell=[5.0, 5.0, 5.0])
     atoms.set_positions(pos)
     structure = StructureData(ase=atoms)
 
     # Basis set.
-    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
+    basis_file = SinglefileData(
+        file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT")
+    )
 
     # Pseudopotentials.
-    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
+    pseudo_file = SinglefileData(
+        file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS")
+    )
 
     # Parameters.
     parameters = Dict(
         dict={
-            'MULTIPLE_FORCE_EVALS': {
-                'FORCE_EVAL_ORDER': '2 3',
-                'MULTIPLE_SUBSYS': 'T',
+            "MULTIPLE_FORCE_EVALS": {
+                "FORCE_EVAL_ORDER": "2 3",
+                "MULTIPLE_SUBSYS": "T",
             },
-            'FORCE_EVAL': [
+            "FORCE_EVAL": [
                 {
-                    'METHOD': 'MIXED',
-                    'MIXED': {
-                        'MIXING_TYPE': 'GENMIX',
-                        'GENERIC': {
-                            'ERROR_LIMIT': 1.0E-10,
-                            'MIXING_FUNCTION': 'E1+E2',
-                            'VARIABLES': 'E1 E2',
+                    "METHOD": "MIXED",
+                    "MIXED": {
+                        "MIXING_TYPE": "GENMIX",
+                        "GENERIC": {
+                            "ERROR_LIMIT": 1.0e-10,
+                            "MIXING_FUNCTION": "E1+E2",
+                            "VARIABLES": "E1 E2",
                         },
-                        'MAPPING': {
-                            'FORCE_EVAL_MIXED': {
-                                'FRAGMENT': [
-                                    {
-                                        '_': 1,
-                                        '1': '3'
-                                    },
-                                    {
-                                        '_': 2,
-                                        '4': '6'
-                                    },
+                        "MAPPING": {
+                            "FORCE_EVAL_MIXED": {
+                                "FRAGMENT": [
+                                    {"_": 1, "1": "3"},
+                                    {"_": 2, "4": "6"},
                                 ],
                             },
-                            'FORCE_EVAL': [{
-                                '_': 1,
-                                'DEFINE_FRAGMENTS': '1 2',
-                            }, {
-                                '_': 2,
-                                'DEFINE_FRAGMENTS': '1 2',
-                            }],
-                        }
+                            "FORCE_EVAL": [
+                                {
+                                    "_": 1,
+                                    "DEFINE_FRAGMENTS": "1 2",
+                                },
+                                {
+                                    "_": 2,
+                                    "DEFINE_FRAGMENTS": "1 2",
+                                },
+                            ],
+                        },
                     },
                 },
                 {
-                    'METHOD': 'FIST',
-                    'MM': {
-                        'FORCEFIELD': {
-                            'SPLINE': {
-                                'EPS_SPLINE': 1.30E-5,
-                                'EMAX_SPLINE': 0.8,
+                    "METHOD": "FIST",
+                    "MM": {
+                        "FORCEFIELD": {
+                            "SPLINE": {
+                                "EPS_SPLINE": 1.30e-5,
+                                "EMAX_SPLINE": 0.8,
                             },
-                            'CHARGE': [
+                            "CHARGE": [
                                 {
-                                    'ATOM': 'H',
-                                    'CHARGE': 0.0,
+                                    "ATOM": "H",
+                                    "CHARGE": 0.0,
                                 },
                                 {
-                                    'ATOM': 'O',
-                                    'CHARGE': 0.0,
+                                    "ATOM": "O",
+                                    "CHARGE": 0.0,
                                 },
                             ],
-                            'BOND': {
-                                'ATOMS': 'H O',
-                                'K': 0.0,
-                                'R0': 2.0,
+                            "BOND": {
+                                "ATOMS": "H O",
+                                "K": 0.0,
+                                "R0": 2.0,
                             },
-                            'BEND': {
-                                'ATOMS': 'H O H',
-                                'K': 0.0,
-                                'THETA0': 2.0,
+                            "BEND": {
+                                "ATOMS": "H O H",
+                                "K": 0.0,
+                                "THETA0": 2.0,
                             },
-                            'NONBONDED': {
-                                'LENNARD-JONES': [
+                            "NONBONDED": {
+                                "LENNARD-JONES": [
                                     {
-                                        'ATOMS': 'H H',
-                                        'EPSILON': 0.2,
-                                        'SIGMA': 2.4,
+                                        "ATOMS": "H H",
+                                        "EPSILON": 0.2,
+                                        "SIGMA": 2.4,
                                     },
                                     {
-                                        'ATOMS': 'H O',
-                                        'EPSILON': 0.4,
-                                        'SIGMA': 3.0,
+                                        "ATOMS": "H O",
+                                        "EPSILON": 0.4,
+                                        "SIGMA": 3.0,
                                     },
                                     {
-                                        'ATOMS': 'O O',
-                                        'EPSILON': 0.8,
-                                        'SIGMA': 3.6,
+                                        "ATOMS": "O O",
+                                        "EPSILON": 0.8,
+                                        "SIGMA": 3.6,
                                     },
                                 ]
                             },
                         },
-                        'POISSON': {
-                            'EWALD': {
-                                'EWALD_TYPE': 'none',
+                        "POISSON": {
+                            "EWALD": {
+                                "EWALD_TYPE": "none",
                             }
+                        },
+                    },
+                    "SUBSYS": {
+                        "TOPOLOGY": {
+                            "CONNECTIVITY": "GENERATE",
+                            "GENERATE": {
+                                "CREATE_MOLECULES": True,
+                            },
                         }
                     },
-                    'SUBSYS': {
-                        'TOPOLOGY': {
-                            'CONNECTIVITY': 'GENERATE',
-                            'GENERATE': {
-                                'CREATE_MOLECULES': True,
-                            }
-                        }
-                    }
                 },
                 {
-                    'METHOD': 'Quickstep',
-                    'DFT': {
-                        'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-                        'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
-                        'QS': {
-                            'EPS_DEFAULT': 1.0e-12,
-                            'WF_INTERPOLATION': 'ps',
-                            'EXTRAPOLATION_ORDER': 3,
+                    "METHOD": "Quickstep",
+                    "DFT": {
+                        "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
+                        "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
+                        "QS": {
+                            "EPS_DEFAULT": 1.0e-12,
+                            "WF_INTERPOLATION": "ps",
+                            "EXTRAPOLATION_ORDER": 3,
                         },
-                        'MGRID': {
-                            'NGRIDS': 4,
-                            'CUTOFF': 280,
-                            'REL_CUTOFF': 30,
+                        "MGRID": {
+                            "NGRIDS": 4,
+                            "CUTOFF": 280,
+                            "REL_CUTOFF": 30,
                         },
-                        'XC': {
-                            'XC_FUNCTIONAL': {
-                                '_': 'LDA',
+                        "XC": {
+                            "XC_FUNCTIONAL": {
+                                "_": "LDA",
                             },
                         },
-                        'POISSON': {
-                            'PERIODIC': 'none',
-                            'PSOLVER': 'MT',
+                        "POISSON": {
+                            "PERIODIC": "none",
+                            "PSOLVER": "MT",
                         },
                     },
-                    'SUBSYS': {
-                        'KIND': [
+                    "SUBSYS": {
+                        "KIND": [
                             {
-                                '_': 'O',
-                                'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                                'POTENTIAL': 'GTH-LDA-q6'
+                                "_": "O",
+                                "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                                "POTENTIAL": "GTH-LDA-q6",
                             },
                             {
-                                '_': 'H',
-                                'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                                'POTENTIAL': 'GTH-LDA-q1'
+                                "_": "H",
+                                "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                                "POTENTIAL": "GTH-LDA-q1",
                             },
                         ],
                     },
                 },
-            ]
-        })
+            ],
+        }
+    )
 
     # Construct process builder.
     builder = cp2k_code.get_builder()
@@ -194,8 +202,8 @@ def example_multiple_force_eval(cp2k_code):
     builder.parameters = parameters
     builder.code = cp2k_code
     builder.file = {
-        'basis': basis_file,
-        'pseudo': pseudo_file,
+        "basis": basis_file,
+        "pseudo": pseudo_file,
     }
     builder.metadata.options.resources = {
         "num_machines": 1,
@@ -207,8 +215,8 @@ def example_multiple_force_eval(cp2k_code):
     run(builder)
 
 
-@click.command('cli')
-@click.argument('codelabel')
+@click.command("cli")
+@click.argument("codelabel")
 def cli(codelabel):
     """Click interface."""
     try:
@@ -219,5 +227,5 @@ def cli(codelabel):
     example_multiple_force_eval(code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter

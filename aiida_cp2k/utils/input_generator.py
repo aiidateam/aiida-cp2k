@@ -54,7 +54,9 @@ class Cp2kInput:
         if isinstance(kwpath, str):
             kwpath = kwpath.split("/")
 
-        Cp2kInput._add_keyword(kwpath, value, self._params, ovrd=override, cfct=conflicting_keys)
+        Cp2kInput._add_keyword(
+            kwpath, value, self._params, ovrd=override, cfct=conflicting_keys
+        )
 
     def render(self):
         output = [self.DISCLAIMER]
@@ -71,7 +73,9 @@ class Cp2kInput:
                 if sections:
                     yield (key, value)
                 stack += [(key + (k,), v) for k, v in value.items()]
-            elif isinstance(value, MutableSequence):  # not just 'Sequence' to avoid matching strings
+            elif isinstance(
+                value, MutableSequence
+            ):  # not just 'Sequence' to avoid matching strings
                 for entry in value:
                     stack += [(key, entry)]
             else:
@@ -85,7 +89,9 @@ class Cp2kInput:
         if len(kwpath) == 1:
             if cfct:
                 conflicting_keys_present = [key for key in cfct if key in params]
-            if ovrd:  # if ovrd is True, set the new element's value and remove the conflicting keys
+            if (
+                ovrd
+            ):  # if ovrd is True, set the new element's value and remove the conflicting keys
                 params[kwpath[0]] = value
                 for key in conflicting_keys_present:
                     params.pop(key)
@@ -101,7 +107,9 @@ class Cp2kInput:
             Cp2kInput._add_keyword(kwpath[1:], value, params[kwpath[0]], ovrd, cfct)
 
         # if it is a list, loop over its elements
-        elif isinstance(params[kwpath[0]], Sequence) and not isinstance(params[kwpath[0]], str):
+        elif isinstance(params[kwpath[0]], Sequence) and not isinstance(
+            params[kwpath[0]], str
+        ):
             for element in params[kwpath[0]]:
                 Cp2kInput._add_keyword(kwpath[1:], value, element, ovrd, cfct)
 
@@ -168,7 +176,7 @@ class Cp2kInput:
                     Cp2kInput._render_section(output, {key: listitem}, indent)
 
             elif isinstance(val, bool):
-                val_str = '.TRUE.' if val else '.FALSE.'
+                val_str = ".TRUE." if val else ".FALSE."
                 output.append(f"{' ' * indent}{key} {val_str}")
 
             else:
@@ -181,11 +189,11 @@ def add_restart_sections(input_dict):
 
     params = input_dict.get_dict()
     restart_wfn_dict = {
-        'FORCE_EVAL': {
-            'DFT': {
-                'RESTART_FILE_NAME': './parent_calc/aiida-RESTART.wfn',
-                'SCF': {
-                    'SCF_GUESS': 'RESTART',
+        "FORCE_EVAL": {
+            "DFT": {
+                "RESTART_FILE_NAME": "./parent_calc/aiida-RESTART.wfn",
+                "SCF": {
+                    "SCF_GUESS": "RESTART",
                 },
             },
         },
@@ -193,7 +201,7 @@ def add_restart_sections(input_dict):
     merge_dict(params, restart_wfn_dict)
 
     # overwrite the complete EXT_RESTART section if present
-    params['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
+    params["EXT_RESTART"] = {"RESTART_FILE_NAME": "./parent_calc/aiida-1.restart"}
     return Dict(dict=params)
 
 
@@ -201,13 +209,17 @@ def add_restart_sections(input_dict):
 def add_wfn_restart_section(input_dict, is_kpoints):
     """Add wavefunction restart section to the input dictionary."""
     params = input_dict.get_dict()
-    fname = './parent_calc/aiida-RESTART.kp' if is_kpoints else './parent_calc/aiida-RESTART.wfn'
+    fname = (
+        "./parent_calc/aiida-RESTART.kp"
+        if is_kpoints
+        else "./parent_calc/aiida-RESTART.wfn"
+    )
     restart_wfn_dict = {
-        'FORCE_EVAL': {
-            'DFT': {
-                'RESTART_FILE_NAME': fname,
-                'SCF': {
-                    'SCF_GUESS': 'RESTART',
+        "FORCE_EVAL": {
+            "DFT": {
+                "RESTART_FILE_NAME": fname,
+                "SCF": {
+                    "SCF_GUESS": "RESTART",
                 },
             },
         },
@@ -221,5 +233,5 @@ def add_ext_restart_section(input_dict):
     """Add external restart section to the input dictionary."""
     params = input_dict.get_dict()
     # overwrite the complete EXT_RESTART section if present
-    params['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
+    params["EXT_RESTART"] = {"RESTART_FILE_NAME": "./parent_calc/aiida-1.restart"}
     return Dict(dict=params)

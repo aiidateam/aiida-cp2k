@@ -62,7 +62,9 @@ def _kind_element_from_kind_section(section):
         try:
             element = match["sym"]
         except TypeError:
-            raise InputValidationError(f"Unable to figure out atomic symbol from KIND '{kind}'.")
+            raise InputValidationError(
+                f"Unable to figure out atomic symbol from KIND '{kind}'."
+            )
 
     return kind, element
 
@@ -79,10 +81,12 @@ def _prepare_kind_section(inp, kind):
     if "KIND" not in inp["FORCE_EVAL"]["SUBSYS"]:
         inp["FORCE_EVAL"]["SUBSYS"]["KIND"] = []
 
-    inp["FORCE_EVAL"]["SUBSYS"]["KIND"].append({
-        "_": kind.name,
-        "ELEMENT": kind.symbol,
-    })
+    inp["FORCE_EVAL"]["SUBSYS"]["KIND"].append(
+        {
+            "_": kind.name,
+            "ELEMENT": kind.symbol,
+        }
+    )
 
     return inp["FORCE_EVAL"]["SUBSYS"]["KIND"][-1]
 
@@ -122,7 +126,9 @@ def _write_gdt(inp, entries, folder, key, fname):
 
 def validate_basissets_namespace(basissets, _):
     """A input_namespace validator to ensure passed down basis sets have the correct type."""
-    return _validate_gdt_namespace(basissets, DataFactory("gaussian.basisset"), "basis set")
+    return _validate_gdt_namespace(
+        basissets, DataFactory("gaussian.basisset"), "basis set"
+    )
 
 
 def validate_basissets(inp, basissets, structure):
@@ -146,12 +152,19 @@ def validate_basissets(inp, basissets, structure):
     #    ("AUX", "O", BasisSet<3>),
     #    ("ORB", "H", BasisSet<4>) ]
     # e.g. resolving any label to a (type,label) tuple, and unpack any list of basissets
-    basissets = [(*_parse_name(label, default_type="ORB", sep="_"), bset) for label, bset in _unpack(basissets)]
+    basissets = [
+        (*_parse_name(label, default_type="ORB", sep="_"), bset)
+        for label, bset in _unpack(basissets)
+    ]
     basissets_specified = set(bset for _, _, bset in basissets)
     basissets_used = set()
     explicit_kinds = []  # list of kinds with explicitly specified kind sections
 
-    for section in (section for secpath, section in inp.param_iter(sections=True) if secpath[-1].upper() == "KIND"):
+    for section in (
+        section
+        for secpath, section in inp.param_iter(sections=True)
+        if secpath[-1].upper() == "KIND"
+    ):
         kind, element = _kind_element_from_kind_section(section)
         explicit_kinds += [kind]
 
@@ -166,8 +179,10 @@ def validate_basissets(inp, basissets, structure):
                 bsets = [(t, b) for t, s, b in basissets if s == element]
 
             if not bsets:
-                raise InputValidationError(f"No basis set found for kind {kind} or element {element}"
-                                           f" in basissets input namespace and not explicitly set.")
+                raise InputValidationError(
+                    f"No basis set found for kind {kind} or element {element}"
+                    f" in basissets input namespace and not explicitly set."
+                )
 
             if len(bsets) > 1:
                 section["BASIS_SET"] = [f"bstype {bset.name}" for bstype, bset in bsets]
@@ -191,25 +206,36 @@ def validate_basissets(inp, basissets, structure):
                     bsets = [(t, b) for t, s, b in basissets if s == element]
 
                 if not bsets:
-                    raise InputValidationError(f"'BASIS_SET {bstype} {bsname}' for element {element} (from kind {kind})"
-                                               " not found in basissets input namespace")
+                    raise InputValidationError(
+                        f"'BASIS_SET {bstype} {bsname}' for element {element} (from kind {kind})"
+                        " not found in basissets input namespace"
+                    )
 
                 for _, bset in bsets:
                     if bsname in bset.aliases:
                         basissets_used.add(bset)
                         break
                 else:
-                    raise InputValidationError(f"'BASIS_SET {bstype} {bsname}' for element {element} (from kind {kind})"
-                                               " not found in basissets input namespace")
+                    raise InputValidationError(
+                        f"'BASIS_SET {bstype} {bsname}' for element {element} (from kind {kind})"
+                        " not found in basissets input namespace"
+                    )
 
     # if there is no structure and there are any unreferenced basissets, end it here
-    if not structure and any(bset not in basissets_used for bset in basissets_specified):
-        raise InputValidationError("No explicit structure given and basis sets not referenced in input")
+    if not structure and any(
+        bset not in basissets_used for bset in basissets_specified
+    ):
+        raise InputValidationError(
+            "No explicit structure given and basis sets not referenced in input"
+        )
 
-    if isinstance(inp["FORCE_EVAL"], Sequence) and any(kind.name not in explicit_kinds for kind in structure.kinds):
+    if isinstance(inp["FORCE_EVAL"], Sequence) and any(
+        kind.name not in explicit_kinds for kind in structure.kinds
+    ):
         raise InputValidationError(
             "Automated BASIS_SET keyword creation is not yet supported with multiple FORCE_EVALs."
-            " Please explicitly reference a BASIS_SET for each KIND.")
+            " Please explicitly reference a BASIS_SET for each KIND."
+        )
 
     # check the structure against the present KIND sections and generate the missing ones
     for kind in structure.kinds:
@@ -228,16 +254,21 @@ def validate_basissets(inp, basissets, structure):
 
         if not bsets:
             raise InputValidationError(
-                f"No basis set found in the given basissets for kind '{kind.name}' of your structure.")
+                f"No basis set found in the given basissets for kind '{kind.name}' of your structure."
+            )
 
         for _, bset in bsets:
             if bset.element != kind.symbol:
-                raise InputValidationError(f"Basis set '{bset.name}' for '{bset.element}' specified"
-                                           f" for kind '{kind.name}' (of '{kind.symbol}').")
+                raise InputValidationError(
+                    f"Basis set '{bset.name}' for '{bset.element}' specified"
+                    f" for kind '{kind.name}' (of '{kind.symbol}')."
+                )
 
         kind_section = _prepare_kind_section(inp, kind)
         if len(bsets) > 1:
-            kind_section["BASIS_SET"] = [f"{bstype} {bset.name}" for bstype, bset in bsets]
+            kind_section["BASIS_SET"] = [
+                f"{bstype} {bset.name}" for bstype, bset in bsets
+            ]
         else:
             kind_section["BASIS_SET"] = f"{bsets[0][0]} {bsets[0][1].name}"
 
@@ -246,8 +277,10 @@ def validate_basissets(inp, basissets, structure):
 
     for bset in basissets_specified:
         if bset not in basissets_used:
-            raise InputValidationError(f"Basis set '{bset.name}' ('{bset.element}') specified in the basissets"
-                                       f" input namespace but not referenced by either input or structure.")
+            raise InputValidationError(
+                f"Basis set '{bset.name}' ('{bset.element}') specified in the basissets"
+                f" input namespace but not referenced by either input or structure."
+            )
 
 
 def write_basissets(inp, basissets, folder):
@@ -269,7 +302,11 @@ def validate_pseudos(inp, pseudos, structure):
     pseudos_used = set()
     explicit_kinds = []  # list of kinds with explicitly specified kind sections
 
-    for section in (section for secpath, section in inp.param_iter(sections=True) if secpath[-1].upper() == "KIND"):
+    for section in (
+        section
+        for secpath, section in inp.param_iter(sections=True)
+        if secpath[-1].upper() == "KIND"
+    ):
         kind, element = _kind_element_from_kind_section(section)
         explicit_kinds += [kind]
 
@@ -286,8 +323,10 @@ def validate_pseudos(inp, pseudos, structure):
                 try:
                     pseudo = pseudos[element]
                 except KeyError:
-                    raise InputValidationError(f"No pseudopotential found for kind {kind} or element {element}"
-                                               f" in pseudos input namespace and not explicitly set.")
+                    raise InputValidationError(
+                        f"No pseudopotential found for kind {kind} or element {element}"
+                        f" in pseudos input namespace and not explicitly set."
+                    )
 
             # if the POTENTIAL keyword is missing completely, fill it up:
             section["POTENTIAL"] = f"GTH {pseudo.name}"
@@ -301,27 +340,40 @@ def validate_pseudos(inp, pseudos, structure):
                 try:
                     pseudo = pseudos[element]
                 except KeyError:
-                    raise InputValidationError(f"'POTENTIAL {ptype} {pname}' for element {element} (from kind {kind})"
-                                               " not found in pseudos input namespace")
+                    raise InputValidationError(
+                        f"'POTENTIAL {ptype} {pname}' for element {element} (from kind {kind})"
+                        " not found in pseudos input namespace"
+                    )
 
             if pname not in pseudo.aliases:
-                raise InputValidationError(f"'POTENTIAL {ptype} {pname}' for element {element} (from kind {kind})"
-                                           " not found in pseudos input namespace")
+                raise InputValidationError(
+                    f"'POTENTIAL {ptype} {pname}' for element {element} (from kind {kind})"
+                    " not found in pseudos input namespace"
+                )
 
         if pseudo.element != element:
-            raise InputValidationError(f"Pseudopotential '{pseudo.name}' for '{pseudo.element}' specified"
-                                       f" for element '{element}'.")
+            raise InputValidationError(
+                f"Pseudopotential '{pseudo.name}' for '{pseudo.element}' specified"
+                f" for element '{element}'."
+            )
 
         pseudos_used.add(pseudo)
 
     # if there is no structure and there are any unreferenced pseudos, end it here
-    if not structure and any(pseudo not in pseudos_used for pseudo in pseudos_specified):
-        raise InputValidationError("No explicit structure given and pseudo not referenced in input")
+    if not structure and any(
+        pseudo not in pseudos_used for pseudo in pseudos_specified
+    ):
+        raise InputValidationError(
+            "No explicit structure given and pseudo not referenced in input"
+        )
 
-    if isinstance(inp["FORCE_EVAL"], Sequence) and any(kind.name not in explicit_kinds for kind in structure.kinds):
+    if isinstance(inp["FORCE_EVAL"], Sequence) and any(
+        kind.name not in explicit_kinds for kind in structure.kinds
+    ):
         raise InputValidationError(
             "Automated POTENTIAL keyword creation is not yet supported with multiple FORCE_EVALs."
-            " Please explicitly reference a POTENTIAL for each KIND.")
+            " Please explicitly reference a POTENTIAL for each KIND."
+        )
 
     # check the structure against the present KIND sections and generate the missing ones
     for kind in structure.kinds:
@@ -336,12 +388,16 @@ def validate_pseudos(inp, pseudos, structure):
             try:
                 pseudo = pseudos[kind.symbol]
             except KeyError:
-                raise InputValidationError(f"No basis set found in the given basissets"
-                                           f" for kind '{kind.name}' (or '{kind.symbol}') of your structure.")
+                raise InputValidationError(
+                    f"No basis set found in the given basissets"
+                    f" for kind '{kind.name}' (or '{kind.symbol}') of your structure."
+                )
 
         if pseudo.element != kind.symbol:
-            raise InputValidationError(f"Pseudopotential '{pseudo.name}' for '{pseudo.element}' specified"
-                                       f" for kind '{kind.name}' (of '{kind.symbol}').")
+            raise InputValidationError(
+                f"Pseudopotential '{pseudo.name}' for '{pseudo.element}' specified"
+                f" for kind '{kind.name}' (of '{kind.symbol}')."
+            )
 
         kind_section = _prepare_kind_section(inp, kind)
         kind_section["POTENTIAL"] = f"GTH {pseudo.name}"
@@ -351,8 +407,10 @@ def validate_pseudos(inp, pseudos, structure):
 
     for pseudo in pseudos_specified:
         if pseudo not in pseudos_used:
-            raise InputValidationError(f"Pseudopodential '{pseudo.name}' specified in the pseudos input namespace"
-                                       f" but not referenced by either input or structure.")
+            raise InputValidationError(
+                f"Pseudopodential '{pseudo.name}' specified in the pseudos input namespace"
+                f" but not referenced by either input or structure."
+            )
 
 
 def write_pseudos(inp, pseudos, folder):

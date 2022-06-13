@@ -19,10 +19,11 @@ from aiida.orm import Dict
 from aiida.plugins import DataFactory
 
 from aiida_cp2k import utils
+
 # -
 
-StructureData = DataFactory('structure')  # pylint: disable=invalid-name
-BandsData = DataFactory('array.bands')  # pylint: disable=invalid-name
+StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+BandsData = DataFactory("array.bands")  # pylint: disable=invalid-name
 
 
 class Cp2kBaseParser(Parser):
@@ -43,7 +44,7 @@ class Cp2kBaseParser(Parser):
         try:
             returned = self._parse_trajectory()
             if isinstance(returned, StructureData):
-                self.out('output_structure', returned)
+                self.out("output_structure", returned)
             else:  # in case this is an error code
                 return returned
         except exceptions.NotExistent:
@@ -73,11 +74,16 @@ class Cp2kBaseParser(Parser):
         """CP2K trajectory parser."""
 
         from ase import Atoms
-        fname = self.node.process_class._DEFAULT_RESTART_FILE_NAME  # pylint: disable=protected-access
+
+        fname = (
+            self.node.process_class._DEFAULT_RESTART_FILE_NAME
+        )  # pylint: disable=protected-access
 
         # Check if the restart file is present.
         if fname not in self.retrieved.list_object_names():
-            raise exceptions.NotExistent("No restart file available, so the output trajectory can't be extracted")
+            raise exceptions.NotExistent(
+                "No restart file available, so the output trajectory can't be extracted"
+            )
 
         # Read the restart file.
         try:
@@ -104,7 +110,7 @@ class Cp2kBaseParser(Parser):
     def _read_stdout(self):
         """Read the standard output file. If impossible, return a non-zero exit code."""
 
-        fname = self.node.get_attribute('output_filename')
+        fname = self.node.get_attribute("output_filename")
 
         if fname not in self.retrieved.list_object_names():
             return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING, None
@@ -136,23 +142,24 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
         result_dict = utils.parse_cp2k_output_advanced(output_string)
 
         # Compute the bandgap for Spin1 and Spin2 if eigen was parsed (works also with smearing!)
-        if 'eigen_spin1_au' in result_dict:
-            if result_dict['dft_type'] == "RKS":
-                result_dict['eigen_spin2_au'] = result_dict['eigen_spin1_au']
+        if "eigen_spin1_au" in result_dict:
+            if result_dict["dft_type"] == "RKS":
+                result_dict["eigen_spin2_au"] = result_dict["eigen_spin1_au"]
 
-            lumo_spin1_idx = result_dict['init_nel_spin1']
-            lumo_spin2_idx = result_dict['init_nel_spin2']
-            if (lumo_spin1_idx > len(result_dict['eigen_spin1_au'])-1) or \
-               (lumo_spin2_idx > len(result_dict['eigen_spin2_au'])-1):
-                #electrons jumped from spin1 to spin2 (or opposite): assume last eigen is lumo
-                lumo_spin1_idx = len(result_dict['eigen_spin1_au']) - 1
-                lumo_spin2_idx = len(result_dict['eigen_spin2_au']) - 1
-            homo_spin1 = result_dict['eigen_spin1_au'][lumo_spin1_idx - 1]
-            homo_spin2 = result_dict['eigen_spin2_au'][lumo_spin2_idx - 1]
-            lumo_spin1 = result_dict['eigen_spin1_au'][lumo_spin1_idx]
-            lumo_spin2 = result_dict['eigen_spin2_au'][lumo_spin2_idx]
-            result_dict['bandgap_spin1_au'] = lumo_spin1 - homo_spin1
-            result_dict['bandgap_spin2_au'] = lumo_spin2 - homo_spin2
+            lumo_spin1_idx = result_dict["init_nel_spin1"]
+            lumo_spin2_idx = result_dict["init_nel_spin2"]
+            if (lumo_spin1_idx > len(result_dict["eigen_spin1_au"]) - 1) or (
+                lumo_spin2_idx > len(result_dict["eigen_spin2_au"]) - 1
+            ):
+                # electrons jumped from spin1 to spin2 (or opposite): assume last eigen is lumo
+                lumo_spin1_idx = len(result_dict["eigen_spin1_au"]) - 1
+                lumo_spin2_idx = len(result_dict["eigen_spin2_au"]) - 1
+            homo_spin1 = result_dict["eigen_spin1_au"][lumo_spin1_idx - 1]
+            homo_spin2 = result_dict["eigen_spin2_au"][lumo_spin2_idx - 1]
+            lumo_spin1 = result_dict["eigen_spin1_au"][lumo_spin1_idx]
+            lumo_spin2 = result_dict["eigen_spin2_au"][lumo_spin2_idx]
+            result_dict["bandgap_spin1_au"] = lumo_spin1 - homo_spin1
+            result_dict["bandgap_spin2_au"] = lumo_spin2 - homo_spin2
 
         kpoint_data = result_dict.pop("kpoint_data", None)
         if kpoint_data:

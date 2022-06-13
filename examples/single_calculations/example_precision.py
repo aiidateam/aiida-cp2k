@@ -17,10 +17,10 @@ import numpy as np
 
 from aiida.common import NotExistent
 from aiida.engine import run
-from aiida.orm import (Code, Dict, SinglefileData)
+from aiida.orm import Code, Dict, SinglefileData
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory('structure')  # pylint: disable=invalid-name
+StructureData = DataFactory("structure")  # pylint: disable=invalid-name
 
 
 def example_precision(cp2k_code):
@@ -35,50 +35,55 @@ def example_precision(cp2k_code):
     dist = 0.74 + epsilon
     positions = [(0, 0, 0), (0, 0, dist)]
     cell = np.diag([4, -4, 4 + epsilon])
-    atoms = ase.Atoms('H2', positions=positions, cell=cell)
+    atoms = ase.Atoms("H2", positions=positions, cell=cell)
     structure = StructureData(ase=atoms)
 
     # Basis set.
-    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
+    basis_file = SinglefileData(
+        file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT")
+    )
 
     # Pseudopotentials.
-    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
+    pseudo_file = SinglefileData(
+        file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS")
+    )
 
     # Parameters.
     parameters = Dict(
         dict={
-            'GLOBAL': {
-                'RUN_TYPE': 'MD',
+            "GLOBAL": {
+                "RUN_TYPE": "MD",
             },
-            'MOTION': {
-                'MD': {
-                    'TIMESTEP': 0.0,  # do not move atoms
-                    'STEPS': 1,
+            "MOTION": {
+                "MD": {
+                    "TIMESTEP": 0.0,  # do not move atoms
+                    "STEPS": 1,
                 },
             },
-            'FORCE_EVAL': {
-                'METHOD': 'Quickstep',
-                'DFT': {
-                    'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-                    'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
-                    'SCF': {
-                        'MAX_SCF': 1,
+            "FORCE_EVAL": {
+                "METHOD": "Quickstep",
+                "DFT": {
+                    "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
+                    "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
+                    "SCF": {
+                        "MAX_SCF": 1,
                     },
-                    'XC': {
-                        'XC_FUNCTIONAL': {
-                            '_': 'LDA',
+                    "XC": {
+                        "XC_FUNCTIONAL": {
+                            "_": "LDA",
                         },
                     },
                 },
-                'SUBSYS': {
-                    'KIND': {
-                        '_': 'DEFAULT',
-                        'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                        'POTENTIAL': 'GTH-LDA',
+                "SUBSYS": {
+                    "KIND": {
+                        "_": "DEFAULT",
+                        "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                        "POTENTIAL": "GTH-LDA",
                     },
                 },
             },
-        })
+        }
+    )
 
     # Construct process builder.
     builder = cp2k_code.get_builder()
@@ -86,8 +91,8 @@ def example_precision(cp2k_code):
     builder.parameters = parameters
     builder.code = cp2k_code
     builder.file = {
-        'basis': basis_file,
-        'pseudo': pseudo_file,
+        "basis": basis_file,
+        "pseudo": pseudo_file,
     }
     builder.metadata.options.resources = {
         "num_machines": 1,
@@ -99,7 +104,7 @@ def example_precision(cp2k_code):
     calc = run(builder)
 
     # Check structure preservation.
-    atoms2 = calc['output_structure'].get_ase()
+    atoms2 = calc["output_structure"].get_ase()
 
     # Zeros should be preserved exactly.
     if np.all(atoms2.positions[0] == 0.0):
@@ -128,8 +133,8 @@ def example_precision(cp2k_code):
         sys.exit(3)
 
 
-@click.command('cli')
-@click.argument('codelabel')
+@click.command("cli")
+@click.argument("codelabel")
 def cli(codelabel):
     """Click interface."""
     try:
@@ -140,5 +145,5 @@ def cli(codelabel):
     example_precision(code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter

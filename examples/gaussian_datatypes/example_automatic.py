@@ -16,12 +16,12 @@ import ase.io
 
 from aiida.common import NotExistent
 from aiida.engine import run
-from aiida.orm import (Code, Dict)
+from aiida.orm import Code, Dict
 from aiida.plugins import DataFactory
 
 from gdt_data import load_data
 
-StructureData = DataFactory('structure')  # pylint: disable=invalid-name
+StructureData = DataFactory("structure")  # pylint: disable=invalid-name
 
 
 def example_gdt(cp2k_code):
@@ -37,7 +37,9 @@ def example_gdt(cp2k_code):
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # Structure.
-    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', "files", 'h2o.xyz')))
+    structure = StructureData(
+        ase=ase.io.read(os.path.join(thisdir, "..", "files", "h2o.xyz"))
+    )
 
     bsets, pseudos = load_data(prefix="MY-AUTO-")
     # in your code you will probably use something like:
@@ -58,23 +60,13 @@ def example_gdt(cp2k_code):
                         "WF_INTERPOLATION": "ps",
                         "EXTRAPOLATION_ORDER": 3,
                     },
-                    "MGRID": {
-                        "NGRIDS": 4,
-                        "CUTOFF": 280,
-                        "REL_CUTOFF": 30
-                    },
-                    "XC": {
-                        "XC_FUNCTIONAL": {
-                            "_": "LDA"
-                        }
-                    },
-                    "POISSON": {
-                        "PERIODIC": "none",
-                        "PSOLVER": "MT"
-                    },
+                    "MGRID": {"NGRIDS": 4, "CUTOFF": 280, "REL_CUTOFF": 30},
+                    "XC": {"XC_FUNCTIONAL": {"_": "LDA"}},
+                    "POISSON": {"PERIODIC": "none", "PSOLVER": "MT"},
                 },
             }
-        })
+        }
+    )
 
     # Construct process builder.
     builder = cp2k_code.get_builder()
@@ -93,8 +85,8 @@ def example_gdt(cp2k_code):
     run(builder)
 
 
-@click.command('cli')
-@click.argument('codelabel')
+@click.command("cli")
+@click.argument("codelabel")
 def cli(codelabel):
     """Click interface."""
     try:
@@ -105,5 +97,5 @@ def cli(codelabel):
     example_gdt(code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter

@@ -1,29 +1,43 @@
-# # Install pre-commit hooks via
-# pre-commit install
+---
+# repos:
+#     - repo: https://github.com/pre-commit/pre-commit-hooks
+#       rev: v4.2.0
+#       hooks:
+#           - id: check-json
+#           - id: check-yaml
+#           - id: end-of-file-fixer
+#           - id: trailing-whitespace
 
-repos:
-- repo: https://github.com/pre-commit/mirrors-yapf
-  rev: v0.30.0
-  hooks:
-  # yapf = yet another python formatter
-  - id: yapf
-    name: yapf
-    types: [python]
-    exclude: >
-      (?x)^(
-          docs/.*|
-      )$
-    args: ['-i']
+   - repo: https://github.com/psf/black
+     rev: 22.3.0
+     hooks:
+         - id: black
+           language_version: python3 # Should be a command that runs python3.6+
 
-- repo: local
-  hooks:
-  - id: pylint
-    language: system
-    types: [file, python]
-    name: pylint
-    entry: pylint
+    # - repo: https://github.com/PyCQA/flake8
+    #   rev: 4.0.1
+    #   hooks:
+    #       - id: flake8
+    #         args: [--count, --show-source, --statistics]
 
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v3.4.0  # Use the ref you want to point at
-  hooks:
-  - id: check-json
+    # - repo: https://github.com/pycqa/isort
+    #   rev: 5.10.1
+    #   hooks:
+    #       - id: isort
+    #         args: [--profile, black, --filter-files]
+
+    # - repo: https://github.com/asottile/setup-cfg-fmt
+    #   rev: v1.20.1
+    #   hooks:
+    #       - id: setup-cfg-fmt
+
+    # - repo: https://github.com/sirosen/check-jsonschema
+    #   rev: 0.16.0
+    #   hooks:
+    #       - id: check-github-workflows
+
+    # - repo: https://github.com/asottile/pyupgrade
+    #   rev: v2.32.1
+    #   hooks:
+    #       - id: pyupgrade
+    #         args: [--py37-plus]

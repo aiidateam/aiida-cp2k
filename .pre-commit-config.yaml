@@ -1,12 +1,18 @@
 ---
-# repos:
-#     - repo: https://github.com/pre-commit/pre-commit-hooks
-#       rev: v4.2.0
-#       hooks:
-#           - id: check-json
-#           - id: check-yaml
-#           - id: end-of-file-fixer
-#           - id: trailing-whitespace
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.2.0
+    hooks:
+
+        - id: check-json
+        - id: check-yaml
+        - id: end-of-file-fixer
+          exclude:  &exclude_pre_commit_hooks >
+            (?x)^(
+                test/.*(?<!\.py)$|
+                examples/.*(?<!\.py)$|
+            )$
+        - id: trailing-whitespace
+          exclude: *exclude_pre_commit_hooks
 
   - repo: https://github.com/psf/black
     rev: 22.3.0

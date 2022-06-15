@@ -15,6 +15,7 @@ serve to show the default.
 import os
 import sys
 import time
+from typing import Dict
 
 from aiida.manage.configuration import load_documentation_profile
 
@@ -247,7 +248,7 @@ htmlhelp_basename = "aiida-cp2k-doc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_elements = {
+latex_elements: Dict[str, str] = {
     # The paper size ('letterpaper' or 'a4paper').
     #'papersize': 'letterpaper',
     # The font size ('10pt', '11pt' or '12pt').

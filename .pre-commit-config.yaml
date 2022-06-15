@@ -22,11 +22,11 @@ repos:
           language_version: python3 # Should be a command that runs python3.6+
           exclude: aiida_cp2k/workchains/base.py
 
-    # - repo: https://github.com/PyCQA/flake8
-    #   rev: 4.0.1
-    #   hooks:
-    #       - id: flake8
-    #         args: [--count, --show-source, --statistics]
+  - repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
+    hooks:
+        - id: flake8
+          args: [--count, --show-source, --statistics]
 
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1

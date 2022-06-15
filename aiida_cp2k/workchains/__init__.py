@@ -7,3 +7,5 @@
 """AiiDA-CP2K workchains"""
 
 from .base import Cp2kBaseWorkChain
+
+__all__ = ["Cp2kBaseWorkChain"]

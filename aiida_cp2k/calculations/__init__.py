@@ -6,12 +6,11 @@
 ###############################################################################
 """AiiDA-CP2K input plugin."""
 
-import io
 from operator import add
 
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 from aiida.engine import CalcJob
-from aiida.orm import Computer, Dict, RemoteData, SinglefileData
+from aiida.orm import Dict, RemoteData, SinglefileData
 from aiida.plugins import DataFactory
 
 from ..utils import Cp2kInput

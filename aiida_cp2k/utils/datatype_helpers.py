@@ -6,7 +6,6 @@
 ###############################################################################
 """AiiDA-CP2K Gaussian Datatype Helpers."""
 
-import io
 import re
 from collections.abc import Sequence
 

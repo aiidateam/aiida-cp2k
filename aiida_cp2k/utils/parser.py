@@ -392,7 +392,7 @@ def parse_cp2k_trajectory(content):
     # splitting element name and the tag (if present)
     symbols = []
     tags = []
-    for atomic_kind in [l[0] for l in coord_lines]:
+    for atomic_kind in [line[0] for line in coord_lines]:
         symbols.append("".join([s for s in atomic_kind if not s.isdigit()]))
         try:
             tag = int("".join([s for s in atomic_kind if s.isdigit()]))

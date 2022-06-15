@@ -6,10 +6,7 @@
 ###############################################################################
 """AiiDA-CP2K output parser."""
 
-import io
-import os
-
-from aiida.common import NotExistent, OutputParsingError, exceptions
+from aiida.common import exceptions
 from aiida.engine import ExitCode
 from aiida.orm import Dict
 

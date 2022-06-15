@@ -108,7 +108,8 @@ def check_resize_unit_cell(struct, threshold):  # pylint: disable=too-many-local
     """Returns the multiplication factors for the cell vectors to respect, in every direction:
     min(perpendicular_width) > threshold.
     """
-    from math import cos, sin, sqrt, fabs, ceil
+    from math import ceil, cos, fabs, sin, sqrt
+
     import numpy as np
 
     # Parsing structure's cell

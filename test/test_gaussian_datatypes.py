@@ -9,15 +9,13 @@
 
 from io import StringIO
 
-import pytest
 import ase.build
-
-from aiida.plugins import CalculationFactory, DataFactory
-
+import pytest
 from aiida.engine import run, run_get_node
+from aiida.engine.processes.calcjobs.tasks import PreSubmitException
 from aiida.orm import Dict, StructureData
 from aiida.orm.nodes.data.structure import Kind, Site
-from aiida.engine.processes.calcjobs.tasks import PreSubmitException
+from aiida.plugins import CalculationFactory, DataFactory
 
 # Note: the basissets and pseudos deliberately have a prefix to avoid matching
 #       any CP2K provided entries which may creep in via the DATA_DIR

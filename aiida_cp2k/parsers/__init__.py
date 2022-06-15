@@ -9,13 +9,13 @@
 
 import io
 import os
-from aiida.common import exceptions
+
+from aiida.common import NotExistent, OutputParsingError, exceptions
+from aiida.engine import ExitCode
+from aiida.orm import Dict
 
 # +
 from aiida.parsers import Parser
-from aiida.common import OutputParsingError, NotExistent
-from aiida.engine import ExitCode
-from aiida.orm import Dict
 from aiida.plugins import DataFactory
 
 from aiida_cp2k import utils

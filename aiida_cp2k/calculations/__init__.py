@@ -10,20 +10,20 @@
 import io
 from operator import add
 
-from aiida.engine import CalcJob
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
+from aiida.engine import CalcJob
 from aiida.orm import Computer, Dict, RemoteData, SinglefileData
 from aiida.plugins import DataFactory
 
+from ..utils import Cp2kInput
 from ..utils.datatype_helpers import (
     validate_basissets,
-    validate_pseudos,
     validate_basissets_namespace,
+    validate_pseudos,
     validate_pseudos_namespace,
     write_basissets,
     write_pseudos,
 )
-from ..utils import Cp2kInput
 
 BandsData = DataFactory("array.bands")  # pylint: disable=invalid-name
 StructureData = DataFactory("structure")  # pylint: disable=invalid-name

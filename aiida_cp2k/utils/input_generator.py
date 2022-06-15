@@ -7,11 +7,12 @@
 ###############################################################################
 """AiiDA-CP2K input generator."""
 
+from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
 from copy import deepcopy
-from collections.abc import Mapping, Sequence, MutableSequence, MutableMapping
 
-from aiida.orm import Dict
 from aiida.engine import calcfunction
+from aiida.orm import Dict
+
 from .workchains import merge_dict
 
 

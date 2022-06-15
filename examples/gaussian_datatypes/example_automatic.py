@@ -11,14 +11,12 @@
 import os
 import sys
 
-import click
 import ase.io
-
+import click
 from aiida.common import NotExistent
 from aiida.engine import run
 from aiida.orm import Code, Dict
 from aiida.plugins import DataFactory
-
 from gdt_data import load_data
 
 StructureData = DataFactory("structure")  # pylint: disable=invalid-name

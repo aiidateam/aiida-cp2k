@@ -10,15 +10,14 @@
 
 import os
 import sys
+
 import click
-
-from ase.atoms import Atoms
 import numpy as np
-
 from aiida.common import NotExistent
 from aiida.engine import run
 from aiida.orm import Code, Dict, SinglefileData
 from aiida.plugins import DataFactory
+from ase.atoms import Atoms
 
 StructureData = DataFactory("structure")  # pylint: disable=invalid-name
 KpointsData = DataFactory("array.kpoints")  # pylint: disable=invalid-name

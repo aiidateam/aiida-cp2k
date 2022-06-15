@@ -8,9 +8,9 @@
 """Setting up CP2K plugin for AiiDA"""
 
 import json
-
 from io import open  # pylint: disable=redefined-builtin
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 
 def run_setup():

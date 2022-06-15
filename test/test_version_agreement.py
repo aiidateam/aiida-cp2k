@@ -7,8 +7,9 @@
 ###############################################################################
 """Check versions"""
 
-import sys
 import json
+import sys
+
 import aiida_cp2k
 
 

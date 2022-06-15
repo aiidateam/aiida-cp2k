@@ -7,8 +7,8 @@
 ###############################################################################
 """AiiDA-CP2K input plugin."""
 
-import re
 import math
+import re
 
 
 def parse_cp2k_output(fstring):
@@ -386,7 +386,6 @@ def parse_cp2k_trajectory(content):
     import numpy as np
 
     # pylint: disable=protected-access
-
     # parse coordinate section
     match = re.search(r"\n\s*&COORD\n(.*?)\n\s*&END COORD\n", content, re.DOTALL)
     coord_lines = [line.strip().split() for line in match.group(1).splitlines()]

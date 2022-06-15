@@ -12,10 +12,9 @@ import os
 import re
 import sys
 from copy import deepcopy
-import click
 
 import ase.io
-
+import click
 from aiida.common import NotExistent
 from aiida.engine import run, run_get_node
 from aiida.orm import Code, Dict, SinglefileData

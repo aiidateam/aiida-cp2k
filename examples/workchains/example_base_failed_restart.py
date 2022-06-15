@@ -10,12 +10,12 @@
 
 import os
 import sys
+
 import ase.io
 import click
-
+from aiida.common import NotExistent
 from aiida.engine import run_get_node
 from aiida.orm import Code, Dict, SinglefileData
-from aiida.common import NotExistent
 from aiida.plugins import DataFactory, WorkflowFactory
 
 Cp2kBaseWorkChain = WorkflowFactory("cp2k.base")

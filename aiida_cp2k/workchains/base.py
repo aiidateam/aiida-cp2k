@@ -2,11 +2,21 @@
 """Base work chain to run a CP2K calculation."""
 
 from aiida.common import AttributeDict
-from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, process_handler, while_
+from aiida.engine import (
+    BaseRestartWorkChain,
+    ExitCode,
+    ProcessHandlerReport,
+    process_handler,
+    while_,
+)
 from aiida.orm import Bool, Dict
 from aiida.plugins import CalculationFactory
 
-from ..utils import add_restart_sections, add_ext_restart_section, add_wfn_restart_section
+from ..utils import (
+    add_ext_restart_section,
+    add_restart_sections,
+    add_wfn_restart_section,
+)
 
 Cp2kCalculation = CalculationFactory('cp2k')  # pylint: disable=invalid-name
 

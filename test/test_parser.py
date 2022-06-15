@@ -7,6 +7,7 @@
 ###############################################################################
 """Test output parser."""
 import os
+
 from aiida_cp2k.utils.parser import _parse_bands, parse_cp2k_trajectory
 
 THISDIR = os.path.dirname(os.path.realpath(__file__))

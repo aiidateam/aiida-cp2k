@@ -10,11 +10,10 @@
 
 import os
 import sys
-import click
 
 import ase
+import click
 import numpy as np
-
 from aiida.common import NotExistent
 from aiida.engine import run
 from aiida.orm import Code, Dict, SinglefileData

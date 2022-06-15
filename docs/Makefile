@@ -21,7 +21,7 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
 .PHONY: all help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext customdefault
 
-## Runs with nitty-pick and converting warnings into errors to 
+## Runs with nitty-pick and converting warnings into errors to
 ## make sure the documentation is properly written
 customdefault:
 	$(SPHINXBUILD) -b html -nW $(ALLSPHINXOPTS) $(BUILDDIR)/html
@@ -39,4 +39,3 @@ html:
 
 view:
 	xdg-open $(BUILDDIR)/html/index.html
-

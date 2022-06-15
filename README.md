@@ -8,7 +8,7 @@
 
 ## Installation
 
-If you use `pip`, you can install it as: 
+If you use `pip`, you can install it as:
 ```
 pip install aiida-cp2k
 ```

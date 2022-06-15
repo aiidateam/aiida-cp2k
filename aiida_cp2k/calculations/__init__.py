@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -48,7 +47,7 @@ class Cp2kCalculation(CalcJob):
 
     @classmethod
     def define(cls, spec):
-        super(Cp2kCalculation, cls).define(spec)
+        super().define(spec)
 
         # Input parameters.
         spec.input("parameters", valid_type=Dict, help="The input parameters.")
@@ -283,7 +282,7 @@ class Cp2kCalculation(CalcJob):
                 },
             )
 
-        with io.open(
+        with open(
             folder.get_abs_path(self._DEFAULT_INPUT_FILE), mode="w", encoding="utf-8"
         ) as fobj:
             try:
@@ -360,7 +359,7 @@ class Cp2kCalculation(CalcJob):
         """Function that writes a structure and takes care of element tags."""
 
         xyz = _atoms_to_xyz(structure.get_ase())
-        with io.open(folder.get_abs_path(name), mode="w", encoding="utf-8") as fobj:
+        with open(folder.get_abs_path(name), mode="w", encoding="utf-8") as fobj:
             fobj.write(xyz)
 
 
@@ -385,8 +384,7 @@ def _atoms_to_xyz(atoms):
     """
     elem_symbols = kind_names(atoms)
     elem_coords = [
-        "{:25.16f} {:25.16f} {:25.16f}".format(p[0], p[1], p[2])
-        for p in atoms.get_positions()
+        f"{p[0]:25.16f} {p[1]:25.16f} {p[2]:25.16f}" for p in atoms.get_positions()
     ]
     xyz = f"{len(elem_coords)}\n\n"
     xyz += "\n".join(map(add, elem_symbols, elem_coords))

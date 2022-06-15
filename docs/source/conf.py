@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Sphinx configuration for aiida-cp2k.
 
 This file is execfile()d with the current directory set to its

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -88,7 +87,7 @@ class Cp2kBaseParser(Parser):
         # Read the restart file.
         try:
             output_string = self.retrieved.get_object_content(fname)
-        except IOError:
+        except OSError:
             return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
         return StructureData(ase=Atoms(**utils.parse_cp2k_trajectory(output_string)))
@@ -116,7 +115,7 @@ class Cp2kBaseParser(Parser):
             return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING, None
         try:
             output_string = self.retrieved.get_object_content(fname)
-        except IOError:
+        except OSError:
             return self.exit_codes.ERROR_OUTPUT_STDOUT_READ, None
 
         return None, output_string

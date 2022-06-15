@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Base work chain to run a CP2K calculation."""
 
 from aiida.common import AttributeDict

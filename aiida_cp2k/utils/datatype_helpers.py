@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -119,7 +118,7 @@ def _write_gdt(inp, entries, folder, key, fname):
         if secpath[-1].upper() == "DFT":
             section[key] = fname
 
-    with io.open(folder.get_abs_path(fname), mode="w", encoding="utf-8") as fhandle:
+    with open(folder.get_abs_path(fname), mode="w", encoding="utf-8") as fhandle:
         for _, entry in _unpack(entries):
             entry.to_cp2k(fhandle)
 
@@ -156,7 +155,7 @@ def validate_basissets(inp, basissets, structure):
         (*_parse_name(label, default_type="ORB", sep="_"), bset)
         for label, bset in _unpack(basissets)
     ]
-    basissets_specified = set(bset for _, _, bset in basissets)
+    basissets_specified = {bset for _, _, bset in basissets}
     basissets_used = set()
     explicit_kinds = []  # list of kinds with explicitly specified kind sections
 
@@ -298,7 +297,7 @@ def validate_pseudos(inp, pseudos, structure):
 
     # pylint: disable=too-many-branches,too-many-statements
 
-    pseudos_specified = set(pseudo for _, pseudo in _unpack(pseudos))
+    pseudos_specified = {pseudo for _, pseudo in _unpack(pseudos)}
     pseudos_used = set()
     explicit_kinds = []  # list of kinds with explicitly specified kind sections
 

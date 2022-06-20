@@ -38,9 +38,7 @@
             "coverage"
         ],
         "pre-commit":[
-            "pre-commit~=2.2",
-            "yapf==0.28.0",
-            "pylint~=2.5.0"
+            "pre-commit~=2.19"
         ],
         "docs": [
             "sphinx",

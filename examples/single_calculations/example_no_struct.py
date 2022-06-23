@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
@@ -10,11 +9,11 @@
 
 import os
 import sys
-import click
 
+import click
 from aiida.common import NotExistent
 from aiida.engine import run
-from aiida.orm import (Code, Dict, SinglefileData)
+from aiida.orm import Code, Dict, SinglefileData
 
 
 def example_no_struct(cp2k_code):
@@ -25,70 +24,73 @@ def example_no_struct(cp2k_code):
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # Basis set.
-    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
+    basis_file = SinglefileData(
+        file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT")
+    )
 
     # Pseudopotentials.
-    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
+    pseudo_file = SinglefileData(
+        file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS")
+    )
 
     # Parameters.
     parameters = Dict(
         dict={
-            'FORCE_EVAL': {
-                'METHOD': 'Quickstep',
-                'DFT': {
-                    'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-                    'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
-                    'QS': {
-                        'EPS_DEFAULT': 1.0e-12,
-                        'WF_INTERPOLATION': 'ps',
-                        'EXTRAPOLATION_ORDER': 3,
+            "FORCE_EVAL": {
+                "METHOD": "Quickstep",
+                "DFT": {
+                    "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
+                    "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
+                    "QS": {
+                        "EPS_DEFAULT": 1.0e-12,
+                        "WF_INTERPOLATION": "ps",
+                        "EXTRAPOLATION_ORDER": 3,
                     },
-                    'MGRID': {
-                        'NGRIDS': 4,
-                        'CUTOFF': 280,
-                        'REL_CUTOFF': 30,
+                    "MGRID": {
+                        "NGRIDS": 4,
+                        "CUTOFF": 280,
+                        "REL_CUTOFF": 30,
                     },
-                    'XC': {
-                        'XC_FUNCTIONAL': {
-                            '_': 'LDA',
+                    "XC": {
+                        "XC_FUNCTIONAL": {
+                            "_": "LDA",
                         },
                     },
-                    'POISSON': {
-                        'PERIODIC': 'none',
-                        'PSOLVER': 'MT',
+                    "POISSON": {
+                        "PERIODIC": "none",
+                        "PSOLVER": "MT",
                     },
                 },
-                'SUBSYS': {
+                "SUBSYS": {
                     # structure directly included in parameters
-                    'CELL': {
-                        'ABC': '4.0   4.0   4.75'
+                    "CELL": {"ABC": "4.0   4.0   4.75"},
+                    "COORD": {
+                        " ": ["H    2.0   2.0   2.737166", "H    2.0   2.0   2.000000"]
                     },
-                    'COORD': {
-                        ' ': ['H    2.0   2.0   2.737166', 'H    2.0   2.0   2.000000']
-                    },
-                    'KIND': [
+                    "KIND": [
                         {
-                            '_': 'O',
-                            'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                            'POTENTIAL': 'GTH-LDA-q6'
+                            "_": "O",
+                            "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                            "POTENTIAL": "GTH-LDA-q6",
                         },
                         {
-                            '_': 'H',
-                            'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                            'POTENTIAL': 'GTH-LDA-q1'
+                            "_": "H",
+                            "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                            "POTENTIAL": "GTH-LDA-q1",
                         },
                     ],
                 },
             }
-        })
+        }
+    )
 
     # Construct process builder.
     builder = cp2k_code.get_builder()
     builder.parameters = parameters
     builder.code = cp2k_code
     builder.file = {
-        'basis': basis_file,
-        'pseudo': pseudo_file,
+        "basis": basis_file,
+        "pseudo": pseudo_file,
     }
     builder.metadata.options.resources = {
         "num_machines": 1,
@@ -101,7 +103,7 @@ def example_no_struct(cp2k_code):
 
     # Check energy.
     expected_energy = -1.14005678487
-    if abs(calc['output_parameters']['energy'] - expected_energy) < 1e-10:
+    if abs(calc["output_parameters"]["energy"] - expected_energy) < 1e-10:
         print("OK, energy has the expected value.")
     else:
         print("ERROR!")
@@ -110,8 +112,8 @@ def example_no_struct(cp2k_code):
         sys.exit(3)
 
 
-@click.command('cli')
-@click.argument('codelabel')
+@click.command("cli")
+@click.argument("codelabel")
 def cli(codelabel):
     """Click interface."""
     try:
@@ -122,5 +124,5 @@ def cli(codelabel):
     example_no_struct(code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter

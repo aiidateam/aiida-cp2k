@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -7,18 +6,40 @@
 ###############################################################################
 """AiiDA-CP2K utils"""
 
-from .input_generator import Cp2kInput
-from .input_generator import add_ext_restart_section
-from .input_generator import add_restart_sections
-from .input_generator import add_wfn_restart_section
-from .parser import parse_cp2k_output
-from .parser import parse_cp2k_output_advanced
-from .parser import parse_cp2k_trajectory
-from .workchains import merge_dict
-from .workchains import merge_Dict
-from .workchains import get_kinds_section
-from .workchains import get_input_multiplicity
-from .workchains import ot_has_small_bandgap
-from .workchains import check_resize_unit_cell
-from .workchains import resize_unit_cell
-from .workchains import HARTREE2EV, HARTREE2KJMOL
+from .input_generator import (
+    Cp2kInput,
+    add_ext_restart_section,
+    add_restart_sections,
+    add_wfn_restart_section,
+)
+from .parser import parse_cp2k_output, parse_cp2k_output_advanced, parse_cp2k_trajectory
+from .workchains import (
+    HARTREE2EV,
+    HARTREE2KJMOL,
+    check_resize_unit_cell,
+    get_input_multiplicity,
+    get_kinds_section,
+    merge_dict,
+    merge_Dict,
+    ot_has_small_bandgap,
+    resize_unit_cell,
+)
+
+__all__ = [
+    "Cp2kInput",
+    "add_ext_restart_section",
+    "add_restart_sections",
+    "add_wfn_restart_section",
+    "parse_cp2k_output",
+    "parse_cp2k_output_advanced",
+    "parse_cp2k_trajectory",
+    "HARTREE2EV",
+    "HARTREE2KJMOL",
+    "check_resize_unit_cell",
+    "get_input_multiplicity",
+    "get_kinds_section",
+    "merge_dict",
+    "merge_Dict",
+    "ot_has_small_bandgap",
+    "resize_unit_cell",
+]

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=import-outside-toplevel
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
@@ -67,8 +66,14 @@ def load_data(prefix="MY-"):
     fhandle_pseudo = StringIO(pseudo_input)
 
     try:
-        bsets = {b.element: b for b in BasisSet.from_cp2k(fhandle_bset, duplicate_handling='error')}
-        pseudos = {p.element: p for p in Pseudo.from_cp2k(fhandle_pseudo, duplicate_handling='error')}
+        bsets = {
+            b.element: b
+            for b in BasisSet.from_cp2k(fhandle_bset, duplicate_handling="error")
+        }
+        pseudos = {
+            p.element: p
+            for p in Pseudo.from_cp2k(fhandle_pseudo, duplicate_handling="error")
+        }
     except UniquenessError:  # if the user already ran the script, fetch the data from the db instead
         bsets = {
             "H": BasisSet.get("H", f"{prefix}AUTO-DZVP-MOLOPT-GTH"),

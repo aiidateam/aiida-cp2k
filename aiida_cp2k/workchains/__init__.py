@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -8,3 +7,5 @@
 """AiiDA-CP2K workchains"""
 
 from .base import Cp2kBaseWorkChain
+
+__all__ = ["Cp2kBaseWorkChain"]

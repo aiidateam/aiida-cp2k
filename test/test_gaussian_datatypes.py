@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -9,23 +8,20 @@
 
 from io import StringIO
 
-import pytest
 import ase.build
-
-from aiida.plugins import CalculationFactory, DataFactory
-
+import pytest
 from aiida.engine import run, run_get_node
+from aiida.engine.processes.calcjobs.tasks import PreSubmitException
 from aiida.orm import Dict, StructureData
 from aiida.orm.nodes.data.structure import Kind, Site
-from aiida.engine.processes.calcjobs.tasks import PreSubmitException
+from aiida.plugins import CalculationFactory, DataFactory
 
 # Note: the basissets and pseudos deliberately have a prefix to avoid matching
 #       any CP2K provided entries which may creep in via the DATA_DIR
 
 # pylint: disable=line-too-long, redefined-outer-name
 BSET_DATA = {
-    "simple":
-        """\
+    "simple": """\
  H  MY-DZVP-MOLOPT-GTH MY-DZVP-MOLOPT-GTH-q1
  1
  2 0 1 7 2 1
@@ -46,8 +42,7 @@ BSET_DATA = {
       0.496955043655 -0.852791790900 -0.095944016600 -0.454266086000  0.380324658600  0.893564918400
       0.162491615040 -0.242351537800  1.102830348700 -0.257388983000  1.054102919900  0.152954188700
 """,
-    "multiple_o":
-        """\
+    "multiple_o": """\
  H  MY-DZVP-MOLOPT-GTH MY-DZVP-MOLOPT-GTH-q1
  1
  2 0 1 7 2 1
@@ -82,8 +77,7 @@ BSET_DATA = {
 }
 
 PSEUDO_DATA = {
-    "simple":
-        """\
+    "simple": """\
 #
 H MY-GTH-PADE-q1 MY-GTH-LDA-q1 MY-GTH-PADE MY-GTH-LDA
     1
@@ -106,7 +100,7 @@ def bsdataset():
     return "simple"
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def cp2k_basissets(bsdataset):
     """Returns basisset objects from the data above"""
     fhandle = StringIO(BSET_DATA[bsdataset])
@@ -131,7 +125,7 @@ def pdataset():
     return "simple"
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def cp2k_pseudos(pdataset):
     """Returns pseudo objects from the data above"""
     fhandle = StringIO(PSEUDO_DATA[pdataset])
@@ -139,7 +133,9 @@ def cp2k_pseudos(pdataset):
     return {p.element: p for p in Pseudo.from_cp2k(fhandle)}
 
 
-def test_validation(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+def test_validation(
+    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
+):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset"""
 
     # structure
@@ -158,20 +154,9 @@ def test_validation(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  #
                         "WF_INTERPOLATION": "ps",
                         "EXTRAPOLATION_ORDER": 3,
                     },
-                    "MGRID": {
-                        "NGRIDS": 4,
-                        "CUTOFF": 280,
-                        "REL_CUTOFF": 30
-                    },
-                    "XC": {
-                        "XC_FUNCTIONAL": {
-                            "_": "LDA"
-                        }
-                    },
-                    "POISSON": {
-                        "PERIODIC": "none",
-                        "PSOLVER": "MT"
-                    },
+                    "MGRID": {"NGRIDS": 4, "CUTOFF": 280, "REL_CUTOFF": 30},
+                    "XC": {"XC_FUNCTIONAL": {"_": "LDA"}},
+                    "POISSON": {"PERIODIC": "none", "PSOLVER": "MT"},
                 },
                 "SUBSYS": {
                     "KIND": [
@@ -188,13 +173,11 @@ def test_validation(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  #
                     ]
                 },
             }
-        })
+        }
+    )
 
     options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1
-        },
+        "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
         "max_wallclock_seconds": 1 * 3 * 60,
     }
 
@@ -202,9 +185,7 @@ def test_validation(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  #
         "structure": structure,
         "parameters": parameters,
         "code": cp2k_code,
-        "metadata": {
-            "options": options
-        },
+        "metadata": {"options": options},
         "basissets": cp2k_basissets,
         "pseudos": cp2k_pseudos,
     }
@@ -213,7 +194,9 @@ def test_validation(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  #
     assert calc_node.exit_status == 0
 
 
-def test_validation_fail(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+def test_validation_fail(
+    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
+):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset but missing one"""
 
     # structure
@@ -232,20 +215,9 @@ def test_validation_fail(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
                         "WF_INTERPOLATION": "ps",
                         "EXTRAPOLATION_ORDER": 3,
                     },
-                    "MGRID": {
-                        "NGRIDS": 4,
-                        "CUTOFF": 280,
-                        "REL_CUTOFF": 30
-                    },
-                    "XC": {
-                        "XC_FUNCTIONAL": {
-                            "_": "LDA"
-                        }
-                    },
-                    "POISSON": {
-                        "PERIODIC": "none",
-                        "PSOLVER": "MT"
-                    },
+                    "MGRID": {"NGRIDS": 4, "CUTOFF": 280, "REL_CUTOFF": 30},
+                    "XC": {"XC_FUNCTIONAL": {"_": "LDA"}},
+                    "POISSON": {"PERIODIC": "none", "PSOLVER": "MT"},
                 },
                 "SUBSYS": {
                     "KIND": [
@@ -262,13 +234,11 @@ def test_validation_fail(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
                     ]
                 },
             }
-        })
+        }
+    )
 
     options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1
-        },
+        "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
         "max_wallclock_seconds": 1 * 3 * 60,
     }
 
@@ -276,24 +246,24 @@ def test_validation_fail(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
         "structure": structure,
         "parameters": parameters,
         "code": cp2k_code,
-        "metadata": {
-            "options": options
-        },
+        "metadata": {"options": options},
         # add only one of the basis sets to inputs
-        "basissets": {
-            "H": cp2k_basissets["H"]
-        },
+        "basissets": {"H": cp2k_basissets["H"]},
         "pseudos": cp2k_pseudos,
     }
 
-    with pytest.raises(PreSubmitException) as exc_info:  # the InputValidationError is masked by the process runner
+    with pytest.raises(
+        PreSubmitException
+    ) as exc_info:  # the InputValidationError is masked by the process runner
         run(CalculationFactory("cp2k"), **inputs)
 
     assert "not found in basissets input namespace" in str(exc_info.value.__context__)
 
 
-@pytest.mark.parametrize('bsdataset', ['multiple_o'])
-def test_validation_unused(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+@pytest.mark.parametrize("bsdataset", ["multiple_o"])
+def test_validation_unused(
+    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
+):  # pylint: disable=unused-argument
     """Pass more basissets than used in the input configuration"""
 
     # structure
@@ -312,20 +282,9 @@ def test_validation_unused(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_databa
                         "WF_INTERPOLATION": "ps",
                         "EXTRAPOLATION_ORDER": 3,
                     },
-                    "MGRID": {
-                        "NGRIDS": 4,
-                        "CUTOFF": 280,
-                        "REL_CUTOFF": 30
-                    },
-                    "XC": {
-                        "XC_FUNCTIONAL": {
-                            "_": "LDA"
-                        }
-                    },
-                    "POISSON": {
-                        "PERIODIC": "none",
-                        "PSOLVER": "MT"
-                    },
+                    "MGRID": {"NGRIDS": 4, "CUTOFF": 280, "REL_CUTOFF": 30},
+                    "XC": {"XC_FUNCTIONAL": {"_": "LDA"}},
+                    "POISSON": {"PERIODIC": "none", "PSOLVER": "MT"},
                 },
                 "SUBSYS": {
                     "KIND": [
@@ -342,13 +301,11 @@ def test_validation_unused(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_databa
                     ]
                 },
             }
-        })
+        }
+    )
 
     options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1
-        },
+        "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
         "max_wallclock_seconds": 1 * 3 * 60,
     }
 
@@ -356,168 +313,171 @@ def test_validation_unused(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_databa
         "structure": structure,
         "parameters": parameters,
         "code": cp2k_code,
-        "metadata": {
-            "options": options
-        },
+        "metadata": {"options": options},
         "basissets": cp2k_basissets,
         "pseudos": cp2k_pseudos,
     }
 
-    with pytest.raises(PreSubmitException) as exc_info:  # the InputValidationError is masked by the process runner
+    with pytest.raises(
+        PreSubmitException
+    ) as exc_info:  # the InputValidationError is masked by the process runner
         run(CalculationFactory("cp2k"), **inputs)
 
     assert "not referenced" in str(exc_info.value.__context__)
 
 
-def test_validation_mfe_noauto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+def test_validation_mfe_noauto(
+    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
+):  # pylint: disable=unused-argument
     """Test that multiple FORCE_EVAL without explicit assignment is rejected"""
 
     # structure
-    pos = [[0.934, 2.445, 1.844], [1.882, 2.227, 1.982], [0.81, 3.165, 2.479], [3.59, 2.048, 2.436],
-           [4.352, 2.339, 1.906], [3.953, 1.304, 2.946]]
-    atoms = ase.Atoms(symbols='OH2OH2', pbc=True, cell=[5.0, 5.0, 5.0])
+    pos = [
+        [0.934, 2.445, 1.844],
+        [1.882, 2.227, 1.982],
+        [0.81, 3.165, 2.479],
+        [3.59, 2.048, 2.436],
+        [4.352, 2.339, 1.906],
+        [3.953, 1.304, 2.946],
+    ]
+    atoms = ase.Atoms(symbols="OH2OH2", pbc=True, cell=[5.0, 5.0, 5.0])
     atoms.set_positions(pos)
     structure = StructureData(ase=atoms)
 
     # Parameters.
     parameters = Dict(
         dict={
-            'MULTIPLE_FORCE_EVALS': {
-                'FORCE_EVAL_ORDER': '2 3',
-                'MULTIPLE_SUBSYS': 'T',
+            "MULTIPLE_FORCE_EVALS": {
+                "FORCE_EVAL_ORDER": "2 3",
+                "MULTIPLE_SUBSYS": "T",
             },
-            'FORCE_EVAL': [
+            "FORCE_EVAL": [
                 {
-                    'METHOD': 'MIXED',
-                    'MIXED': {
-                        'MIXING_TYPE': 'GENMIX',
-                        'GENERIC': {
-                            'ERROR_LIMIT': 1.0E-10,
-                            'MIXING_FUNCTION': 'E1+E2',
-                            'VARIABLES': 'E1 E2',
+                    "METHOD": "MIXED",
+                    "MIXED": {
+                        "MIXING_TYPE": "GENMIX",
+                        "GENERIC": {
+                            "ERROR_LIMIT": 1.0e-10,
+                            "MIXING_FUNCTION": "E1+E2",
+                            "VARIABLES": "E1 E2",
                         },
-                        'MAPPING': {
-                            'FORCE_EVAL_MIXED': {
-                                'FRAGMENT': [
-                                    {
-                                        '_': 1,
-                                        '1': '3'
-                                    },
-                                    {
-                                        '_': 2,
-                                        '4': '6'
-                                    },
+                        "MAPPING": {
+                            "FORCE_EVAL_MIXED": {
+                                "FRAGMENT": [
+                                    {"_": 1, "1": "3"},
+                                    {"_": 2, "4": "6"},
                                 ],
                             },
-                            'FORCE_EVAL': [{
-                                '_': 1,
-                                'DEFINE_FRAGMENTS': '1 2',
-                            }, {
-                                '_': 2,
-                                'DEFINE_FRAGMENTS': '1 2',
-                            }],
-                        }
+                            "FORCE_EVAL": [
+                                {
+                                    "_": 1,
+                                    "DEFINE_FRAGMENTS": "1 2",
+                                },
+                                {
+                                    "_": 2,
+                                    "DEFINE_FRAGMENTS": "1 2",
+                                },
+                            ],
+                        },
                     },
                 },
                 {
-                    'METHOD': 'FIST',
-                    'MM': {
-                        'FORCEFIELD': {
-                            'SPLINE': {
-                                'EPS_SPLINE': 1.30E-5,
-                                'EMAX_SPLINE': 0.8,
+                    "METHOD": "FIST",
+                    "MM": {
+                        "FORCEFIELD": {
+                            "SPLINE": {
+                                "EPS_SPLINE": 1.30e-5,
+                                "EMAX_SPLINE": 0.8,
                             },
-                            'CHARGE': [
+                            "CHARGE": [
                                 {
-                                    'ATOM': 'H',
-                                    'CHARGE': 0.0,
+                                    "ATOM": "H",
+                                    "CHARGE": 0.0,
                                 },
                                 {
-                                    'ATOM': 'O',
-                                    'CHARGE': 0.0,
+                                    "ATOM": "O",
+                                    "CHARGE": 0.0,
                                 },
                             ],
-                            'BOND': {
-                                'ATOMS': 'H O',
-                                'K': 0.0,
-                                'R0': 2.0,
+                            "BOND": {
+                                "ATOMS": "H O",
+                                "K": 0.0,
+                                "R0": 2.0,
                             },
-                            'BEND': {
-                                'ATOMS': 'H O H',
-                                'K': 0.0,
-                                'THETA0': 2.0,
+                            "BEND": {
+                                "ATOMS": "H O H",
+                                "K": 0.0,
+                                "THETA0": 2.0,
                             },
-                            'NONBONDED': {
-                                'LENNARD-JONES': [
+                            "NONBONDED": {
+                                "LENNARD-JONES": [
                                     {
-                                        'ATOMS': 'H H',
-                                        'EPSILON': 0.2,
-                                        'SIGMA': 2.4,
+                                        "ATOMS": "H H",
+                                        "EPSILON": 0.2,
+                                        "SIGMA": 2.4,
                                     },
                                     {
-                                        'ATOMS': 'H O',
-                                        'EPSILON': 0.4,
-                                        'SIGMA': 3.0,
+                                        "ATOMS": "H O",
+                                        "EPSILON": 0.4,
+                                        "SIGMA": 3.0,
                                     },
                                     {
-                                        'ATOMS': 'O O',
-                                        'EPSILON': 0.8,
-                                        'SIGMA': 3.6,
+                                        "ATOMS": "O O",
+                                        "EPSILON": 0.8,
+                                        "SIGMA": 3.6,
                                     },
                                 ]
                             },
                         },
-                        'POISSON': {
-                            'EWALD': {
-                                'EWALD_TYPE': 'none',
+                        "POISSON": {
+                            "EWALD": {
+                                "EWALD_TYPE": "none",
                             }
+                        },
+                    },
+                    "SUBSYS": {
+                        "TOPOLOGY": {
+                            "CONNECTIVITY": "GENERATE",
+                            "GENERATE": {
+                                "CREATE_MOLECULES": True,
+                            },
                         }
                     },
-                    'SUBSYS': {
-                        'TOPOLOGY': {
-                            'CONNECTIVITY': 'GENERATE',
-                            'GENERATE': {
-                                'CREATE_MOLECULES': True,
-                            }
-                        }
-                    }
                 },
                 {
-                    'METHOD': 'Quickstep',
-                    'DFT': {
-                        'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-                        'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
-                        'QS': {
-                            'EPS_DEFAULT': 1.0e-12,
-                            'WF_INTERPOLATION': 'ps',
-                            'EXTRAPOLATION_ORDER': 3,
+                    "METHOD": "Quickstep",
+                    "DFT": {
+                        "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
+                        "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
+                        "QS": {
+                            "EPS_DEFAULT": 1.0e-12,
+                            "WF_INTERPOLATION": "ps",
+                            "EXTRAPOLATION_ORDER": 3,
                         },
-                        'MGRID': {
-                            'NGRIDS': 4,
-                            'CUTOFF': 280,
-                            'REL_CUTOFF': 30,
+                        "MGRID": {
+                            "NGRIDS": 4,
+                            "CUTOFF": 280,
+                            "REL_CUTOFF": 30,
                         },
-                        'XC': {
-                            'XC_FUNCTIONAL': {
-                                '_': 'LDA',
+                        "XC": {
+                            "XC_FUNCTIONAL": {
+                                "_": "LDA",
                             },
                         },
-                        'POISSON': {
-                            'PERIODIC': 'none',
-                            'PSOLVER': 'MT',
+                        "POISSON": {
+                            "PERIODIC": "none",
+                            "PSOLVER": "MT",
                         },
                     },
                     # SUBSYS section omitted, forcing into automated assignment mode,
                     # which is not yet supported for multiple FORCE_EVAL
                 },
-            ]
-        })
+            ],
+        }
+    )
 
     options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1
-        },
+        "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
         "max_wallclock_seconds": 1 * 3 * 60,
     }
 
@@ -525,179 +485,184 @@ def test_validation_mfe_noauto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_da
         "structure": structure,
         "parameters": parameters,
         "code": cp2k_code,
-        "metadata": {
-            "options": options
-        },
+        "metadata": {"options": options},
         "basissets": cp2k_basissets,
         "pseudos": cp2k_pseudos,
     }
 
-    with pytest.raises(PreSubmitException) as exc_info:  # the InputValidationError is masked by the process runner
+    with pytest.raises(
+        PreSubmitException
+    ) as exc_info:  # the InputValidationError is masked by the process runner
         run(CalculationFactory("cp2k"), **inputs)
 
-    assert "Automated BASIS_SET keyword creation is not yet supported with multiple FORCE_EVALs" in str(
-        exc_info.value.__context__)
+    assert (
+        "Automated BASIS_SET keyword creation is not yet supported with multiple FORCE_EVALs"
+        in str(exc_info.value.__context__)
+    )
 
 
-def test_validation_mfe(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+def test_validation_mfe(
+    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
+):  # pylint: disable=unused-argument
     """Test that multiple FORCE_EVAL with explicit assignment is accepted"""
 
     # structure
-    pos = [[0.934, 2.445, 1.844], [1.882, 2.227, 1.982], [0.81, 3.165, 2.479], [3.59, 2.048, 2.436],
-           [4.352, 2.339, 1.906], [3.953, 1.304, 2.946]]
-    atoms = ase.Atoms(symbols='OH2OH2', pbc=True, cell=[5.0, 5.0, 5.0])
+    pos = [
+        [0.934, 2.445, 1.844],
+        [1.882, 2.227, 1.982],
+        [0.81, 3.165, 2.479],
+        [3.59, 2.048, 2.436],
+        [4.352, 2.339, 1.906],
+        [3.953, 1.304, 2.946],
+    ]
+    atoms = ase.Atoms(symbols="OH2OH2", pbc=True, cell=[5.0, 5.0, 5.0])
     atoms.set_positions(pos)
     structure = StructureData(ase=atoms)
 
     # Parameters.
     parameters = Dict(
         dict={
-            'MULTIPLE_FORCE_EVALS': {
-                'FORCE_EVAL_ORDER': '2 3',
-                'MULTIPLE_SUBSYS': 'T',
+            "MULTIPLE_FORCE_EVALS": {
+                "FORCE_EVAL_ORDER": "2 3",
+                "MULTIPLE_SUBSYS": "T",
             },
-            'FORCE_EVAL': [
+            "FORCE_EVAL": [
                 {
-                    'METHOD': 'MIXED',
-                    'MIXED': {
-                        'MIXING_TYPE': 'GENMIX',
-                        'GENERIC': {
-                            'ERROR_LIMIT': 1.0E-10,
-                            'MIXING_FUNCTION': 'E1+E2',
-                            'VARIABLES': 'E1 E2',
+                    "METHOD": "MIXED",
+                    "MIXED": {
+                        "MIXING_TYPE": "GENMIX",
+                        "GENERIC": {
+                            "ERROR_LIMIT": 1.0e-10,
+                            "MIXING_FUNCTION": "E1+E2",
+                            "VARIABLES": "E1 E2",
                         },
-                        'MAPPING': {
-                            'FORCE_EVAL_MIXED': {
-                                'FRAGMENT': [
-                                    {
-                                        '_': 1,
-                                        '1': '3'
-                                    },
-                                    {
-                                        '_': 2,
-                                        '4': '6'
-                                    },
+                        "MAPPING": {
+                            "FORCE_EVAL_MIXED": {
+                                "FRAGMENT": [
+                                    {"_": 1, "1": "3"},
+                                    {"_": 2, "4": "6"},
                                 ],
                             },
-                            'FORCE_EVAL': [{
-                                '_': 1,
-                                'DEFINE_FRAGMENTS': '1 2',
-                            }, {
-                                '_': 2,
-                                'DEFINE_FRAGMENTS': '1 2',
-                            }],
-                        }
+                            "FORCE_EVAL": [
+                                {
+                                    "_": 1,
+                                    "DEFINE_FRAGMENTS": "1 2",
+                                },
+                                {
+                                    "_": 2,
+                                    "DEFINE_FRAGMENTS": "1 2",
+                                },
+                            ],
+                        },
                     },
                 },
                 {
-                    'METHOD': 'FIST',
-                    'MM': {
-                        'FORCEFIELD': {
-                            'SPLINE': {
-                                'EPS_SPLINE': 1.30E-5,
-                                'EMAX_SPLINE': 0.8,
+                    "METHOD": "FIST",
+                    "MM": {
+                        "FORCEFIELD": {
+                            "SPLINE": {
+                                "EPS_SPLINE": 1.30e-5,
+                                "EMAX_SPLINE": 0.8,
                             },
-                            'CHARGE': [
+                            "CHARGE": [
                                 {
-                                    'ATOM': 'H',
-                                    'CHARGE': 0.0,
+                                    "ATOM": "H",
+                                    "CHARGE": 0.0,
                                 },
                                 {
-                                    'ATOM': 'O',
-                                    'CHARGE': 0.0,
+                                    "ATOM": "O",
+                                    "CHARGE": 0.0,
                                 },
                             ],
-                            'BOND': {
-                                'ATOMS': 'H O',
-                                'K': 0.0,
-                                'R0': 2.0,
+                            "BOND": {
+                                "ATOMS": "H O",
+                                "K": 0.0,
+                                "R0": 2.0,
                             },
-                            'BEND': {
-                                'ATOMS': 'H O H',
-                                'K': 0.0,
-                                'THETA0': 2.0,
+                            "BEND": {
+                                "ATOMS": "H O H",
+                                "K": 0.0,
+                                "THETA0": 2.0,
                             },
-                            'NONBONDED': {
-                                'LENNARD-JONES': [
+                            "NONBONDED": {
+                                "LENNARD-JONES": [
                                     {
-                                        'ATOMS': 'H H',
-                                        'EPSILON': 0.2,
-                                        'SIGMA': 2.4,
+                                        "ATOMS": "H H",
+                                        "EPSILON": 0.2,
+                                        "SIGMA": 2.4,
                                     },
                                     {
-                                        'ATOMS': 'H O',
-                                        'EPSILON': 0.4,
-                                        'SIGMA': 3.0,
+                                        "ATOMS": "H O",
+                                        "EPSILON": 0.4,
+                                        "SIGMA": 3.0,
                                     },
                                     {
-                                        'ATOMS': 'O O',
-                                        'EPSILON': 0.8,
-                                        'SIGMA': 3.6,
+                                        "ATOMS": "O O",
+                                        "EPSILON": 0.8,
+                                        "SIGMA": 3.6,
                                     },
                                 ]
                             },
                         },
-                        'POISSON': {
-                            'EWALD': {
-                                'EWALD_TYPE': 'none',
+                        "POISSON": {
+                            "EWALD": {
+                                "EWALD_TYPE": "none",
                             }
+                        },
+                    },
+                    "SUBSYS": {
+                        "TOPOLOGY": {
+                            "CONNECTIVITY": "GENERATE",
+                            "GENERATE": {
+                                "CREATE_MOLECULES": True,
+                            },
                         }
                     },
-                    'SUBSYS': {
-                        'TOPOLOGY': {
-                            'CONNECTIVITY': 'GENERATE',
-                            'GENERATE': {
-                                'CREATE_MOLECULES': True,
-                            }
-                        }
-                    }
                 },
                 {
-                    'METHOD': 'Quickstep',
-                    'DFT': {
-                        'QS': {
-                            'EPS_DEFAULT': 1.0e-12,
-                            'WF_INTERPOLATION': 'ps',
-                            'EXTRAPOLATION_ORDER': 3,
+                    "METHOD": "Quickstep",
+                    "DFT": {
+                        "QS": {
+                            "EPS_DEFAULT": 1.0e-12,
+                            "WF_INTERPOLATION": "ps",
+                            "EXTRAPOLATION_ORDER": 3,
                         },
-                        'MGRID': {
-                            'NGRIDS': 4,
-                            'CUTOFF': 280,
-                            'REL_CUTOFF': 30,
+                        "MGRID": {
+                            "NGRIDS": 4,
+                            "CUTOFF": 280,
+                            "REL_CUTOFF": 30,
                         },
-                        'XC': {
-                            'XC_FUNCTIONAL': {
-                                '_': 'LDA',
+                        "XC": {
+                            "XC_FUNCTIONAL": {
+                                "_": "LDA",
                             },
                         },
-                        'POISSON': {
-                            'PERIODIC': 'none',
-                            'PSOLVER': 'MT',
+                        "POISSON": {
+                            "PERIODIC": "none",
+                            "PSOLVER": "MT",
                         },
                     },
-                    'SUBSYS': {
-                        'KIND': [
+                    "SUBSYS": {
+                        "KIND": [
                             {
-                                '_': 'O',
-                                'BASIS_SET': 'ORB MY-DZVP-MOLOPT-SR-GTH-q6',
-                                'POTENTIAL': 'GTH MY-GTH-PADE-q6'
+                                "_": "O",
+                                "BASIS_SET": "ORB MY-DZVP-MOLOPT-SR-GTH-q6",
+                                "POTENTIAL": "GTH MY-GTH-PADE-q6",
                             },
                             {
-                                '_': 'H',
-                                'BASIS_SET': 'ORB MY-DZVP-MOLOPT-GTH-q1',
-                                'POTENTIAL': 'GTH MY-GTH-PADE-q1'
+                                "_": "H",
+                                "BASIS_SET": "ORB MY-DZVP-MOLOPT-GTH-q1",
+                                "POTENTIAL": "GTH MY-GTH-PADE-q1",
                             },
                         ],
                     },
                 },
-            ]
-        })
+            ],
+        }
+    )
 
     options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1
-        },
+        "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
         "max_wallclock_seconds": 1 * 3 * 60,
     }
 
@@ -705,9 +670,7 @@ def test_validation_mfe(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database)
         "structure": structure,
         "parameters": parameters,
         "code": cp2k_code,
-        "metadata": {
-            "options": options
-        },
+        "metadata": {"options": options},
         "basissets": cp2k_basissets,
         "pseudos": cp2k_pseudos,
     }
@@ -716,7 +679,9 @@ def test_validation_mfe(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database)
     assert calc_node.exit_status == 0
 
 
-def test_without_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+def test_without_kinds(
+    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
+):  # pylint: disable=unused-argument
     """Testing CP2K with the Basis Set stored in gaussian.basisset but without a KIND section"""
 
     # structure
@@ -735,29 +700,16 @@ def test_without_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
                         "WF_INTERPOLATION": "ps",
                         "EXTRAPOLATION_ORDER": 3,
                     },
-                    "MGRID": {
-                        "NGRIDS": 4,
-                        "CUTOFF": 280,
-                        "REL_CUTOFF": 30
-                    },
-                    "XC": {
-                        "XC_FUNCTIONAL": {
-                            "_": "LDA"
-                        }
-                    },
-                    "POISSON": {
-                        "PERIODIC": "none",
-                        "PSOLVER": "MT"
-                    },
+                    "MGRID": {"NGRIDS": 4, "CUTOFF": 280, "REL_CUTOFF": 30},
+                    "XC": {"XC_FUNCTIONAL": {"_": "LDA"}},
+                    "POISSON": {"PERIODIC": "none", "PSOLVER": "MT"},
                 },
             }
-        })
+        }
+    )
 
     options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1
-        },
+        "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
         "max_wallclock_seconds": 1 * 3 * 60,
     }
 
@@ -765,9 +717,7 @@ def test_without_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
         "structure": structure,
         "parameters": parameters,
         "code": cp2k_code,
-        "metadata": {
-            "options": options
-        },
+        "metadata": {"options": options},
         "basissets": cp2k_basissets,
         "pseudos": cp2k_pseudos,
     }
@@ -776,7 +726,9 @@ def test_without_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
     assert calc_node.exit_status == 0
 
 
-def test_multiple_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+def test_multiple_kinds(
+    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
+):  # pylint: disable=unused-argument
     """Testing CP2K with multiple KIND sections for the same symbol"""
 
     # structure
@@ -791,7 +743,9 @@ def test_multiple_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database)
     structure.append_kind(Kind(name="H2", symbols="H"))
 
     # ASE stores it as OHH
-    assert all(atoms.numbers == [8, 1, 1]), "ASE changed positions of atoms in generated structure"
+    assert all(
+        atoms.numbers == [8, 1, 1]
+    ), "ASE changed positions of atoms in generated structure"
     structure.append_site(Site(kind_name="O", position=atoms.positions[0]))
     structure.append_site(Site(kind_name="H1", position=atoms.positions[1]))
     structure.append_site(Site(kind_name="H2", position=atoms.positions[2]))
@@ -807,20 +761,9 @@ def test_multiple_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database)
                         "WF_INTERPOLATION": "ps",
                         "EXTRAPOLATION_ORDER": 3,
                     },
-                    "MGRID": {
-                        "NGRIDS": 4,
-                        "CUTOFF": 280,
-                        "REL_CUTOFF": 30
-                    },
-                    "XC": {
-                        "XC_FUNCTIONAL": {
-                            "_": "LDA"
-                        }
-                    },
-                    "POISSON": {
-                        "PERIODIC": "none",
-                        "PSOLVER": "MT"
-                    },
+                    "MGRID": {"NGRIDS": 4, "CUTOFF": 280, "REL_CUTOFF": 30},
+                    "XC": {"XC_FUNCTIONAL": {"_": "LDA"}},
+                    "POISSON": {"PERIODIC": "none", "PSOLVER": "MT"},
                 },
                 "SUBSYS": {
                     "KIND": [
@@ -844,13 +787,11 @@ def test_multiple_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database)
                     ]
                 },
             }
-        })
+        }
+    )
 
     options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1
-        },
+        "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
         "max_wallclock_seconds": 1 * 3 * 60,
     }
 
@@ -858,9 +799,7 @@ def test_multiple_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database)
         "structure": structure,
         "parameters": parameters,
         "code": cp2k_code,
-        "metadata": {
-            "options": options
-        },
+        "metadata": {"options": options},
         "basissets": cp2k_basissets,
         "pseudos": cp2k_pseudos,
     }
@@ -871,13 +810,20 @@ def test_multiple_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database)
     with calc_node.open("aiida.inp") as fhandle:
         lines = fhandle.readlines()
 
-    assert any("&KIND H1" in line for line in lines), "&KIND H1 not found in generated input"
-    assert any("&KIND H2" in line for line in lines), "&KIND H2 not found in generated input"
-    assert len([True for line in lines if '&KIND H' in line
-               ]) < 3, "More than the expected 2 &KIND H sections found in generated input"
+    assert any(
+        "&KIND H1" in line for line in lines
+    ), "&KIND H1 not found in generated input"
+    assert any(
+        "&KIND H2" in line for line in lines
+    ), "&KIND H2 not found in generated input"
+    assert (
+        len([True for line in lines if "&KIND H" in line]) < 3
+    ), "More than the expected 2 &KIND H sections found in generated input"
 
 
-def test_multiple_kinds_auto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):  # pylint: disable=unused-argument
+def test_multiple_kinds_auto(
+    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
+):  # pylint: disable=unused-argument
     """Testing CP2K with multiple KIND sections for the same symbol, auto-assigned"""
 
     # structure
@@ -892,7 +838,9 @@ def test_multiple_kinds_auto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_data
     structure.append_kind(Kind(name="H2", symbols="H"))
 
     # ASE stores it as OHH
-    assert all(atoms.numbers == [8, 1, 1]), "ASE changed positions of atoms in generated structure"
+    assert all(
+        atoms.numbers == [8, 1, 1]
+    ), "ASE changed positions of atoms in generated structure"
     structure.append_site(Site(kind_name="O", position=atoms.positions[0]))
     structure.append_site(Site(kind_name="H1", position=atoms.positions[1]))
     structure.append_site(Site(kind_name="H2", position=atoms.positions[2]))
@@ -908,20 +856,9 @@ def test_multiple_kinds_auto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_data
                         "WF_INTERPOLATION": "ps",
                         "EXTRAPOLATION_ORDER": 3,
                     },
-                    "MGRID": {
-                        "NGRIDS": 4,
-                        "CUTOFF": 280,
-                        "REL_CUTOFF": 30
-                    },
-                    "XC": {
-                        "XC_FUNCTIONAL": {
-                            "_": "LDA"
-                        }
-                    },
-                    "POISSON": {
-                        "PERIODIC": "none",
-                        "PSOLVER": "MT"
-                    },
+                    "MGRID": {"NGRIDS": 4, "CUTOFF": 280, "REL_CUTOFF": 30},
+                    "XC": {"XC_FUNCTIONAL": {"_": "LDA"}},
+                    "POISSON": {"PERIODIC": "none", "PSOLVER": "MT"},
                 },
                 "SUBSYS": {
                     "KIND": [
@@ -943,13 +880,11 @@ def test_multiple_kinds_auto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_data
                     ]
                 },
             }
-        })
+        }
+    )
 
     options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1
-        },
+        "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
         "max_wallclock_seconds": 1 * 3 * 60,
     }
 
@@ -957,9 +892,7 @@ def test_multiple_kinds_auto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_data
         "structure": structure,
         "parameters": parameters,
         "code": cp2k_code,
-        "metadata": {
-            "options": options
-        },
+        "metadata": {"options": options},
         "basissets": cp2k_basissets,
         "pseudos": cp2k_pseudos,
     }
@@ -973,7 +906,12 @@ def test_multiple_kinds_auto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_data
         print(line)
     assert calc_node.exit_status == 0
 
-    assert any("&KIND H1" in line for line in lines), "&KIND H1 not found in generated input"
-    assert any("&KIND H2" in line for line in lines), "&KIND H2 not found in generated input"
-    assert len([True for line in lines if '&KIND H' in line
-               ]) < 3, "More than the expected 2 &KIND H sections found in generated input"
+    assert any(
+        "&KIND H1" in line for line in lines
+    ), "&KIND H1 not found in generated input"
+    assert any(
+        "&KIND H2" in line for line in lines
+    ), "&KIND H2 not found in generated input"
+    assert (
+        len([True for line in lines if "&KIND H" in line]) < 3
+    ), "More than the expected 2 &KIND H sections found in generated input"

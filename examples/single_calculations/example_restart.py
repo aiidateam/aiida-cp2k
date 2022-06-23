@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
@@ -12,16 +11,15 @@ import os
 import re
 import sys
 from copy import deepcopy
-import click
 
 import ase.io
-
+import click
 from aiida.common import NotExistent
 from aiida.engine import run, run_get_node
-from aiida.orm import (Code, Dict, SinglefileData)
+from aiida.orm import Code, Dict, SinglefileData
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory('structure')  # pylint: disable=invalid-name
+StructureData = DataFactory("structure")  # pylint: disable=invalid-name
 
 
 def example_restart(cp2k_code):
@@ -32,75 +30,76 @@ def example_restart(cp2k_code):
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
     # Structure.
-    structure = StructureData(ase=ase.io.read(os.path.join(thisdir, '..', 'files', 'h2o.xyz')))
+    structure = StructureData(
+        ase=ase.io.read(os.path.join(thisdir, "..", "files", "h2o.xyz"))
+    )
 
     # Basis set.
-    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT"))
+    basis_file = SinglefileData(
+        file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT")
+    )
 
     # Pseudopotentials.
-    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS"))
+    pseudo_file = SinglefileData(
+        file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS")
+    )
 
     # CP2K input.
     params1 = Dict(
         dict={
-            'GLOBAL': {
-                'RUN_TYPE': 'GEO_OPT',
-                'WALLTIME': '00:00:20',  # too short
+            "GLOBAL": {
+                "RUN_TYPE": "GEO_OPT",
+                "WALLTIME": "00:00:20",  # too short
             },
-            'MOTION': {
-                'GEO_OPT': {
-                    'MAX_FORCE': 1e-20,  # impossible to reach
-                    'MAX_ITER': 100000  # run forever
+            "MOTION": {
+                "GEO_OPT": {
+                    "MAX_FORCE": 1e-20,  # impossible to reach
+                    "MAX_ITER": 100000,  # run forever
                 },
             },
-            'FORCE_EVAL': {
-                'METHOD': 'Quickstep',
-                'DFT': {
-                    'BASIS_SET_FILE_NAME': 'BASIS_MOLOPT',
-                    'POTENTIAL_FILE_NAME': 'GTH_POTENTIALS',
-                    'QS': {
-                        'EPS_DEFAULT': 1.0e-12,
-                        'WF_INTERPOLATION': 'ps',
-                        'EXTRAPOLATION_ORDER': 3,
+            "FORCE_EVAL": {
+                "METHOD": "Quickstep",
+                "DFT": {
+                    "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
+                    "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
+                    "QS": {
+                        "EPS_DEFAULT": 1.0e-12,
+                        "WF_INTERPOLATION": "ps",
+                        "EXTRAPOLATION_ORDER": 3,
                     },
-                    'MGRID': {
-                        'NGRIDS': 4,
-                        'CUTOFF': 280,
-                        'REL_CUTOFF': 30,
+                    "MGRID": {
+                        "NGRIDS": 4,
+                        "CUTOFF": 280,
+                        "REL_CUTOFF": 30,
                     },
-                    'XC': {
-                        'XC_FUNCTIONAL': {
-                            '_': 'LDA',
+                    "XC": {
+                        "XC_FUNCTIONAL": {
+                            "_": "LDA",
                         },
                     },
-                    'POISSON': {
-                        'PERIODIC': 'none',
-                        'PSOLVER': 'MT',
+                    "POISSON": {
+                        "PERIODIC": "none",
+                        "PSOLVER": "MT",
                     },
-                    'SCF': {
-                        'PRINT': {
-                            'RESTART': {
-                                '_': 'ON'
-                            }
-                        }
-                    },
+                    "SCF": {"PRINT": {"RESTART": {"_": "ON"}}},
                 },
-                'SUBSYS': {
-                    'KIND': [
+                "SUBSYS": {
+                    "KIND": [
                         {
-                            '_': 'O',
-                            'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                            'POTENTIAL': 'GTH-LDA-q6'
+                            "_": "O",
+                            "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                            "POTENTIAL": "GTH-LDA-q6",
                         },
                         {
-                            '_': 'H',
-                            'BASIS_SET': 'DZVP-MOLOPT-SR-GTH',
-                            'POTENTIAL': 'GTH-LDA-q1'
+                            "_": "H",
+                            "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                            "POTENTIAL": "GTH-LDA-q1",
                         },
                     ],
                 },
-            }
-        })
+            },
+        }
+    )
 
     # ------------------------------------------------------------------------------
     # Construct process builder.
@@ -111,8 +110,8 @@ def example_restart(cp2k_code):
     builder.parameters = params1
     builder.code = cp2k_code
     builder.file = {
-        'basis': basis_file,
-        'pseudo': pseudo_file,
+        "basis": basis_file,
+        "pseudo": pseudo_file,
     }
     builder.metadata.options.resources = {
         "num_machines": 1,
@@ -135,39 +134,39 @@ def example_restart(cp2k_code):
 
     # Parameters.
     params2 = deepcopy(params1.get_dict())
-    del params2['GLOBAL']['WALLTIME']
-    del params2['MOTION']['GEO_OPT']['MAX_FORCE']
-    restart_wfn_fn = './parent_calc/aiida-RESTART.wfn'
-    params2['FORCE_EVAL']['DFT']['RESTART_FILE_NAME'] = restart_wfn_fn
-    params2['FORCE_EVAL']['DFT']['SCF']['SCF_GUESS'] = 'RESTART'
-    params2['EXT_RESTART'] = {'RESTART_FILE_NAME': './parent_calc/aiida-1.restart'}
+    del params2["GLOBAL"]["WALLTIME"]
+    del params2["MOTION"]["GEO_OPT"]["MAX_FORCE"]
+    restart_wfn_fn = "./parent_calc/aiida-RESTART.wfn"
+    params2["FORCE_EVAL"]["DFT"]["RESTART_FILE_NAME"] = restart_wfn_fn
+    params2["FORCE_EVAL"]["DFT"]["SCF"]["SCF_GUESS"] = "RESTART"
+    params2["EXT_RESTART"] = {"RESTART_FILE_NAME": "./parent_calc/aiida-1.restart"}
     params2 = Dict(dict=params2)
 
     # Structure.
-    atoms2 = ase.io.read(os.path.join(thisdir, '..', 'files', 'h2o.xyz'))
+    atoms2 = ase.io.read(os.path.join(thisdir, "..", "files", "h2o.xyz"))
     atoms2.positions *= 0.0  # place all atoms at origin -> nuclear fusion :-)
     structure2 = StructureData(ase=atoms2)
 
     # Update the process builder.
     builder.structure = structure2
     builder.parameters = params2
-    builder.parent_calc_folder = calc1_outputs['remote_folder']
+    builder.parent_calc_folder = calc1_outputs["remote_folder"]
 
     print("Submitted calculation 2.")
     calc2 = run(builder)
 
     # Check energy.
     expected_energy = -17.1566455959
-    if abs(calc2['output_parameters']['energy'] - expected_energy) < 1e-10:
+    if abs(calc2["output_parameters"]["energy"] - expected_energy) < 1e-10:
         print("OK, energy has the expected value.")
 
     # Ensure that this warning originates from overwritting coordinates.
-    output = calc2['retrieved'].get_object_content('aiida.out')
+    output = calc2["retrieved"].get_object_content("aiida.out")
     assert re.search("WARNING .* :: Overwriting coordinates", output)
 
 
-@click.command('cli')
-@click.argument('codelabel')
+@click.command("cli")
+@click.argument("codelabel")
 def cli(codelabel):
     """Click interface."""
     try:
@@ -178,5 +177,5 @@ def cli(codelabel):
     example_restart(code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter

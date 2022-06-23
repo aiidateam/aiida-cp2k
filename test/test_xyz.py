@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -7,12 +6,13 @@
 ###############################################################################
 """Test writing structures to xyz format"""
 from ase import Atoms
+
 from aiida_cp2k.calculations import _atoms_to_xyz
 
 
 def test_atoms_to_xyz():
     """Test that writing atoms to xyz format is handled correctly in the presence of tags"""
-    h2o = Atoms('H2O')
+    h2o = Atoms("H2O")
     # pylint: disable=assigning-non-slot
     h2o[0].charge = -1
     h2o[0].tag = 1
@@ -20,5 +20,5 @@ def test_atoms_to_xyz():
 
     xyz = _atoms_to_xyz(h2o)  # pylint: disable=protected-access
 
-    assert 'H1' in xyz, xyz
-    assert 'H2' in xyz, xyz
+    assert "H1" in xyz, xyz
+    assert "H2" in xyz, xyz

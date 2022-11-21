@@ -7,8 +7,7 @@
 """Test output parser."""
 import os
 
-from aiida_cp2k.utils.parser import _parse_bands, parse_cp2k_trajectory
-
+from aiida_cp2k.utils.parser import _parse_bands, parse_cp2k_trajectory, parse_cp2k_output
 THISDIR = os.path.dirname(os.path.realpath(__file__))
 
 
@@ -58,6 +57,17 @@ def test_bands_parser_81():
         assert (
             bands[0] == [-6.84282475, 5.23143741, 5.23143741, 5.23143741, 7.89232311]
         ).all()
+
+def test_cp2k_output():
+    """Test parse_cp2k_out """
+    with open(f"{THISDIR}/outputs/cdft_dos_cp2k_6.0.out") as fobj:
+        lines = fobj.readlines()
+        result_dict = parse_cp2k_output(lines)
+        assert(result_dict["energy"] == -1544.475602321840825).all()
+        assert(result_dict["energy_units"] == "a.u.").all()
+        assert(result_dict["nwarnings"]== 1).all()
+            
+
 
 
 def test_trajectory_parser_pbc():

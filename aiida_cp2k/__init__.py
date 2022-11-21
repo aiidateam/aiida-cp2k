@@ -4,7 +4,7 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""AiiDA-CP2K plugins, parsers, workflows, etc ..."""
+"""The official AiiDA plugin for CP2K."""
 
 __version__ = "1.5.0"
 

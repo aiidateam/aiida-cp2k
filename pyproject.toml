@@ -9,6 +9,7 @@ name = "aiida_cp2k"
 name = "aiida-cp2k"
 dynamic = ["version", "description"]
 readme = "README.md"
+license = {file = 'LICENSE.txt'}
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Framework :: AiiDA",
@@ -17,8 +18,9 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Programming Language :: Python :: 3",
 ]
+requires-python = ">=3.8"
 dependencies = [
-    "aiida-core>=1.1.0,<2.0.0",
+    "aiida-core~=1.1",
     "aiida-gaussian-datatypes",
     "ase",
     "ruamel.yaml>=0.16.5",

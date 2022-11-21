@@ -7,7 +7,7 @@
 """Test output parser."""
 import os
 
-from aiida_cp2k.utils.parser import _parse_bands, parse_cp2k_trajectory, parse_cp2k_output
+from aiida_cp2k.utils.parser import _parse_bands, parse_cp2k_trajectory, parse_cp2k_output, parse_cp2k_output_advanced
 THISDIR = os.path.dirname(os.path.realpath(__file__))
 
 
@@ -66,7 +66,27 @@ def test_cp2k_output():
         assert(result_dict["energy"] == -1544.475602321840825).all()
         assert(result_dict["energy_units"] == "a.u.").all()
         assert(result_dict["nwarnings"]== 1).all()
-            
+
+def test_cp2k_output_advanced():
+    """Test parse_cp2k_advanced output """
+    with open(f"{THISDIR}/outputs/cdft_dos_cp2k_6.0.out") as fobj:
+        lines = fobj.readlines()
+        result_dict = parse_cp2k_output_advanced(lines)
+        assert(result_dict["cp2k_version"] == 6.0).all()
+        assert(result_dict["energy_scf"] == -1544.47560232184082).all()
+        assert(result_dict["nwarnings"]== 1).all()
+        assert(result_dict["run_type"]== "ENERGY").all()
+        assert(result_dict["dft_type"]== "UKS").all()
+        assert(result_dict["integrated_abs_spin_dens"] == 6.4548954029 ).all()
+        assert(result_dict["spin_square_ideal"] ==  0.750000).all()
+        assert(result_dict["spin_square_expectation"] == 2.827411).all()
+        assert(result_dict["init_nel_spin1"] == 358 ).all()
+        assert(result_dict["init_nel_spin2"] == 357).all()
+        assert(result_dict["natoms"] == 194).all()
+
+        
+           
+          
 
 
 

@@ -68,8 +68,7 @@ def test_bands_parser_81():
 def test_cp2k_output():
     """Test parse_cp2k_out"""
     with open(f"{THISDIR}/outputs/cdft_dos_cp2k_6.0.out") as fobj:
-        lines = fobj.readlines()
-        result_dict = parse_cp2k_output(lines)
+        result_dict = parse_cp2k_output(fobj)
         assert result_dict["energy"] == -1544.475602321840825
         assert result_dict["energy_units"] == "a.u."
         assert result_dict["nwarnings"] == 1
@@ -78,8 +77,7 @@ def test_cp2k_output():
 def test_cp2k_output_advanced():
     """Test parse_cp2k_advanced output"""
     with open(f"{THISDIR}/outputs/cdft_dos_cp2k_6.0.out") as fobj:
-        lines = fobj.readlines()
-        result_dict = parse_cp2k_output_advanced(lines)
+        result_dict = parse_cp2k_output_advanced(fobj)
         assert result_dict["cp2k_version"] == 6.0
         assert result_dict["energy_scf"] == -1544.47560232184082
         assert result_dict["nwarnings"] == 1

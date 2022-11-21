@@ -89,7 +89,7 @@ jobs:
     - name: Install python dependencies
       run: |
         pip install --upgrade pip
-        pip install -e .[docs,test]
+        pip install -e .[docs,dev]
         reentry scan
 
     - name: Build docs

@@ -21,15 +21,28 @@ pip install -e .  # Also installs aiida, if missing (but not postgres/rabbitmq).
 ```
 
 ## Links
+
 * [Documentation](https://aiida-cp2k.readthedocs.io/en/latest/) for the calculation examples and features of the plugin.
 * [Make an issue](https://github.com/aiidateam/aiida-cp2k/issues/new) for bug reports, questions and suggestions.
 * [AiiDA](http://www.aiida.net/) to learn about AiiDA.
 * [Cp2k](https://www.cp2k.org/) to learn about CP2K.
 
+## For maintainers
+
+To create a new release, clone the repository, install development dependencies with `pip install '.[dev]'`, and then execute `bumpver update --major/--minor/--patch`.
+This will:
+
+  1. Create a tagged release with bumped version and push it to the repository.
+  2. Trigger a GitHub actions workflow that creates a GitHub release.
+
+Additional notes:
+
+  - Use the `--dry` option to preview the release change.
+  - The release tag (e.g. a/b/rc) is determined from the last release.
+    Use the `--tag` option to switch the release tag.
 
 ## License
 MIT
-
 
 ## Contact
 yakutovicha@gmail.com

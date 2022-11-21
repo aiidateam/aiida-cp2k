@@ -10,4 +10,3 @@ filterwarnings = [
     "ignore::DeprecationWarning:yaml:",
     "ignore::DeprecationWarning:pymatgen:",
 ]
-

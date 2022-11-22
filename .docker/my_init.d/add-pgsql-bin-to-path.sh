@@ -1,4 +1,4 @@
 #!/bin/bash
 set -em
 
-echo 'export PATH=${PATH}:/opt/conda/envs/pgsql/bin/' >> /home/aiida/.bashrc
+sed  -i '1i PATH=${PATH}:/opt/conda/envs/pgsql/bin/' /home/aiida/.bashrc

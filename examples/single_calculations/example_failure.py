@@ -21,7 +21,7 @@ def example_failure(cp2k_code):
     print("Testing CP2K failure...")
 
     # a broken CP2K input
-    parameters = Dict(dict={"GLOBAL": {"FOO_BAR_QUUX": 42}})
+    parameters = Dict({"GLOBAL": {"FOO_BAR_QUUX": 42}})
 
     print("Submitted calculation...")
 

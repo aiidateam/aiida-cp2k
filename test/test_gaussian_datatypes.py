@@ -145,7 +145,7 @@ def test_validation(
 
     # parameters
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {
@@ -206,7 +206,7 @@ def test_validation_fail(
 
     # parameters
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {
@@ -273,7 +273,7 @@ def test_validation_unused(
 
     # parameters
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {
@@ -346,7 +346,7 @@ def test_validation_mfe_noauto(
 
     # Parameters.
     parameters = Dict(
-        dict={
+        {
             "MULTIPLE_FORCE_EVALS": {
                 "FORCE_EVAL_ORDER": "2 3",
                 "MULTIPLE_SUBSYS": "T",
@@ -521,7 +521,7 @@ def test_validation_mfe(
 
     # Parameters.
     parameters = Dict(
-        dict={
+        {
             "MULTIPLE_FORCE_EVALS": {
                 "FORCE_EVAL_ORDER": "2 3",
                 "MULTIPLE_SUBSYS": "T",
@@ -691,7 +691,7 @@ def test_without_kinds(
 
     # parameters
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {
@@ -752,7 +752,7 @@ def test_multiple_kinds(
 
     # parameters
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {
@@ -847,7 +847,7 @@ def test_multiple_kinds_auto(
 
     # parameters
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {

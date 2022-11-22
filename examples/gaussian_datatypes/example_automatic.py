@@ -18,7 +18,7 @@ from aiida.orm import Code, Dict
 from aiida.plugins import DataFactory
 from gdt_data import load_data
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
 
 
 def example_gdt(cp2k_code):
@@ -48,7 +48,7 @@ def example_gdt(cp2k_code):
 
     # parameters
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {

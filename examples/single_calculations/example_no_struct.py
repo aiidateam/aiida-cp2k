@@ -35,7 +35,7 @@ def example_no_struct(cp2k_code):
 
     # Parameters.
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {

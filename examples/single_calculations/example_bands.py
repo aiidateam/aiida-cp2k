@@ -18,8 +18,8 @@ from aiida.orm import Code, Dict, SinglefileData
 from aiida.plugins import DataFactory
 from ase.atoms import Atoms
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
-KpointsData = DataFactory("array.kpoints")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
+KpointsData = DataFactory("core.array.kpoints")  # pylint: disable=invalid-name
 
 
 def example_bands(cp2k_code):
@@ -59,7 +59,7 @@ def example_bands(cp2k_code):
 
     # parameters
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {

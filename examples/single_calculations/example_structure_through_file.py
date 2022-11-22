@@ -17,7 +17,7 @@ from aiida.engine import run
 from aiida.orm import Code, Dict, SinglefileData
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
 
 
 def example_structure_through_file(cp2k_code):
@@ -46,7 +46,7 @@ def example_structure_through_file(cp2k_code):
 
     # parameters
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {

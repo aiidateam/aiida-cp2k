@@ -60,7 +60,7 @@ def example_mm(cp2k_code):
     # Parameters.
     # Based on cp2k/tests/Fist/regtest-1-1/water_1.inp
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "fist",
                 "MM": {
@@ -96,7 +96,7 @@ def example_mm(cp2k_code):
     )
 
     # Settings.
-    settings = Dict(dict={"additional_retrieve_list": ["runtime.callgraph"]})
+    settings = Dict({"additional_retrieve_list": ["runtime.callgraph"]})
 
     # Construct process builder.
     builder = cp2k_code.get_builder()

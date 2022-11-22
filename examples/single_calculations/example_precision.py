@@ -18,7 +18,7 @@ from aiida.engine import run
 from aiida.orm import Code, Dict, SinglefileData
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
 
 
 def example_precision(cp2k_code):
@@ -48,7 +48,7 @@ def example_precision(cp2k_code):
 
     # Parameters.
     parameters = Dict(
-        dict={
+        {
             "GLOBAL": {
                 "RUN_TYPE": "MD",
             },

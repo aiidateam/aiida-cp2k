@@ -17,7 +17,7 @@ from aiida.engine import run
 from aiida.orm import Code, Dict, SinglefileData
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
 
 
 def example_multiple_force_eval(cp2k_code):
@@ -52,7 +52,7 @@ def example_multiple_force_eval(cp2k_code):
 
     # Parameters.
     parameters = Dict(
-        dict={
+        {
             "MULTIPLE_FORCE_EVALS": {
                 "FORCE_EVAL_ORDER": "2 3",
                 "MULTIPLE_SUBSYS": "T",

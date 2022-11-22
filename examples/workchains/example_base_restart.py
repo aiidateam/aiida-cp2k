@@ -18,7 +18,7 @@ from aiida.orm import Code, Dict, SinglefileData
 from aiida.plugins import DataFactory, WorkflowFactory
 
 Cp2kBaseWorkChain = WorkflowFactory("cp2k.base")
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
 
 
 def example_base(cp2k_code):
@@ -45,7 +45,7 @@ def example_base(cp2k_code):
 
     # Parameters.
     parameters = Dict(
-        dict={
+        {
             "GLOBAL": {
                 "RUN_TYPE": "GEO_OPT",
                 "WALLTIME": "00:00:20",  # too short
@@ -98,7 +98,7 @@ def example_base(cp2k_code):
     builder = Cp2kBaseWorkChain.get_builder()
 
     # Switch on resubmit_unconverged_geometry disabled by default.
-    builder.handler_overrides = Dict(dict={"restart_incomplete_calculation": True})
+    builder.handler_overrides = Dict({"restart_incomplete_calculation": True})
 
     # Input structure.
     builder.cp2k.structure = structure

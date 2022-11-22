@@ -18,8 +18,8 @@ from aiida_cp2k import utils
 
 # -
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
-BandsData = DataFactory("array.bands")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
+BandsData = DataFactory("core.array.bands")  # pylint: disable=invalid-name
 
 
 class Cp2kBaseParser(Parser):

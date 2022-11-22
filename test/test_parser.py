@@ -85,9 +85,9 @@ def test_cp2k_output_advanced():
         assert result_dict["nwarnings"] == 1
         assert result_dict["run_type"] == "ENERGY"
         assert result_dict["dft_type"] == "UKS"
-        assert result_dict["integrated_abs_spin_dens"] == 6.4548954029
+        assert result_dict["integrated_abs_spin_dens"] == [6.4548954029]
         assert result_dict["spin_square_ideal"] == 0.750000
-        assert result_dict["spin_square_expectation"] == 2.827411
+        assert result_dict["spin_square_expectation"] == [2.827411]
         assert result_dict["init_nel_spin1"] == 358
         assert result_dict["init_nel_spin2"] == 357
         assert result_dict["natoms"] == 194

@@ -5,7 +5,7 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-FROM aiidateam/aiida-core:1.6.5
+FROM aiidateam/aiida-core:2.1.2
 
 # To prevent the container to exit prematurely.
 ENV KILL_ALL_RPOCESSES_TIMEOUT=50

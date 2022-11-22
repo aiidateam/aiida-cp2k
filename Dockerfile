@@ -23,7 +23,7 @@ RUN set -ex ; \
 
 # Install aiida-cp2k plugin.
 COPY . aiida-cp2k
-RUN pip install ./aiida-cp2k[pre-commit,test,docs]
+RUN pip install ./aiida-cp2k[dev,docs]
 
 # Install coverals.
 RUN pip install coveralls

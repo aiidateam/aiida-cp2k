@@ -40,7 +40,7 @@ Additional notes:
 
   - Use the `--dry` option to preview the release change.
   - The release tag (e.g. a/b/rc) is determined from the last release.
-    Use the `--tag` option to switch the release tag.
+    Use the `--tag` option to override the release tag.
 
 ## License
 

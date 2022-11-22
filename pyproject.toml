@@ -35,6 +35,7 @@ Homepage = "https://github.com/aiidateam/aiida-cp2k"
 
 [project.optional-dependencies]
 dev = [
+    "bumpver==2022.1119",
     "pgtest~=1.3",
     "pytest~=6.0",
     "pytest-cov~=2.11.1",
@@ -70,4 +71,17 @@ filterwarnings = [
     "ignore::DeprecationWarning:sqlalchemy:",
     "ignore::DeprecationWarning:yaml:",
     "ignore::DeprecationWarning:pymatgen:",
+]
+
+[tool.bumpver]
+current_version = "v1.5.0"
+version_pattern = "vMAJOR.MINOR.PATCH[PYTAGNUM]"
+commit_message = "Bump version {old_version} -> {new_version}."
+commit = true
+tag = true
+push = true
+
+[tool.bumpver.file_patterns]
+"aiida_cp2k/__init__.py" = [
+    '__version__ = "{pep440_version}"',
 ]

@@ -68,7 +68,6 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install -e .[dev,docs]
-        reentry scan
     - name: Run pre-commit
       run: |
         pre-commit install
@@ -90,7 +89,6 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install -e .[docs,dev]
-        reentry scan
 
     - name: Build docs
       run: cd docs && make

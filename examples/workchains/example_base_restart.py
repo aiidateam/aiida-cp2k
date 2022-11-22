@@ -48,7 +48,7 @@ def example_base(cp2k_code):
         {
             "GLOBAL": {
                 "RUN_TYPE": "GEO_OPT",
-                "WALLTIME": "00:00:25",  # too short
+                "WALLTIME": "00:00:30",  # too short
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",

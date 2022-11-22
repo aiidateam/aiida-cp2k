@@ -14,7 +14,7 @@ import ase.io
 import click
 from aiida.common import NotExistent
 from aiida.engine import run
-from aiida.orm import Code, Dict, SinglefileData
+from aiida.orm import Dict, SinglefileData, load_code
 
 
 def example_mm(cp2k_code):
@@ -127,7 +127,7 @@ def example_mm(cp2k_code):
         sys.exit(3)
 
     # Check if callgraph is there.
-    if "runtime.callgraph" in calc["retrieved"].list_object_names():
+    if "runtime.callgraph" in calc["retrieved"].base.repository.list_object_names():
         print("OK, callgraph file was retrived.")
     else:
         print("ERROR!")
@@ -140,7 +140,7 @@ def example_mm(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = Code.get_from_string(codelabel)
+        code = load_code(codelabel)
     except NotExistent:
         print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)

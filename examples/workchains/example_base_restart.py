@@ -14,7 +14,7 @@ import ase.io
 import click
 from aiida.common import NotExistent
 from aiida.engine import run
-from aiida.orm import Code, Dict, SinglefileData
+from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory, WorkflowFactory
 
 Cp2kBaseWorkChain = WorkflowFactory("cp2k.base")
@@ -98,7 +98,9 @@ def example_base(cp2k_code):
     builder = Cp2kBaseWorkChain.get_builder()
 
     # Switch on resubmit_unconverged_geometry disabled by default.
-    builder.handler_overrides = Dict({"restart_incomplete_calculation": True})
+    builder.handler_overrides = Dict(
+        {"restart_incomplete_calculation": {"enabled": True}}
+    )
 
     # Input structure.
     builder.cp2k.structure = structure
@@ -131,7 +133,7 @@ def example_base(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = Code.get_from_string(codelabel)
+        code = load_code(codelabel)
     except NotExistent:
         print(f"The code '{codelabel}' does not exist")
         sys.exit(1)

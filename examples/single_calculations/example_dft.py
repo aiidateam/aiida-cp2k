@@ -14,7 +14,7 @@ import ase.io
 import click
 from aiida.common import NotExistent
 from aiida.engine import run
-from aiida.orm import Code, Dict, SinglefileData
+from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory
 
 StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
@@ -112,7 +112,7 @@ def example_dft(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = Code.get_from_string(codelabel)
+        code = load_code(codelabel)
     except NotExistent:
         print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)

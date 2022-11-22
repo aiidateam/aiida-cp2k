@@ -121,8 +121,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
     ], enabled=False)
     def restart_incomplete_calculation(self, calc):
         """This handler restarts incomplete calculations."""
-
-        content_string = calc.outputs.retrieved.get_object_content(calc.get_attribute('output_filename'))
+        content_string = calc.outputs.retrieved.base.repository.get_object_content(calc.base.attributes.get('output_filename'))
 
         # CP2K was updating geometry - continue with that.
         restart_geometry_transformation = "Max. gradient              =" in content_string

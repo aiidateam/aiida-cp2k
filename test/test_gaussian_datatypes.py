@@ -807,7 +807,7 @@ def test_multiple_kinds(
     _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)
     assert calc_node.exit_status == 0
 
-    with calc_node.open("aiida.inp") as fhandle:
+    with calc_node.base.repository.open("aiida.inp") as fhandle:
         lines = fhandle.readlines()
 
     assert any(
@@ -899,7 +899,7 @@ def test_multiple_kinds_auto(
 
     _, calc_node = run_get_node(CalculationFactory("cp2k"), **inputs)
 
-    with calc_node.open("aiida.inp") as fhandle:
+    with calc_node.base.repository.open("aiida.inp") as fhandle:
         lines = fhandle.readlines()
 
     for line in lines:

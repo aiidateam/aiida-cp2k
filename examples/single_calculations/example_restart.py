@@ -16,7 +16,7 @@ import ase.io
 import click
 from aiida.common import NotExistent
 from aiida.engine import run, run_get_node
-from aiida.orm import Code, Dict, SinglefileData
+from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory
 
 StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
@@ -161,7 +161,7 @@ def example_restart(cp2k_code):
         print("OK, energy has the expected value.")
 
     # Ensure that this warning originates from overwritting coordinates.
-    output = calc2["retrieved"].get_object_content("aiida.out")
+    output = calc2["retrieved"].base.repository.get_object_content("aiida.out")
     assert re.search("WARNING .* :: Overwriting coordinates", output)
 
 
@@ -170,7 +170,7 @@ def example_restart(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = Code.get_from_string(codelabel)
+        code = load_code(codelabel)
     except NotExistent:
         print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)

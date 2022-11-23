@@ -14,10 +14,10 @@ import ase
 import click
 from aiida.common import NotExistent
 from aiida.engine import run
-from aiida.orm import Code, Dict, SinglefileData
+from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
 
 
 def example_multiple_force_eval(cp2k_code):
@@ -52,7 +52,7 @@ def example_multiple_force_eval(cp2k_code):
 
     # Parameters.
     parameters = Dict(
-        dict={
+        {
             "MULTIPLE_FORCE_EVALS": {
                 "FORCE_EVAL_ORDER": "2 3",
                 "MULTIPLE_SUBSYS": "T",
@@ -218,7 +218,7 @@ def example_multiple_force_eval(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = Code.get_from_string(codelabel)
+        code = load_code(codelabel)
     except NotExistent:
         print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)

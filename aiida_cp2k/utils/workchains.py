@@ -10,7 +10,7 @@ from aiida.engine import calcfunction
 from aiida.orm import Dict
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
 
 HARTREE2EV = 27.211399
 HARTREE2KJMOL = 2625.500
@@ -41,7 +41,7 @@ def merge_Dict(d1, d2):  # pylint: disable=invalid-name
     d1_dict = d1.get_dict()
     d2_dict = d2.get_dict()
     merge_dict(d1_dict, d2_dict)
-    return Dict(dict=d1_dict)
+    return Dict(d1_dict)
 
 
 def get_kinds_section(structure, protocol_settings):
@@ -167,7 +167,7 @@ def check_resize_unit_cell(struct, threshold):  # pylint: disable=too-many-local
         "ny": int(ceil(thr / perpwidth[1])),
         "nz": int(ceil(thr / perpwidth[2])),
     }
-    return Dict(dict=resize)
+    return Dict(resize)
 
 
 @calcfunction

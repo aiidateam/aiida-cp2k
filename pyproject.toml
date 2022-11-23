@@ -20,7 +20,7 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-    "aiida-core~=1.1",
+    "aiida-core>=2.0.0,<3.0.0",
     "aiida-gaussian-datatypes",
     "ase",
     "ruamel.yaml>=0.16.5",

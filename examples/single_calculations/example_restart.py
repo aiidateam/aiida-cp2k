@@ -16,10 +16,10 @@ import ase.io
 import click
 from aiida.common import NotExistent
 from aiida.engine import run, run_get_node
-from aiida.orm import Code, Dict, SinglefileData
+from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
 
 
 def example_restart(cp2k_code):
@@ -46,7 +46,7 @@ def example_restart(cp2k_code):
 
     # CP2K input.
     params1 = Dict(
-        dict={
+        {
             "GLOBAL": {
                 "RUN_TYPE": "GEO_OPT",
                 "WALLTIME": "00:00:20",  # too short
@@ -140,7 +140,7 @@ def example_restart(cp2k_code):
     params2["FORCE_EVAL"]["DFT"]["RESTART_FILE_NAME"] = restart_wfn_fn
     params2["FORCE_EVAL"]["DFT"]["SCF"]["SCF_GUESS"] = "RESTART"
     params2["EXT_RESTART"] = {"RESTART_FILE_NAME": "./parent_calc/aiida-1.restart"}
-    params2 = Dict(dict=params2)
+    params2 = Dict(params2)
 
     # Structure.
     atoms2 = ase.io.read(os.path.join(thisdir, "..", "files", "h2o.xyz"))
@@ -161,7 +161,7 @@ def example_restart(cp2k_code):
         print("OK, energy has the expected value.")
 
     # Ensure that this warning originates from overwritting coordinates.
-    output = calc2["retrieved"].get_object_content("aiida.out")
+    output = calc2["retrieved"].base.repository.get_object_content("aiida.out")
     assert re.search("WARNING .* :: Overwriting coordinates", output)
 
 
@@ -170,7 +170,7 @@ def example_restart(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = Code.get_from_string(codelabel)
+        code = load_code(codelabel)
     except NotExistent:
         print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)

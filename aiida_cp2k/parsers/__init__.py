@@ -18,8 +18,8 @@ from aiida_cp2k import utils
 
 # -
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
-BandsData = DataFactory("array.bands")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
+BandsData = DataFactory("core.array.bands")  # pylint: disable=invalid-name
 
 
 class Cp2kBaseParser(Parser):
@@ -76,14 +76,14 @@ class Cp2kBaseParser(Parser):
         )  # pylint: disable=protected-access
 
         # Check if the restart file is present.
-        if fname not in self.retrieved.list_object_names():
+        if fname not in self.retrieved.base.repository.list_object_names():
             raise exceptions.NotExistent(
                 "No restart file available, so the output trajectory can't be extracted"
             )
 
         # Read the restart file.
         try:
-            output_string = self.retrieved.get_object_content(fname)
+            output_string = self.retrieved.base.repository.get_object_content(fname)
         except OSError:
             return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
@@ -106,12 +106,12 @@ class Cp2kBaseParser(Parser):
     def _read_stdout(self):
         """Read the standard output file. If impossible, return a non-zero exit code."""
 
-        fname = self.node.get_attribute("output_filename")
+        fname = self.node.base.attributes.get("output_filename")
 
-        if fname not in self.retrieved.list_object_names():
+        if fname not in self.retrieved.base.repository.list_object_names():
             return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING, None
         try:
-            output_string = self.retrieved.get_object_content(fname)
+            output_string = self.retrieved.base.repository.get_object_content(fname)
         except OSError:
             return self.exit_codes.ERROR_OUTPUT_STDOUT_READ, None
 

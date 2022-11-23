@@ -1,7 +1,7 @@
 [![PyPI version](https://badge.fury.io/py/aiida-cp2k.svg)](https://badge.fury.io/py/aiida-cp2k)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/aiida-cp2k.svg)](https://pypi.python.org/pypi/aiida-cp2k/)
 [![Test CI](https://github.com/aiidateam/aiida-cp2k/actions/workflows/ci.yml/badge.svg)](https://github.com/aiidateam/aiida-cp2k/actions)
-[![Coverage Status](https://coveralls.io/repos/github/aiidateam/aiida-cp2k/badge.svg)](https://coveralls.io/github/aiidateam/aiida-cp2k)
+[![Coverage Status](https://coveralls.io/repos/github/aiidateam/aiida-cp2k/badge.svg?branch=main)](https://coveralls.io/github/aiidateam/aiida-cp2k?branch=main)
 [![Documentation](https://readthedocs.org/projects/aiida-cp2k/badge/?version=latest)](https://aiida-cp2k.readthedocs.io/en/latest/?badge=latest)
 
 # AiiDA CP2K

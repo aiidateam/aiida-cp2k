@@ -34,10 +34,14 @@ def example_dft(cp2k_code):
     )
 
     # Basis set.
-    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_SET"))
+    basis_file = SinglefileData(
+        file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT")
+    )
 
     # Pseudopotentials.
-    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "POTENTIAL"))
+    pseudo_file = SinglefileData(
+        file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS")
+    )
 
     # Parameters.
     parameters = Dict(
@@ -58,8 +62,8 @@ def example_dft(cp2k_code):
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {
-                    "BASIS_SET_FILE_NAME": "BASIS_SET",
-                    "POTENTIAL_FILE_NAME": "POTENTIAL",
+                    "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
+                    "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
                     "QS": {"EPS_DEFAULT": 1.0e-8, "EXTRAPOLATION": "use_prev_p"},
                     "MGRID": {
                         "NGRIDS": 4,
@@ -68,7 +72,7 @@ def example_dft(cp2k_code):
                     },
                     "XC": {
                         "XC_FUNCTIONAL": {
-                            "_": "Pade",
+                            "_": "LDA",
                         },
                     },
                     "POISSON": {
@@ -80,13 +84,13 @@ def example_dft(cp2k_code):
                     "KIND": [
                         {
                             "_": "O",
-                            "BASIS_SET": "DZVP-GTH-PADE",
-                            "POTENTIAL": "GTH-PADE-q6",
+                            "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                            "POTENTIAL": "GTH-LDA-q6",
                         },
                         {
                             "_": "H",
-                            "BASIS_SET": "DZVP-GTH-PADE",
-                            "POTENTIAL": "GTH-PADE-q1",
+                            "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
+                            "POTENTIAL": "GTH-LDA-q1",
                         },
                     ],
                 },

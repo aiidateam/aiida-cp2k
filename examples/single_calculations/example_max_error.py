@@ -34,14 +34,10 @@ def example_dft(cp2k_code):
     )
 
     # Basis set.
-    basis_file = SinglefileData(
-        file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT")
-    )
+    basis_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "BASIS_SET"))
 
     # Pseudopotentials.
-    pseudo_file = SinglefileData(
-        file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS")
-    )
+    pseudo_file = SinglefileData(file=os.path.join(thisdir, "..", "files", "POTENTIAL"))
 
     # Parameters.
     parameters = Dict(

@@ -179,6 +179,11 @@ class Cp2kCalculation(CalcJob):
             "ERROR_GEOMETRY_CONVERGENCE_NOT_REACHED",
             message="The ionic minimization cycle did not converge for the given thresholds.",
         )
+        spec.exit_code(
+            501,
+            "ERROR_MAX_NUMBER_OPT_STEPS_REACHED",
+            message="The maximum number of optimization steps reached.",
+        )
 
         # Output parameters.
         spec.output(

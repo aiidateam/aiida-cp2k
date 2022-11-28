@@ -117,7 +117,7 @@ def example_dft(cp2k_code):
     calc = run_get_node(builder)
     assert (
         calc[1].exit_status
-        == Cp2kCalculation.exit_codes.ERROR_MAX_NUMBER_OPT_STEPS_REACHED.status
+        == Cp2kCalculation.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED.status
     )
 
 

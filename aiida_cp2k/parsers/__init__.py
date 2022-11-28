@@ -102,7 +102,7 @@ class Cp2kBaseParser(Parser):
             return self.exit_codes.ERROR_OUTPUT_INCOMPLETE
 
         if "MAXIMUM NUMBER OF OPTIMIZATION STEPS REACHED" in output_string:
-            return self.exit_codes.ERROR_MAX_NUMBER_OPT_STEPS_REACHED
+            return self.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED
 
         return None
 

@@ -181,7 +181,7 @@ class Cp2kCalculation(CalcJob):
         )
         spec.exit_code(
             501,
-            "ERROR_MAX_NUMBER_OPT_STEPS_REACHED",
+            "ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED",
             message="The maximum number of optimization steps reached.",
         )
 

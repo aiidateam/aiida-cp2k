@@ -101,6 +101,9 @@ class Cp2kBaseParser(Parser):
         if "PROGRAM STOPPED IN" not in output_string:
             return self.exit_codes.ERROR_OUTPUT_INCOMPLETE
 
+        if "MAXIMUM NUMBER OF OPTIMIZATION STEPS REACHED" in output_string:
+            return self.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED
+
         return None
 
     def _read_stdout(self):

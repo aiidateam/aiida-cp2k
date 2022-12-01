@@ -73,8 +73,9 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
 
         # CP2K was updating geometry - continue with that.
         restart_geometry_transformation = "Max. gradient              =" in content_string
+        end_inner_scf_loop = "Total energy: " in content_string
         # The message is written in the log file when the CP2K input parameter `LOG_PRINT_KEY` is set to True.
-        if not (restart_geometry_transformation or "Writing RESTART" in content_string):
+        if not (restart_geometry_transformation or end_inner_scf_loop or "Writing RESTART" in content_string):
             self.report("It seems that the restart of CP2K calculation wouldn't be able to fix the problem as the "
                         "previous calculation didn't produce any output to restart from. "
                         "Sending a signal to stop the Base work chain.")

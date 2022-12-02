@@ -119,12 +119,18 @@ def example_base(cp2k_code):
     print("Submitted calculation...")
     _, process_node = run_get_node(builder)
 
-    if process_node.exit_status == 400:
-        print("Work chain failure correctly recognized.")
+    first_calcjob = process_node.called_descendants[0]
+
+    if first_calcjob.exit_status == 400:
+        print("Work chain failure correctly recognized first restart.")
     else:
         print("ERROR!")
         print("Work chain failure was not recognized.")
         sys.exit(3)
+    if process_node.exit_status == 0:
+        print("The workchain complete successfully")
+    if process_node.exit_status == 402:
+        print("The workchain attempted a second restart with no success")
 
 
 @click.command("cli")

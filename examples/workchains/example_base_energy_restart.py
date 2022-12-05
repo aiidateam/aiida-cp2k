@@ -5,7 +5,7 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Run simple DFT calculation through a workchain."""
+"""An example testing the restart calculation handler for ENERGY run in CP2K."""
 
 import os
 import sys
@@ -116,11 +116,6 @@ def example_base(cp2k_code):
             "num_mpiprocs_per_machine": 1,
         },
         "max_wallclock_seconds": 1 * 1 * 60,  # 30 min
-        # "withmpi": True,  # A trick to put the kill below before raspa command.
-        "mpirun_extra_params": [
-            "timeout",
-            "1",
-        ],  # Kill the calculation after 5 seconds, to test restart.
     }
 
     # builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 1 *60
@@ -128,11 +123,10 @@ def example_base(cp2k_code):
     print("Submitted calculation...")
     _, process_node = run_get_node(builder)
 
-    if process_node.exit_status == 400:
-        print("Work chain failure correctly recognized.")
+    if process_node.exit_status == 0:
+        print("Work chain is finished correctly.")
     else:
-        print("ERROR!")
-        print("Work chain failure was not recognized.")
+        print("ERROR! Work chain failed.")
         sys.exit(3)
 
 

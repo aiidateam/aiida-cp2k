@@ -5,7 +5,7 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Run simple DFT calculation through a workchain."""
+"""An example testing the restart calculation handler for geo_opt run in CP2K."""
 
 import os
 import sys

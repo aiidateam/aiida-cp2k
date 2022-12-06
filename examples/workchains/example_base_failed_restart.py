@@ -116,11 +116,10 @@ def example_base(cp2k_code):
             "num_mpiprocs_per_machine": 1,
         },
         "max_wallclock_seconds": 1 * 1 * 60,  # 30 min
-        # "withmpi": True,  # A trick to put the kill below before raspa command.
         "mpirun_extra_params": [
             "timeout",
             "1",
-        ],  # Kill the calculation after 5 seconds, to test restart.
+        ],  # Kill the calculation after 5 seconds to test the restart failure.
     }
 
     # builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 1 *60

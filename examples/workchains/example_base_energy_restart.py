@@ -48,7 +48,7 @@ def example_base(cp2k_code):
         {
             "GLOBAL": {
                 "RUN_TYPE": "ENERGY",
-                "WALLTIME": "00:00:05",  # Can't even do one geo opt step.
+                "WALLTIME": "00:00:05",  # Not enough time to converge an SCF loop
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",

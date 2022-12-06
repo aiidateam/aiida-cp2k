@@ -5,7 +5,7 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""An example that fails due to lack of restart data."""
+"""An example testing the restart calculation handler for geo_opt run in CP2K."""
 
 import os
 import sys
@@ -13,7 +13,7 @@ import sys
 import ase.io
 import click
 from aiida.common import NotExistent
-from aiida.engine import run_get_node
+from aiida.engine import run
 from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory, WorkflowFactory
 
@@ -47,7 +47,8 @@ def example_base(cp2k_code):
     parameters = Dict(
         {
             "GLOBAL": {
-                "RUN_TYPE": "ENERGY",
+                "RUN_TYPE": "GEO_OPT",
+                "WALLTIME": "00:00:30",  # too short
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
@@ -55,14 +56,14 @@ def example_base(cp2k_code):
                     "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
                     "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
                     "QS": {
-                        "EPS_DEFAULT": 1.0e-16,
+                        "EPS_DEFAULT": 1.0e-12,
                         "WF_INTERPOLATION": "ps",
                         "EXTRAPOLATION_ORDER": 3,
                     },
                     "MGRID": {
                         "NGRIDS": 4,
-                        "CUTOFF": 450,
-                        "REL_CUTOFF": 70,
+                        "CUTOFF": 280,
+                        "REL_CUTOFF": 30,
                     },
                     "XC": {
                         "XC_FUNCTIONAL": {
@@ -109,25 +110,21 @@ def example_base(cp2k_code):
         "basis": basis_file,
         "pseudo": pseudo_file,
     }
-    builder.cp2k.metadata.options = {
-        "resources": {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 1,
-        },
-        "max_wallclock_seconds": 1 * 1 * 60,  # 30 min
-        "mpirun_extra_params": [
-            "timeout",
-            "1",
-        ],  # Kill the calculation after 1 second to test the restart failure.
+    builder.cp2k.metadata.options.resources = {
+        "num_machines": 1,
+        "num_mpiprocs_per_machine": 1,
     }
-    print("Submitted calculation...")
-    _, process_node = run_get_node(builder)
+    builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
-    if process_node.exit_status == 400:
-        print("Work chain failure correctly recognized.")
+    print("Submitted calculation...")
+    calc = run(builder)
+
+    if "EXT_RESTART" in calc["final_input_parameters"].dict:
+        print("OK, EXT_RESTART section is present in the final_input_parameters.")
     else:
-        print("ERROR!")
-        print("Work chain failure was not recognized.")
+        print(
+            "ERROR, EXT_RESTART section is NOT present in the final_input_parameters."
+        )
         sys.exit(3)
 
 

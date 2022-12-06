@@ -48,7 +48,7 @@ def example_base(cp2k_code):
         {
             "GLOBAL": {
                 "RUN_TYPE": "ENERGY",
-                "WALLTIME": "00:00:05",  # Not enough time to converge an SCF loop
+                "WALLTIME": "00:00:30",  # Not enough time to converge an SCF loop
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
@@ -115,10 +115,8 @@ def example_base(cp2k_code):
             "num_machines": 1,
             "num_mpiprocs_per_machine": 1,
         },
-        "max_wallclock_seconds": 1 * 1 * 60,  # 30 min
+        "max_wallclock_seconds": 1 * 1 * 60,
     }
-
-    # builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 1 *60
 
     print("Submitted calculation...")
     _, process_node = run_get_node(builder)

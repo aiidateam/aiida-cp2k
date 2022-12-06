@@ -48,7 +48,6 @@ def example_base(cp2k_code):
         {
             "GLOBAL": {
                 "RUN_TYPE": "ENERGY",
-                "WALLTIME": "00:00:05",  # Can't even do one geo opt step.
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
@@ -121,9 +120,6 @@ def example_base(cp2k_code):
             "1",
         ],  # Kill the calculation after 5 seconds to test the restart failure.
     }
-
-    # builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 1 *60
-
     print("Submitted calculation...")
     _, process_node = run_get_node(builder)
 

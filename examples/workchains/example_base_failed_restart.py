@@ -118,7 +118,7 @@ def example_base(cp2k_code):
         "mpirun_extra_params": [
             "timeout",
             "1",
-        ],  # Kill the calculation after 5 seconds to test the restart failure.
+        ],  # Kill the calculation after 1 second to test the restart failure.
     }
     print("Submitted calculation...")
     _, process_node = run_get_node(builder)

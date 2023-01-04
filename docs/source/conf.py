@@ -360,4 +360,5 @@ nitpick_ignore = [
     ("py:class", "utils.AttributesFrozendict"),
     ("py:class", "State"),
     ("py:class", "Stepper"),
+    ("py:class", "CalcJobNode"),
 ]

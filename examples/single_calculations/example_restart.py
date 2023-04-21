@@ -117,7 +117,7 @@ def example_restart(cp2k_code):
         "num_machines": 1,
         "num_mpiprocs_per_machine": 1,
     }
-    builder.metadata.options.max_wallclock_seconds = 1 * 2 * 60
+    builder.metadata.options.max_wallclock_seconds = 1 * 5 * 60
 
     print("Submitted calculation 1.")
     calc1_outputs, calc1 = run_get_node(builder)

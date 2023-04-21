@@ -193,7 +193,7 @@ def example_bands(cp2k_code):
         "num_machines": 1,
         "num_mpiprocs_per_machine": 1,
     }
-    builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
+    builder.metadata.options.max_wallclock_seconds = 1 * 5 * 60
 
     builder.metadata.options.parser_name = "cp2k_advanced_parser"
 

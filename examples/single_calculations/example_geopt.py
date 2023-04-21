@@ -104,7 +104,7 @@ def example_geopt(cp2k_code):
         "num_machines": 1,
         "num_mpiprocs_per_machine": 1,
     }
-    builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
+    builder.metadata.options.max_wallclock_seconds = 1 * 5 * 60
 
     print("Submitted calculation...")
     calc = run(builder)

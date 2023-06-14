@@ -6,6 +6,7 @@
 ###############################################################################
 """Test output parser."""
 from pathlib import Path
+
 import pytest
 
 from aiida_cp2k.utils.parser import (
@@ -91,11 +92,11 @@ bsse_output_v5_1_result = {"exceeded_walltime": False, "nwarnings": 0}
         ("OT_v9.1.out", ot_v9_1_out_result),
     ],
 )
-def test_cp2k_output_parser(output_file, result_dict):
+def test_cp2k_output_parser(output_file, reference_dict):
     with open(THISDIR / "outputs" / output_file) as fobj:
         lines = fobj.read()
-        result_dict = parse_cp2k_output(lines)
-        assert dict_is_subset(cdft_dos_cp2k_6_0_out_result, result_dict)
+        reference_dict = parse_cp2k_output(lines)
+        assert dict_is_subset(cdft_dos_cp2k_6_0_out_result, reference_dict)
 
 
 bands_output_v5_1_out_advanced_result = {
@@ -703,7 +704,7 @@ def test_cp2k_output_advanced(output_file, reference_dict):
     """Test parse_cp2k_advanced output"""
     with open(THISDIR / "outputs" / "cdft_dos_cp2k_6.0.out") as fobj:
         lines = fobj.read()
-        result = parse_cp2k_advanced(lines)
+        result = parse_cp2k_output_advanced(lines)
         assert dict_is_subset(reference_dict, result)
 
 

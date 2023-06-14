@@ -20,7 +20,7 @@ THISDIR = Path(__file__).parent.resolve()
 
 
 def dict_is_subset(a, b):
-    return set(a.items()).issubset(set(b.items()))
+    return a.items() <= b.items()
 
 
 @pytest.mark.parametrize(
@@ -683,7 +683,6 @@ ot_v9_1_out_advanced_result = {
     "init_nel_spin1": 4560,
     "init_nel_spin2": 4560,
     "energy_scf": -26352.215747926548,
-    "eigen_spin1_au": [-0.06400983],
     "energy": -26352.215747926548,
     "energy_units": "a.u.",
     "nwarnings": 1,

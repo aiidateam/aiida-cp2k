@@ -101,7 +101,6 @@ def parse_cp2k_output_advanced(
             result_dict["smear_method"] = line.split()[-1]
 
         if "subspace spin" in line and "owest" not in line:
-            print(line)
             if int(line.split()[-1]) == 1:
                 line_is = "eigen_spin1_au"
                 if "eigen_spin1_au" not in result_dict.keys():
@@ -124,7 +123,6 @@ def parse_cp2k_output_advanced(
 
         # If a tag has been detected, now read the following line knowing what they are
         if line_is is not None:
-            print("line_is", line_is, line)
             # Read eigenvalues as 4-columns row, then convert to float
             if line_is in ["eigen_spin1_au", "eigen_spin2_au"]:
                 splitted_line = line.split()

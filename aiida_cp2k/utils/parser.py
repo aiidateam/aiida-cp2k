@@ -126,7 +126,7 @@ def parse_cp2k_output_advanced(
             # Read eigenvalues as 4-columns row, then convert to float
             if line_is in ["eigen_spin1_au", "eigen_spin2_au"]:
                 if re.search(r"-------------", line) or re.search(
-                    r"Reached convergence", line
+                    r"eached convergence", line
                 ):
                     continue
                 if line.split() and len(line.split()) <= 4:

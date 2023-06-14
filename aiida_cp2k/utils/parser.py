@@ -100,7 +100,8 @@ def parse_cp2k_output_advanced(
         if re.search("Smear method", line):
             result_dict["smear_method"] = line.split()[-1]
 
-        if re.search(r"subspace spin", line):
+        if "subspace spin" in line and "owest" not in line:
+            print(line)
             if int(line.split()[-1]) == 1:
                 line_is = "eigen_spin1_au"
                 if "eigen_spin1_au" not in result_dict.keys():
@@ -123,16 +124,17 @@ def parse_cp2k_output_advanced(
 
         # If a tag has been detected, now read the following line knowing what they are
         if line_is is not None:
+            print("line_is", line_is, line)
             # Read eigenvalues as 4-columns row, then convert to float
             if line_is in ["eigen_spin1_au", "eigen_spin2_au"]:
-                if re.search(r"-------------", line) or re.search(
-                    r"eached convergence", line
-                ):
-                    continue
-                if line.split() and len(line.split()) <= 4:
-                    result_dict[line_is] += [float(x) for x in line.split()]
-                else:
-                    line_is = None
+                splitted_line = line.split()
+                try:
+                    result_dict[line_is] += [float(x) for x in splitted_line]
+                except ValueError:
+                    if "fermi energy" in line.lower():
+                        line_is = None
+                    else:
+                        continue
 
         ####################################################################
         #  THIS SECTION PARSES THE PROPERTIES AT GOE_OPT/CELL_OPT/MD STEP  #

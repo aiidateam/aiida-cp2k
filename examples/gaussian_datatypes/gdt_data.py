@@ -74,7 +74,9 @@ def load_data(prefix="MY-"):
             p.element: p
             for p in Pseudo.from_cp2k(fhandle_pseudo, duplicate_handling="error")
         }
-    except UniquenessError:  # if the user already ran the script, fetch the data from the db instead
+    except (
+        UniquenessError
+    ):  # if the user already ran the script, fetch the data from the db instead
         bsets = {
             "H": BasisSet.get("H", f"{prefix}AUTO-DZVP-MOLOPT-GTH"),
             "O": BasisSet.get("O", f"{prefix}AUTO-DZVP-MOLOPT-SR-GTH"),

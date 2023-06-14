@@ -95,8 +95,8 @@ bsse_output_v5_1_result = {"exceeded_walltime": False, "nwarnings": 0}
 def test_cp2k_output_parser(output_file, reference_dict):
     with open(THISDIR / "outputs" / output_file) as fobj:
         lines = fobj.read()
-        reference_dict = parse_cp2k_output(lines)
-        assert dict_is_subset(cdft_dos_cp2k_6_0_out_result, reference_dict)
+        parsed_dict = parse_cp2k_output(lines)
+        assert dict_is_subset(reference_dict, parsed_dict)
 
 
 bands_output_v5_1_out_advanced_result = {
@@ -701,10 +701,10 @@ ot_v9_1_out_advanced_result = {
 )
 def test_cp2k_output_advanced(output_file, reference_dict):
     """Test parse_cp2k_advanced output"""
-    with open(THISDIR / "outputs" / "cdft_dos_cp2k_6.0.out") as fobj:
+    with open(THISDIR / "outputs" / output_file) as fobj:
         lines = fobj.read()
-        result = parse_cp2k_output_advanced(lines)
-        assert dict_is_subset(reference_dict, result)
+        parsed_dict = parse_cp2k_output_advanced(lines)
+        assert dict_is_subset(reference_dict, parsed_dict)
 
 
 def test_trajectory_parser_pbc():

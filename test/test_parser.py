@@ -16,7 +16,8 @@ from aiida_cp2k.utils.parser import (
     parse_cp2k_trajectory,
 )
 
-THISDIR = Path(__file__).parent.resolve()
+THIS_DIR = Path(__file__).parent.resolve()
+OUTPUTS_DIR = THIS_DIR / "outputs"
 
 
 def dict_is_subset(a, b):
@@ -31,7 +32,7 @@ def dict_is_subset(a, b):
     ],
 )
 def test_bands_parser(output_file):
-    with open({THISDIR} / "outputs" / output_file) as fobj:
+    with open(OUTPUTS_DIR / output_file) as fobj:
         lines = fobj.readlines()
         for i_line, line in enumerate(lines):
             if "KPOINTS| Band Structure Calculation" in line:
@@ -93,7 +94,7 @@ bsse_output_v5_1_result = {"exceeded_walltime": False, "nwarnings": 0}
     ],
 )
 def test_cp2k_output_parser(output_file, reference_dict):
-    with open(THISDIR / "outputs" / output_file) as fobj:
+    with open(OUTPUTS_DIR / output_file) as fobj:
         lines = fobj.read()
         parsed_dict = parse_cp2k_output(lines)
         assert dict_is_subset(reference_dict, parsed_dict)
@@ -701,7 +702,7 @@ ot_v9_1_out_advanced_result = {
 )
 def test_cp2k_output_advanced(output_file, reference_dict):
     """Test parse_cp2k_advanced output"""
-    with open(THISDIR / "outputs" / output_file) as fobj:
+    with open(OUTPUTS_DIR / output_file) as fobj:
         lines = fobj.read()
         parsed_dict = parse_cp2k_output_advanced(lines)
         assert dict_is_subset(reference_dict, parsed_dict)
@@ -721,7 +722,7 @@ def test_trajectory_parser_pbc():
     ]
 
     for file, boundary_cond in zip(files, boundary_conditions):
-        with open(f"{THISDIR}/outputs/{file}") as fobj:
+        with open(OUTPUTS_DIR / file) as fobj:
             content = fobj.read()
             structure_data = parse_cp2k_trajectory(content)
 

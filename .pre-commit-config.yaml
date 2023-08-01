@@ -23,7 +23,7 @@ repos:
           exclude: aiida_cp2k/workchains/base.py
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
+    rev: 6.1.0
     hooks:
         - id: flake8
           args: [--count, --show-source, --statistics]
@@ -35,7 +35,7 @@ repos:
           args: [--profile, black, --filter-files]
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.9.0
+    rev: v3.10.1
     hooks:
         - id: pyupgrade
           args: [--py37-plus]

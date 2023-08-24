@@ -6,12 +6,14 @@
 ###############################################################################
 """AiiDA-CP2K input plugin."""
 
+import json
 from operator import add
 
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 from aiida.engine import CalcJob
 from aiida.orm import Dict, RemoteData, SinglefileData
 from aiida.plugins import DataFactory
+from upf_to_json import upf_to_json
 
 from ..utils import Cp2kInput
 from ..utils.datatype_helpers import (
@@ -26,6 +28,7 @@ from ..utils.datatype_helpers import (
 BandsData = DataFactory("core.array.bands")
 StructureData = DataFactory("core.structure")
 KpointsData = DataFactory("core.array.kpoints")
+UpfData = DataFactory("pseudo.upf")
 
 
 class Cp2kCalculation(CalcJob):
@@ -103,6 +106,14 @@ class Cp2kCalculation(CalcJob):
                 " for a single symbol are passed, it is mandatory to specify a KIND section with a PSEUDOPOTENTIAL"
                 " keyword matching the names (or aliases) of the pseudopotentials."
             ),
+        )
+
+        spec.input_namespace(
+            "pseudos_upf",
+            valid_type=UpfData,
+            dynamic=True,
+            required=True,
+            help="A mapping of `UpfData` nodes onto the kind name to which they should apply.",
         )
 
         # Specify default parser.
@@ -264,6 +275,12 @@ class Cp2kCalculation(CalcJob):
                 self.inputs.structure if "structure" in self.inputs else None,
             )
             write_pseudos(inp, self.inputs.pseudos, folder)
+
+        if "pseudos_upf" in self.inputs:
+            for atom_kind, pseudo in self.inputs.pseudos_upf.items():
+                pseudo_dict = upf_to_json(pseudo.get_content(), atom_kind)
+                with folder.open(atom_kind + ".json", "w") as fobj:
+                    fobj.write(json.dumps(pseudo_dict, indent=2))
 
         # Kpoints.
         if "kpoints" in self.inputs:

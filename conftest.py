@@ -1,13 +1,11 @@
-"""
-For pytest initialise a test database and profile
-"""
+"""For pytest initialise a test database and profile."""
 import pytest
 
-pytest_plugins = ["aiida.manage.tests.pytest_fixtures"]  # pylint: disable=invalid-name
+pytest_plugins = ["aiida.manage.tests.pytest_fixtures"]
 
 
 @pytest.fixture(scope="function")
-def cp2k_code(aiida_local_code_factory):  # pylint: disable=unused-argument
+def cp2k_code(aiida_local_code_factory):
     return aiida_local_code_factory("cp2k", "cp2k")
 
 
@@ -18,13 +16,13 @@ def clear_database(aiida_profile_clean):
 
 # from https://stackoverflow.com/a/25188424
 # required for examples for optional features to show appropriate error messages
-def pytest_configure(config):  # pylint: disable=unused-argument
+def pytest_configure(config):
     import sys
 
-    sys._called_from_test = True  # pylint: disable=protected-access
+    sys._called_from_test = True
 
 
-def pytest_unconfigure(config):  # pylint: disable=unused-argument
+def pytest_unconfigure(config):
     import sys
 
-    del sys._called_from_test  # pylint: disable=protected-access
+    del sys._called_from_test

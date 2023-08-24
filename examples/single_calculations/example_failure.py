@@ -1,4 +1,3 @@
-# pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -58,4 +57,4 @@ def cli(codelabel):
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable=no-value-for-parameter
+    cli()

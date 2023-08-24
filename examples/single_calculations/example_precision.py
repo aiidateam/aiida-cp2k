@@ -1,4 +1,3 @@
-# pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -18,7 +17,7 @@ from aiida.engine import run
 from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")
 
 
 def example_precision(cp2k_code):
@@ -144,4 +143,4 @@ def cli(codelabel):
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable=no-value-for-parameter
+    cli()

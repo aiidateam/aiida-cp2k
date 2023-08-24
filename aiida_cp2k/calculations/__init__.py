@@ -23,9 +23,9 @@ from ..utils.datatype_helpers import (
     write_pseudos,
 )
 
-BandsData = DataFactory("core.array.bands")  # pylint: disable=invalid-name
-StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
-KpointsData = DataFactory("core.array.kpoints")  # pylint: disable=invalid-name
+BandsData = DataFactory("core.array.bands")
+StructureData = DataFactory("core.structure")
+KpointsData = DataFactory("core.array.kpoints")
 
 
 class Cp2kCalculation(CalcJob):
@@ -214,8 +214,6 @@ class Cp2kCalculation(CalcJob):
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
-
-        # pylint: disable=too-many-statements,too-many-branches
 
         # Create cp2k input file.
         inp = Cp2kInput(self.inputs.parameters.get_dict())

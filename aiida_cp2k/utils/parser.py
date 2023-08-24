@@ -28,7 +28,7 @@ def parse_cp2k_output(fstring):
 
 def parse_cp2k_output_advanced(
     fstring,
-):  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
+):
     """Parse CP2K output into a dictionary (ADVANCED: more info parsed @ PRINT_LEVEL MEDIUM)."""
     lines = fstring.splitlines()
 
@@ -380,8 +380,7 @@ def parse_cp2k_trajectory(content):
 
     import numpy as np
 
-    # pylint: disable=protected-access
-    # parse coordinate section
+    # Parse coordinate section
     match = re.search(r"\n\s*&COORD\n(.*?)\n\s*&END COORD\n", content, re.DOTALL)
     coord_lines = [line.strip().split() for line in match.group(1).splitlines()]
 

@@ -19,7 +19,6 @@ from aiida.plugins import CalculationFactory, DataFactory
 # Note: the basissets and pseudos deliberately have a prefix to avoid matching
 #       any CP2K provided entries which may creep in via the DATA_DIR
 
-# pylint: disable=line-too-long, redefined-outer-name
 BSET_DATA = {
     "simple": """\
  H  MY-DZVP-MOLOPT-GTH MY-DZVP-MOLOPT-GTH-q1
@@ -104,7 +103,7 @@ def bsdataset():
 def cp2k_basissets(bsdataset):
     """Returns basisset objects from the data above"""
     fhandle = StringIO(BSET_DATA[bsdataset])
-    BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
+    BasisSet = DataFactory("gaussian.basisset")
     bsets = {}
     for bset in BasisSet.from_cp2k(fhandle):
         bset.store()  # store because the validator accesses it when raising an error
@@ -129,13 +128,11 @@ def pdataset():
 def cp2k_pseudos(pdataset):
     """Returns pseudo objects from the data above"""
     fhandle = StringIO(PSEUDO_DATA[pdataset])
-    Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
+    Pseudo = DataFactory("gaussian.pseudo")
     return {p.element: p for p in Pseudo.from_cp2k(fhandle)}
 
 
-def test_validation(
-    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
-):  # pylint: disable=unused-argument
+def test_validation(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
     """Testing CP2K with the Basis Set stored in gaussian.basisset"""
 
     # structure
@@ -194,9 +191,7 @@ def test_validation(
     assert calc_node.exit_status == 0
 
 
-def test_validation_fail(
-    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
-):  # pylint: disable=unused-argument
+def test_validation_fail(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
     """Testing CP2K with the Basis Set stored in gaussian.basisset but missing one"""
 
     # structure
@@ -261,9 +256,7 @@ def test_validation_fail(
 
 
 @pytest.mark.parametrize("bsdataset", ["multiple_o"])
-def test_validation_unused(
-    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
-):  # pylint: disable=unused-argument
+def test_validation_unused(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
     """Pass more basissets than used in the input configuration"""
 
     # structure
@@ -326,9 +319,7 @@ def test_validation_unused(
     assert "not referenced" in str(exc_info.value.__context__)
 
 
-def test_validation_mfe_noauto(
-    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
-):  # pylint: disable=unused-argument
+def test_validation_mfe_noauto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
     """Test that multiple FORCE_EVAL without explicit assignment is rejected"""
 
     # structure
@@ -501,9 +492,7 @@ def test_validation_mfe_noauto(
     )
 
 
-def test_validation_mfe(
-    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
-):  # pylint: disable=unused-argument
+def test_validation_mfe(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
     """Test that multiple FORCE_EVAL with explicit assignment is accepted"""
 
     # structure
@@ -679,9 +668,7 @@ def test_validation_mfe(
     assert calc_node.exit_status == 0
 
 
-def test_without_kinds(
-    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
-):  # pylint: disable=unused-argument
+def test_without_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
     """Testing CP2K with the Basis Set stored in gaussian.basisset but without a KIND section"""
 
     # structure
@@ -726,9 +713,7 @@ def test_without_kinds(
     assert calc_node.exit_status == 0
 
 
-def test_multiple_kinds(
-    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
-):  # pylint: disable=unused-argument
+def test_multiple_kinds(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
     """Testing CP2K with multiple KIND sections for the same symbol"""
 
     # structure
@@ -821,9 +806,7 @@ def test_multiple_kinds(
     ), "More than the expected 2 &KIND H sections found in generated input"
 
 
-def test_multiple_kinds_auto(
-    cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database
-):  # pylint: disable=unused-argument
+def test_multiple_kinds_auto(cp2k_code, cp2k_basissets, cp2k_pseudos, clear_database):
     """Testing CP2K with multiple KIND sections for the same symbol, auto-assigned"""
 
     # structure

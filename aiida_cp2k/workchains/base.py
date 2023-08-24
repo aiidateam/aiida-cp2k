@@ -12,7 +12,7 @@ from aiida.plugins import CalculationFactory
 
 from ..utils import add_ext_restart_section, add_wfn_restart_section
 
-Cp2kCalculation = CalculationFactory('cp2k')  # pylint: disable=invalid-name
+Cp2kCalculation = CalculationFactory('cp2k')
 
 
 class Cp2kBaseWorkChain(BaseRestartWorkChain):
@@ -81,7 +81,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
                         "Sending a signal to stop the Base work chain.")
 
             # Signaling to the base work chain that the problem could not be recovered.
-            return ProcessHandlerReport(True, self.exit_codes.NO_RESTART_DATA)  # pylint: disable=no-member
+            return ProcessHandlerReport(True, self.exit_codes.NO_RESTART_DATA)
 
         self.ctx.inputs.parent_calc_folder = calc.outputs.remote_folder
         params = self.ctx.inputs.parameters

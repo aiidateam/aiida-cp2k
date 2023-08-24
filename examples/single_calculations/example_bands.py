@@ -1,4 +1,3 @@
-# pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -18,8 +17,8 @@ from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory
 from ase.atoms import Atoms
 
-StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
-KpointsData = DataFactory("core.array.kpoints")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")
+KpointsData = DataFactory("core.array.kpoints")
 
 
 def example_bands(cp2k_code):
@@ -241,4 +240,4 @@ def cli(codelabel):
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable=no-value-for-parameter
+    cli()

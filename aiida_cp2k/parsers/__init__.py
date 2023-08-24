@@ -18,8 +18,8 @@ from aiida_cp2k import utils
 
 # -
 
-StructureData = DataFactory("core.structure")  # pylint: disable=invalid-name
-BandsData = DataFactory("core.array.bands")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")
+BandsData = DataFactory("core.array.bands")
 
 
 class Cp2kBaseParser(Parser):
@@ -71,9 +71,7 @@ class Cp2kBaseParser(Parser):
 
         from ase import Atoms
 
-        fname = (
-            self.node.process_class._DEFAULT_RESTART_FILE_NAME
-        )  # pylint: disable=protected-access
+        fname = self.node.process_class._DEFAULT_RESTART_FILE_NAME
 
         # Check if the restart file is present.
         if fname not in self.retrieved.base.repository.list_object_names():

@@ -136,7 +136,6 @@ def validate_basissets(inp, basissets, structure):
     listed in a KIND section, or none of them are, at which point they're
     verified against the symbols in the structure.
     """
-    # pylint: disable=too-many-branches,too-many-statements
 
     # convert a structure
     #   {
@@ -293,8 +292,6 @@ def validate_pseudos_namespace(pseudos, _):
 
 def validate_pseudos(inp, pseudos, structure):
     """Verify that all referenced pseudos are present in the input"""
-
-    # pylint: disable=too-many-branches,too-many-statements
 
     pseudos_specified = {pseudo for _, pseudo in _unpack(pseudos)}
     pseudos_used = set()

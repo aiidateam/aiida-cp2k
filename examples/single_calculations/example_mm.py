@@ -1,4 +1,3 @@
-# pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -45,9 +44,7 @@ def example_mm(cp2k_code):
     END"""
         )
 
-    water_pot = SinglefileData(
-        file=os.path.join("/tmp", "water.pot")
-    )  # pylint: disable=no-value-for-parameter
+    water_pot = SinglefileData(file=os.path.join("/tmp", "water.pot"))
 
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -148,4 +145,4 @@ def cli(codelabel):
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable=no-value-for-parameter
+    cli()

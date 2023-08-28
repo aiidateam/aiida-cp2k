@@ -30,7 +30,7 @@ def example_sirius(cp2k_code):
 
     # Parameters.
     parameters = orm.Dict(
-        {
+        dict={
             "FORCE_EVAL": {
                 "METHOD": "SIRIUS",
                 "STRESS_TENSOR": "ANALYTICAL",

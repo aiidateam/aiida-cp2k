@@ -25,7 +25,7 @@ dependencies = [
     "ase",
     "ruamel.yaml>=0.16.5",
     "cp2k-output-tools",
-    "aiida-pseudo~=1.2",
+    "aiida-pseudo~=0.6",
     "upf-to-json>=0.9",
 ]
 

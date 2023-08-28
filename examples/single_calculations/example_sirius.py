@@ -13,7 +13,7 @@ import ase.io
 import click
 from aiida import common, engine, orm, plugins
 
-StructureData = plugins.DataFactory("core.structure")
+StructureData = plugins.DataFactory("structure")
 
 
 def example_sirius(cp2k_code):
@@ -98,7 +98,7 @@ def example_sirius(cp2k_code):
     builder.structure = structure
     builder.parameters = parameters
     builder.code = cp2k_code
-    pseudo_family = orm.load_group("SSSP/1.3/PBE/efficiency")
+    pseudo_family = orm.load_group("SSSP/1.2/PBE/efficiency")
     builder.pseudos_upf = pseudo_family.get_pseudos(structure=structure)
     builder.metadata.options.resources = {
         "num_machines": 1,

@@ -3,8 +3,8 @@
 # rather than using the flake8 default of 79:
 max-line-length = 88
 extend-ignore =
-    E501  # Line length handled by black.
-    W503  # Line break before binary operator, preferred formatting for black.
-    E203  # Whitespace before ':', preferred formatting for black.
+    E501
+    W503
+    E203
 exclude =
     docs/source/conf.py

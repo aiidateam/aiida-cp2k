@@ -49,7 +49,6 @@ jobs:
         export DOCKERID=`docker run -d aiida_cp2k_test`
         docker exec --tty $DOCKERID wait-for-services
         docker logs $DOCKERID
-        docker exec --tty --user aiida $DOCKERID /bin/bash -l -c 'aiida-pseudo install sssp -v 1.2 -x PBE -p efficiency'
         docker exec --tty --user aiida $DOCKERID /bin/bash -l -c 'cd /opt/aiida-cp2k/ && py.test --cov aiida_cp2k --cov-append .'
 
 

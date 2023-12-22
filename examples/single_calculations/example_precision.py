@@ -63,7 +63,7 @@ def example_precision(cp2k_code):
                     "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
                     "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
                     "SCF": {
-                        "MAX_SCF": 1,
+                        "MAX_SCF": 10,
                     },
                     "XC": {
                         "XC_FUNCTIONAL": {

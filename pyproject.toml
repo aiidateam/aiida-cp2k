@@ -40,7 +40,7 @@ dev = [
     "pytest~=6.0",
     "pytest-cov~=2.11.1",
     "coverage",
-    "pre-commit~=2.19",
+    "pre-commit~=3.6",
 ]
 docs = [
     "sphinx",

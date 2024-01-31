@@ -13,12 +13,9 @@ from copy import deepcopy
 
 import ase.io
 import click
-from aiida.common import NotExistent
-from aiida.engine import run, run_get_node
-from aiida.orm import Dict, SinglefileData, load_code
-from aiida.plugins import DataFactory
+from aiida import common, engine, orm, plugins
 
-StructureData = DataFactory("core.structure")
+StructureData = plugins.DataFactory("core.structure")
 
 
 def example_restart(cp2k_code):
@@ -34,17 +31,17 @@ def example_restart(cp2k_code):
     )
 
     # Basis set.
-    basis_file = SinglefileData(
+    basis_file = orm.SinglefileData(
         file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT")
     )
 
     # Pseudopotentials.
-    pseudo_file = SinglefileData(
+    pseudo_file = orm.SinglefileData(
         file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS")
     )
 
     # CP2K input.
-    params1 = Dict(
+    params1 = orm.Dict(
         {
             "GLOBAL": {
                 "RUN_TYPE": "GEO_OPT",
@@ -100,7 +97,6 @@ def example_restart(cp2k_code):
         }
     )
 
-    # ------------------------------------------------------------------------------
     # Construct process builder.
     builder = cp2k_code.get_builder()
 
@@ -119,7 +115,7 @@ def example_restart(cp2k_code):
     builder.metadata.options.max_wallclock_seconds = 1 * 2 * 60
 
     print("Submitted calculation 1.")
-    calc1_outputs, calc1 = run_get_node(builder)
+    calc1_outputs, calc1 = engine.run_get_node(builder)
 
     # Check walltime exceeded.
     if calc1.exit_status == 400:
@@ -128,7 +124,10 @@ def example_restart(cp2k_code):
         print("FAIL, walltime wasn't exceeded as it should.")
         sys.exit(1)
 
-    # ------------------------------------------------------------------------------
+    print(calc1_outputs)
+    assert "output_structure" in calc1_outputs
+    print("OK, output_structure is present, even though the calculation has failed.")
+
     # Set up and start the second calculation.
 
     # Parameters.
@@ -139,7 +138,7 @@ def example_restart(cp2k_code):
     params2["FORCE_EVAL"]["DFT"]["RESTART_FILE_NAME"] = restart_wfn_fn
     params2["FORCE_EVAL"]["DFT"]["SCF"]["SCF_GUESS"] = "RESTART"
     params2["EXT_RESTART"] = {"RESTART_FILE_NAME": "./parent_calc/aiida-1.restart"}
-    params2 = Dict(params2)
+    params2 = orm.Dict(params2)
 
     # Structure.
     atoms2 = ase.io.read(os.path.join(thisdir, "..", "files", "h2o.xyz"))
@@ -152,7 +151,7 @@ def example_restart(cp2k_code):
     builder.parent_calc_folder = calc1_outputs["remote_folder"]
 
     print("Submitted calculation 2.")
-    calc2 = run(builder)
+    calc2 = engine.run(builder)
 
     # Check energy.
     expected_energy = -17.1566455959
@@ -169,8 +168,8 @@ def example_restart(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = load_code(codelabel)
-    except NotExistent:
+        code = orm.load_code(codelabel)
+    except common.NotExistent:
         print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)
     example_restart(code)

@@ -6,23 +6,16 @@
 ###############################################################################
 """AiiDA-CP2K output parser."""
 
-from aiida.common import exceptions
-from aiida.engine import ExitCode
-from aiida.orm import Dict
+import ase
+from aiida import common, engine, orm, parsers, plugins
 
-# +
-from aiida.parsers import Parser
-from aiida.plugins import DataFactory
+from .. import utils
 
-from aiida_cp2k import utils
-
-# -
-
-StructureData = DataFactory("core.structure")
-BandsData = DataFactory("core.array.bands")
+StructureData = plugins.DataFactory("core.structure")
+BandsData = plugins.DataFactory("core.array.bands")
 
 
-class Cp2kBaseParser(Parser):
+class Cp2kBaseParser(parsers.Parser):
     """Basic AiiDA parser for the output of CP2K."""
 
     def parse(self, **kwargs):
@@ -30,23 +23,25 @@ class Cp2kBaseParser(Parser):
 
         try:
             _ = self.retrieved
-        except exceptions.NotExistent:
+        except common.NotExistent:
             return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
         exit_code = self._parse_stdout()
+
+        # Even though the simpulation might have failed, we still want to parse the output structure.
+        try:
+            last_structure = self._parse_final_structure()
+            if isinstance(last_structure, StructureData):
+                self.out("output_structure", last_structure)
+        except common.NotExistent:
+            last_structure = None
+            self.logger.warning("No Restart file found in the retrieved folder.")
+
         if exit_code is not None:
             return exit_code
-
-        try:
-            returned = self._parse_trajectory()
-            if isinstance(returned, StructureData):
-                self.out("output_structure", returned)
-            else:  # in case this is an error code
-                return returned
-        except exceptions.NotExistent:
-            pass
-
-        return ExitCode(0)
+        if isinstance(last_structure, engine.ExitCode):
+            return last_structure
+        return engine.ExitCode(0)
 
     def _parse_stdout(self):
         """Basic CP2K output file parser."""
@@ -63,19 +58,16 @@ class Cp2kBaseParser(Parser):
 
         # Parse the standard output.
         result_dict = utils.parse_cp2k_output(output_string)
-        self.out("output_parameters", Dict(dict=result_dict))
+        self.out("output_parameters", orm.Dict(dict=result_dict))
         return None
 
-    def _parse_trajectory(self):
+    def _parse_final_structure(self):
         """CP2K trajectory parser."""
-
-        from ase import Atoms
-
         fname = self.node.process_class._DEFAULT_RESTART_FILE_NAME
 
         # Check if the restart file is present.
         if fname not in self.retrieved.base.repository.list_object_names():
-            raise exceptions.NotExistent(
+            raise common.NotExistent(
                 "No restart file available, so the output trajectory can't be extracted"
             )
 
@@ -85,7 +77,9 @@ class Cp2kBaseParser(Parser):
         except OSError:
             return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
-        return StructureData(ase=Atoms(**utils.parse_cp2k_trajectory(output_string)))
+        return StructureData(
+            ase=ase.Atoms(**utils.parse_cp2k_trajectory(output_string))
+        )
 
     def _check_stdout_for_errors(self, output_string):
         """This function checks the CP2K output file for some basic errors."""
@@ -169,7 +163,7 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
             )
             self.out("output_bands", bnds)
 
-        self.out("output_parameters", Dict(dict=result_dict))
+        self.out("output_parameters", orm.Dict(dict=result_dict))
         return None
 
 
@@ -208,5 +202,5 @@ class Cp2kToolsParser(Cp2kBaseParser):
         except KeyError:
             pass
 
-        self.out("output_parameters", Dict(dict=result_dict))
+        self.out("output_parameters", orm.Dict(dict=result_dict))
         return None

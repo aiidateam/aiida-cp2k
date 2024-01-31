@@ -9,6 +9,8 @@
 import math
 import re
 
+import numpy as np
+
 
 def parse_cp2k_output(fstring):
     """Parse CP2K output into a dictionary."""
@@ -323,8 +325,6 @@ def _parse_bands_cp2k_greater_81(lines, line_n):
 def _parse_bands(lines, n_start, cp2k_version):
     """Parse band structure from the CP2K output."""
 
-    import numpy as np
-
     kpoints = []
     labels = []
     bands_s1 = []
@@ -377,9 +377,6 @@ def _parse_bands(lines, n_start, cp2k_version):
 
 def parse_cp2k_trajectory(content):
     """CP2K trajectory parser."""
-
-    import numpy as np
-
     # Parse coordinate section
     match = re.search(r"\n\s*&COORD\n(.*?)\n\s*&END COORD\n", content, re.DOTALL)
     coord_lines = [line.strip().split() for line in match.group(1).splitlines()]

@@ -34,6 +34,7 @@ class Cp2kBaseParser(parsers.Parser):
             if isinstance(last_structure, StructureData):
                 self.out("output_structure", last_structure)
         except common.NotExistent:
+            last_structure = None
             self.logger.warning("No Restart file found in the retrieved folder.")
 
         if exit_code is not None:

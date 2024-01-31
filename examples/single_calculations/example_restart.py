@@ -125,7 +125,7 @@ def example_restart(cp2k_code):
         sys.exit(1)
 
     print(calc1_outputs)
-    assert "output_structure" in calc1_outputs
+    assert "output_structure" in calc1_outputs, "The output_structure is missing."
     print("OK, output_structure is present, even though the calculation has failed.")
 
     # Set up and start the second calculation.
@@ -160,7 +160,9 @@ def example_restart(cp2k_code):
 
     # Ensure that this warning originates from overwritting coordinates.
     output = calc2["retrieved"].base.repository.get_object_content("aiida.out")
-    assert re.search("WARNING .* :: Overwriting coordinates", output)
+    assert re.search(
+        "WARNING .* :: Overwriting coordinates", output
+    ), "No warning about overwritting coordinates."
 
 
 @click.command("cli")

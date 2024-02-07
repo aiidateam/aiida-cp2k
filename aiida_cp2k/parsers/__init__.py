@@ -30,20 +30,21 @@ class Cp2kBaseParser(parsers.Parser):
         exit_code = self._parse_stdout()
 
         # Even though the simpulation might have failed, we still want to parse the output structure.
+        last_structure = None
         try:
             last_structure = self._parse_final_structure()
             if isinstance(last_structure, StructureData):
                 self.out("output_structure", last_structure)
         except common.NotExistent:
-            last_structure = None
-            self.logger.warning("No Restart file found in the retrieved folder.")
+            self.logger.warning("No restart file found in the retrieved folder.")
 
+        trajectory = None
         try:
-            trajectory = self._parse_trajectory(last_structure)
-            if isinstance(trajectory, orm.TrajectoryData):
-                self.out("output_trajectory", trajectory)
+            if last_structure is not None:
+                trajectory = self._parse_trajectory(last_structure)
+                if isinstance(trajectory, orm.TrajectoryData):
+                    self.out("output_trajectory", trajectory)
         except common.NotExistent:
-            trajectory = None
             self.logger.warning("No trajectory file found in the retrieved folder.")
 
         if exit_code is not None:

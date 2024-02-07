@@ -90,42 +90,19 @@ def example_mm(cp2k_code):
             "MOTION": {
                 "CONSTRAINT": {},
                 "MD": {
-                "THERMOSTAT": {
-                    "CSVR": {},
-                    "TYPE": "csvr"
-                },
-                "BAROSTAT": {},
-                "STEPS": 1000,
-                "ENSEMBLE": "npt_f",
-                "TEMPERATURE": 300.0
+                    "THERMOSTAT": {"CSVR": {}, "TYPE": "csvr"},
+                    "BAROSTAT": {},
+                    "STEPS": 1000,
+                    "ENSEMBLE": "npt_f",
+                    "TEMPERATURE": 300.0,
                 },
                 "PRINT": {
-                    "TRAJECTORY": {
-                        "EACH": {
-                        "MD": 5
-                        }
-                    },
-                    "RESTART": {
-                        "EACH": {
-                        "MD": 5
-                        }
-                    },
-                    "RESTART_HISTORY": {
-                        "_": "OFF"
-                    },
-                    "CELL": {
-                        "EACH": {
-                        "MD": 5
-                        }
-                    },
-                    "FORCES": {
-                        "EACH": {
-                        "MD": 5
-                        },
-                        "FORMAT": "XYZ"
-                    },
+                    "TRAJECTORY": {"EACH": {"MD": 5}},
+                    "RESTART": {"EACH": {"MD": 5}},
+                    "RESTART_HISTORY": {"_": "OFF"},
+                    "CELL": {"EACH": {"MD": 5}},
+                    "FORCES": {"EACH": {"MD": 5}, "FORMAT": "XYZ"},
                 },
-
             },
             "GLOBAL": {
                 "CALLGRAPH": "master",
@@ -133,7 +110,7 @@ def example_mm(cp2k_code):
                 "PRINT_LEVEL": "medium",
                 "RUN_TYPE": "MD",
             },
-        }  
+        }
     )
 
     # Construct process builder.

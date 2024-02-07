@@ -53,6 +53,7 @@ class Cp2kBaseParser(parsers.Parser):
             return last_structure
         if isinstance(trajectory, engine.ExitCode):
             return trajectory
+
         return engine.ExitCode(0)
 
     def _parse_stdout(self):
@@ -148,41 +149,49 @@ class Cp2kBaseParser(parsers.Parser):
             _, positions = zip(*frame["atoms"])
             positions_traj.append(positions)
             stepids_traj.append(int(frame["comment"].split()[2][:-1]))
+        positions_traj = np.array(positions_traj)
+        stepids_traj = np.array(stepids_traj)
 
+        cell_traj = None
         cell_traj_fname = self.node.process_class._DEFAULT_TRAJECT_CELL_FILE_NAME
         try:
-            output_cell_pos = self.retrieved.base.repository.get_object_content(
-                cell_traj_fname
-            )
+            if cell_traj_fname in self.retrieved.base.repository.list_object_names():
+                output_cell_pos = self.retrieved.base.repository.get_object_content(
+                    cell_traj_fname
+                )
+                cell_traj = np.array(
+                    [
+                        np.fromstring(line, sep=" ")[2:-1].reshape(3, 3)
+                        for line in output_cell_pos.splitlines()[1:]
+                    ]
+                )
         except OSError:
             return self.exit_codes.ERROR_CELLS_TRAJECTORY_READ
-        cell_traj = np.array(
-            [
-                np.fromstring(line, sep=" ")[2:-1].reshape(3, 3)
-                for line in output_cell_pos.splitlines()[1:]
-            ]
-        )
 
+        forces_traj = None
         forces_traj_fname = self.node.process_class._DEFAULT_TRAJECT_FORCES_FILE_NAME
         try:
-            output_forces = self.retrieved.base.repository.get_object_content(
-                forces_traj_fname
-            )
+            if forces_traj_fname in self.retrieved.base.repository.list_object_names():
+                output_forces = self.retrieved.base.repository.get_object_content(
+                    forces_traj_fname
+                )
+                forces_traj = []
+                for frame in parse(output_forces):
+                    _, forces = zip(*frame["atoms"])
+                    forces_traj.append(forces)
+                forces_traj = np.array(forces_traj)
         except OSError:
             return self.exit_codes.ERROR_FORCES_TRAJECTORY_READ
-        forces_traj = []
-        for frame in parse(output_forces):
-            _, forces = zip(*frame["atoms"])
-            forces_traj.append(forces)
 
         trajectory = orm.TrajectoryData()
         trajectory.set_trajectory(
-            stepids=np.array(stepids_traj),
+            stepids=stepids_traj,
             cells=cell_traj,
             symbols=symbols,
-            positions=np.array(positions_traj),
+            positions=positions_traj,
         )
-        trajectory.set_array("forces", np.array(forces_traj))
+        if forces_traj is not None:
+            trajectory.set_array("forces", forces_traj)
 
         return trajectory
 

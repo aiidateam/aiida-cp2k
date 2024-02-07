@@ -40,6 +40,9 @@ class Cp2kCalculation(CalcJob):
     _DEFAULT_PROJECT_NAME = "aiida"
     _DEFAULT_RESTART_FILE_NAME = _DEFAULT_PROJECT_NAME + "-1.restart"
     _DEFAULT_TRAJECT_FILE_NAME = _DEFAULT_PROJECT_NAME + "-pos-1.dcd"
+    _DEFAULT_TRAJECT_XYZ_FILE_NAME = _DEFAULT_PROJECT_NAME + "-pos-1.xyz"
+    _DEFAULT_TRAJECT_FORCES_FILE_NAME = _DEFAULT_PROJECT_NAME + "-frc-1.xyz"
+    _DEFAULT_TRAJECT_CELL_FILE_NAME = _DEFAULT_PROJECT_NAME + "-1.cell"
     _DEFAULT_PARENT_CALC_FLDR_NAME = "parent_calc/"
     _DEFAULT_COORDS_FILE_NAME = "aiida.coords.xyz"
     _DEFAULT_PARSER = "cp2k_base_parser"
@@ -162,6 +165,24 @@ class Cp2kCalculation(CalcJob):
             "ERROR_STRUCTURE_PARSE",
             message="The output structure could not be parsed.",
         )
+        spec.exit_code(
+            321,
+            "ERROR_COORDINATES_TRAJECTORY_READ",
+            message="The coordinates trajectory file could not be read.",
+        )
+
+        spec.exit_code(
+            323,
+            "ERROR_FORCES_TRAJECTORY_READ",
+            message="The forces trajectory file could not be read.",
+        )
+
+        spec.exit_code(
+            325,
+            "ERROR_CELLS_TRAJECTORY_READ",
+            message="The cells trajectory file could not be read.",
+        )
+
         spec.exit_code(
             350,
             "ERROR_UNEXPECTED_PARSER_EXCEPTION",
@@ -329,6 +350,9 @@ class Cp2kCalculation(CalcJob):
             self._DEFAULT_OUTPUT_FILE,
             self._DEFAULT_RESTART_FILE_NAME,
             self._DEFAULT_TRAJECT_FILE_NAME,
+            self._DEFAULT_TRAJECT_XYZ_FILE_NAME,
+            self._DEFAULT_TRAJECT_FORCES_FILE_NAME,
+            self._DEFAULT_TRAJECT_CELL_FILE_NAME,
         ]
         calcinfo.retrieve_list += settings.pop("additional_retrieve_list", [])
 

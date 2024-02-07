@@ -7,6 +7,7 @@
 """AiiDA-CP2K output parser."""
 
 import ase
+import numpy as np
 from aiida import common, engine, orm, parsers, plugins
 
 from .. import utils
@@ -36,11 +37,21 @@ class Cp2kBaseParser(parsers.Parser):
         except common.NotExistent:
             last_structure = None
             self.logger.warning("No Restart file found in the retrieved folder.")
+        
+        try:
+            trajectory = self._parse_trajectory(last_structure)
+            if isinstance(trajectory, orm.TrajectoryData):
+                self.out("output_trajectory", trajectory)
+        except common.NotExistent:
+            trajectory = None
+            self.logger.warning("No trajectory file found in the retrieved folder.")
 
         if exit_code is not None:
             return exit_code
         if isinstance(last_structure, engine.ExitCode):
             return last_structure
+        if isinstance(trajectory, engine.ExitCode):
+            return trajectory
         return engine.ExitCode(0)
 
     def _parse_stdout(self):
@@ -108,9 +119,62 @@ class Cp2kBaseParser(parsers.Parser):
         try:
             output_string = self.retrieved.base.repository.get_object_content(fname)
         except OSError:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ, None
+            return self.exit_codes.ERROR_OUTPUT_READ, None
 
         return None, output_string
+    
+    def _parse_trajectory(self, structure):
+        """CP2K trajectory parser."""
+
+        symbols = [str(site.kind_name) for site in structure.sites]
+
+        # Handle the positions trajectory
+        xyz_traj_fname = self.node.process_class._DEFAULT_TRAJECT_XYZ_FILE_NAME
+
+        # Read the trajectory file.
+        try:
+            output_xyz_pos = self.retrieved.base.repository.get_object_content(xyz_traj_fname)
+        except OSError:
+            return self.exit_codes.ERROR_COORDINATES_TRAJECTORY_READ
+
+        from cp2k_output_tools.trajectories.xyz import parse
+
+        positions_traj = []
+        stepids_traj = []
+        for frame in parse(output_xyz_pos):
+            _, positions = zip(*frame["atoms"])
+            positions_traj.append(positions)
+            stepids_traj.append(int(frame["comment"].split()[2][:-1]))
+        
+        
+        cell_traj_fname = self.node.process_class._DEFAULT_TRAJECT_CELL_FILE_NAME
+        try:
+            output_cell_pos = self.retrieved.base.repository.get_object_content(cell_traj_fname)
+        except OSError:
+            return self.exit_codes.ERROR_CELLS_TRAJECTORY_READ
+        cell_traj = np.array([np.fromstring(l, sep=" ")[2:-1].reshape(3,3) for l in output_cell_pos.splitlines()[1:]])
+
+
+        forces_traj_fname = self.node.process_class._DEFAULT_TRAJECT_FORCES_FILE_NAME
+        try:
+            output_forces = self.retrieved.base.repository.get_object_content(forces_traj_fname)
+        except OSError:
+            return self.exit_codes.ERROR_FORCES_TRAJECTORY_READ
+        forces_traj = []
+        for frame in parse(output_forces):
+            _, forces = zip(*frame["atoms"])
+            forces_traj.append(forces)
+
+        trajectory = orm.TrajectoryData()
+        trajectory.set_trajectory(
+            stepids=np.array(stepids_traj),
+            cells=cell_traj,
+            symbols=symbols,
+            positions=np.array(positions_traj),
+        )
+        trajectory.set_array("forces", np.array(forces_traj))
+
+        return trajectory
 
 
 class Cp2kAdvancedParser(Cp2kBaseParser):

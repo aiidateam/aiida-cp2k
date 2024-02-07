@@ -90,42 +90,19 @@ def example_mm(cp2k_code):
             "MOTION": {
                 "CONSTRAINT": {},
                 "MD": {
-                "THERMOSTAT": {
-                    "CSVR": {},
-                    "TYPE": "csvr"
-                },
-                "BAROSTAT": {},
-                "STEPS": 1000,
-                "ENSEMBLE": "npt_f",
-                "TEMPERATURE": 300.0
+                    "THERMOSTAT": {"CSVR": {}, "TYPE": "csvr"},
+                    "BAROSTAT": {},
+                    "STEPS": 1000,
+                    "ENSEMBLE": "npt_f",
+                    "TEMPERATURE": 300.0,
                 },
                 "PRINT": {
-                    "TRAJECTORY": {
-                        "EACH": {
-                        "MD": 5
-                        }
-                    },
-                    "RESTART": {
-                        "EACH": {
-                        "MD": 5
-                        }
-                    },
-                    "RESTART_HISTORY": {
-                        "_": "OFF"
-                    },
-                    "CELL": {
-                        "EACH": {
-                        "MD": 5
-                        }
-                    },
-                    "FORCES": {
-                        "EACH": {
-                        "MD": 5
-                        },
-                        "FORMAT": "XYZ"
-                    },
+                    "TRAJECTORY": {"EACH": {"MD": 5}},
+                    "RESTART": {"EACH": {"MD": 5}},
+                    "RESTART_HISTORY": {"_": "OFF"},
+                    "CELL": {"EACH": {"MD": 5}},
+                    "FORCES": {"EACH": {"MD": 5}, "FORMAT": "XYZ"},
                 },
-
             },
             "GLOBAL": {
                 "CALLGRAPH": "master",
@@ -133,7 +110,7 @@ def example_mm(cp2k_code):
                 "PRINT_LEVEL": "medium",
                 "RUN_TYPE": "MD",
             },
-        }  
+        }
     )
 
     # Construct process builder.
@@ -151,7 +128,13 @@ def example_mm(cp2k_code):
     builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")
-    calc = engine.run(builder)
+    results = engine.run(builder)
+    assert "output_trajectory" in results, "Output trajectory not found among results."
+    traj = results["output_trajectory"]
+
+    assert traj.get_cells().shape == (201, 3, 3), "Unexpected shape of cells."
+    assert traj.get_positions().shape == (201, 3, 3), "Unexpected shape of positions."
+    assert traj.get_array("forces").shape == (201, 3, 3), "Unexpected shape of forces."
 
 
 @click.command("cli")

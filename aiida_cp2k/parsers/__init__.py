@@ -37,7 +37,7 @@ class Cp2kBaseParser(parsers.Parser):
         except common.NotExistent:
             last_structure = None
             self.logger.warning("No Restart file found in the retrieved folder.")
-        
+
         try:
             trajectory = self._parse_trajectory(last_structure)
             if isinstance(trajectory, orm.TrajectoryData):
@@ -122,7 +122,7 @@ class Cp2kBaseParser(parsers.Parser):
             return self.exit_codes.ERROR_OUTPUT_READ, None
 
         return None, output_string
-    
+
     def _parse_trajectory(self, structure):
         """CP2K trajectory parser."""
 
@@ -133,7 +133,9 @@ class Cp2kBaseParser(parsers.Parser):
 
         # Read the trajectory file.
         try:
-            output_xyz_pos = self.retrieved.base.repository.get_object_content(xyz_traj_fname)
+            output_xyz_pos = self.retrieved.base.repository.get_object_content(
+                xyz_traj_fname
+            )
         except OSError:
             return self.exit_codes.ERROR_COORDINATES_TRAJECTORY_READ
 
@@ -145,19 +147,26 @@ class Cp2kBaseParser(parsers.Parser):
             _, positions = zip(*frame["atoms"])
             positions_traj.append(positions)
             stepids_traj.append(int(frame["comment"].split()[2][:-1]))
-        
-        
+
         cell_traj_fname = self.node.process_class._DEFAULT_TRAJECT_CELL_FILE_NAME
         try:
-            output_cell_pos = self.retrieved.base.repository.get_object_content(cell_traj_fname)
+            output_cell_pos = self.retrieved.base.repository.get_object_content(
+                cell_traj_fname
+            )
         except OSError:
             return self.exit_codes.ERROR_CELLS_TRAJECTORY_READ
-        cell_traj = np.array([np.fromstring(l, sep=" ")[2:-1].reshape(3,3) for l in output_cell_pos.splitlines()[1:]])
-
+        cell_traj = np.array(
+            [
+                np.fromstring(line, sep=" ")[2:-1].reshape(3, 3)
+                for line in output_cell_pos.splitlines()[1:]
+            ]
+        )
 
         forces_traj_fname = self.node.process_class._DEFAULT_TRAJECT_FORCES_FILE_NAME
         try:
-            output_forces = self.retrieved.base.repository.get_object_content(forces_traj_fname)
+            output_forces = self.retrieved.base.repository.get_object_content(
+                forces_traj_fname
+            )
         except OSError:
             return self.exit_codes.ERROR_FORCES_TRAJECTORY_READ
         forces_traj = []

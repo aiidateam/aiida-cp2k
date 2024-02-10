@@ -212,4 +212,12 @@ def add_ext_restart_section(input_dict):
     params = input_dict.get_dict()
     # overwrite the complete EXT_RESTART section if present
     params["EXT_RESTART"] = {"RESTART_FILE_NAME": "./parent_calc/aiida-1.restart"}
+    if params["GLOBAL"]["RUN_TYPE"] == "MD":
+        params["EXT_RESTART"]["RESTART_DEFAULT"] = ".TRUE."
+        params["EXT_RESTART"]["RESTART_COUNTERS"] = ".TRUE."
+        params["EXT_RESTART"]["RESTART_POS"] = ".TRUE."
+        params["EXT_RESTART"]["RESTART_VEL"] = ".TRUE."
+        params["EXT_RESTART"]["RESTART_CELL"] = ".TRUE."
+        params["EXT_RESTART"]["RESTART_THERMOSTAT"] = ".TRUE."
+        params["EXT_RESTART"]["RESTART_CONSTRAINT"] = ".FALSE."
     return Dict(params)

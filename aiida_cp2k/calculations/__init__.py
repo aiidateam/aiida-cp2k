@@ -25,6 +25,7 @@ from ..utils.datatype_helpers import (
 
 BandsData = DataFactory("core.array.bands")
 StructureData = DataFactory("core.structure")
+TrajectoryData = DataFactory("core.array.trajectory")
 KpointsData = DataFactory("core.array.kpoints")
 
 
@@ -45,6 +46,8 @@ class Cp2kCalculation(CalcJob):
     _DEFAULT_TRAJECT_CELL_FILE_NAME = _DEFAULT_PROJECT_NAME + "-1.cell"
     _DEFAULT_PARENT_CALC_FLDR_NAME = "parent_calc/"
     _DEFAULT_COORDS_FILE_NAME = "aiida.coords.xyz"
+    _DEFAULT_INPUT_TRAJECT_XYZ_FILE_NAME = "trajectory.xyz"
+    _DEFAULT_INPUT_CELL_FILE_NAME = "reftraj.cell"
     _DEFAULT_PARSER = "cp2k_base_parser"
 
     @classmethod
@@ -58,6 +61,12 @@ class Cp2kCalculation(CalcJob):
             valid_type=StructureData,
             required=False,
             help="The main input structure.",
+        )
+        spec.input(
+            "trajectory",
+            valid_type=TrajectoryData,
+            required=False,
+            help="Possible input trajectory fro REFTRAJMD.",
         )
         spec.input(
             "settings",
@@ -270,6 +279,16 @@ class Cp2kCalculation(CalcJob):
                 conflicting_keys=["COORDINATE"],
             )
 
+        # Craeate input trajectory files
+        if "trajectory" in self.inputs:
+            self._write_trajectories(
+                self.inputs.structure,
+                self.inputs.trajectory,
+                folder,
+                self._DEFAULT_INPUT_TRAJECT_XYZ_FILE_NAME,
+                self._DEFAULT_INPUT_CELL_FILE_NAME,
+            )
+
         if "basissets" in self.inputs:
             validate_basissets(
                 inp,
@@ -388,6 +407,16 @@ class Cp2kCalculation(CalcJob):
         with open(folder.get_abs_path(name), mode="w", encoding="utf-8") as fobj:
             fobj.write(xyz)
 
+    @staticmethod
+    def _write_trajectories(structure, trajectory, folder, name_pos, name_cell):
+        """Function that writes a structure and takes care of element tags."""
+
+        (xyz, cell) = _trajectory_to_xyz_and_cell(trajectory, structure.get_ase())
+        with open(folder.get_abs_path(name_pos), mode="w", encoding="utf-8") as fobj:
+            fobj.write(xyz)
+        with open(folder.get_abs_path(name_cell), mode="w", encoding="utf-8") as fobj:
+            fobj.write(cell)
+
 
 def kind_names(atoms):
     """Get atom kind names from ASE atoms based on tags.
@@ -415,3 +444,28 @@ def _atoms_to_xyz(atoms):
     xyz = f"{len(elem_coords)}\n\n"
     xyz += "\n".join(map(add, elem_symbols, elem_coords))
     return xyz
+
+
+def _trajectory_to_xyz_and_cell(tarjectory, atoms):
+    """Converts postions and cell from a TrajectoryData  to string, taking care of element tags from ASE atoms.
+
+    :param atoms: ASE Atoms instance
+    :param trajectory: TrajectoryData instance
+    :returns: positions str (in xyz format) and cell str
+    """
+    cell = "#   Step   Time [fs]       Ax [Angstrom]       Ay [Angstrom]       Az [Angstrom]       Bx [Angstrom]       By [Angstrom]       Bz [Angstrom]       Cx [Angstrom]       Cy [Angstrom]       Cz [Angstrom]      Volume [Angstrom^3]\n"
+    xyz = ""
+    elem_symbols = kind_names(atoms)
+
+    for step in trajectory.get_array("positions"):
+        elem_coords = [f"{p[0]:25.16f} {p[1]:25.16f} {p[2]:25.16f}" for p in step]
+        xyz += f"{len(elem_coords)}\n\n"
+        xyz += "\n".join(map(add, elem_symbols, elem_coords))
+        xyz += "\n"
+    if "cells" in trajectory.get_arraynames():
+        cell_vecs = [
+            f"{i+1} {(i+1)*0.5:6.3f} {p[0][0]:25.16f} {p[0][1]:25.16f} {p[0][2]:25.16f} {p[1][0]:25.16f} {p[1][1]:25.16f} {p[1][2]:25.16f} {p[2][0]:25.16f} {p[2][1]:25.16f} {p[2][2]:25.16f}"
+            for (i, p) in enumerate(trajectory.get_array("cells"))
+        ]
+        cell += "\n".join(cell_vecs)
+    return xyz, cell

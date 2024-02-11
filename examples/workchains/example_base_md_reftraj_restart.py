@@ -7,17 +7,17 @@
 """An example testing the restart calculation handler for geo_opt run in CP2K."""
 
 import os
-import sys
 import random
-import numpy as np
+import sys
 
 import ase.io
 import click
-from ase import Atoms
+import numpy as np
 from aiida.common import NotExistent
 from aiida.engine import run
 from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory, WorkflowFactory
+from ase import Atoms
 
 Cp2kBaseWorkChain = WorkflowFactory("cp2k.base")
 StructureData = DataFactory("core.structure")
@@ -47,14 +47,19 @@ def example_base(cp2k_code):
     )
 
     # Trajectory.
-    steps=20
-    positions = np.array([[[2,2,2.73+0.05*random.random()],[2,2,2]] for i in range(steps)])
-    cells = np.array([[[4,0,0],[0,4,0],[0,0,4.75+0.05*random.random()]]for i in range(steps)])
-    symbols=['H','H']
+    steps = 20
+    positions = np.array(
+        [[[2, 2, 2.73 + 0.05 * random.random()], [2, 2, 2]] for i in range(steps)]
+    )
+    cells = np.array(
+        [
+            [[4, 0, 0], [0, 4, 0], [0, 0, 4.75 + 0.05 * random.random()]]
+            for i in range(steps)
+        ]
+    )
+    symbols = ["H", "H"]
     trajectory = TrajectoryData()
     trajectory.set_trajectory(symbols, positions, cells=cells)
-    
-    
 
     # Parameters.
     parameters = Dict(
@@ -69,14 +74,14 @@ def example_base(cp2k_code):
                 "MD": {
                     "ENSEMBLE": "REFTRAJ",
                     "STEPS": steps,
-                    "REFTRAJ":{
-                        'FIRST_SNAPSHOT':1,
-                        'LAST_SNAPSHOT':steps,
-                        'EVAL_FORCES':'.TRUE.',
-                        'TRAJ_FILE_NAME':'trajectory.xyz',
-                        'CELL_FILE_NAME':'reftraj.cell',
-                        'VARIABLE_VOLUME':'.TRUE.'
-                        },
+                    "REFTRAJ": {
+                        "FIRST_SNAPSHOT": 1,
+                        "LAST_SNAPSHOT": steps,
+                        "EVAL_FORCES": ".TRUE.",
+                        "TRAJ_FILE_NAME": "trajectory.xyz",
+                        "CELL_FILE_NAME": "reftraj.cell",
+                        "VARIABLE_VOLUME": ".TRUE.",
+                    },
                 },
                 "PRINT": {
                     "RESTART": {
@@ -135,7 +140,7 @@ def example_base(cp2k_code):
                         },
                     ],
                 },
-            }
+            },
         }
     )
 

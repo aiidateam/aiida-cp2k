@@ -85,7 +85,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
 
         self.ctx.inputs.parent_calc_folder = calc.outputs.remote_folder
         params = self.ctx.inputs.parameters
-        
+
         # Check if we need to fix restart snapshot in REFTRAJ MD
         try:
             first_snapshot = int(params['MOTION']['MD']['REFTRAJ']['FIRST_SNAPSHOT'])

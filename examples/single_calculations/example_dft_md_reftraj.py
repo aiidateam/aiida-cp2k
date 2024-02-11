@@ -7,8 +7,8 @@
 """Run simple DFT calculation."""
 
 import os
-import sys
 import random
+import sys
 
 import ase.io
 import click

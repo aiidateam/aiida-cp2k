@@ -72,7 +72,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         content_string = calc.outputs.retrieved.base.repository.get_object_content(calc.base.attributes.get('output_filename'))
 
         # CP2K was updating geometry - continue with that.
-        restart_geometry_transformation = "Max. gradient              =" in content_string
+        restart_geometry_transformation = "Max. gradient              =" in content_string or "MD| Step number" in content_string
         end_inner_scf_loop = "Total energy: " in content_string
         # The message is written in the log file when the CP2K input parameter `LOG_PRINT_KEY` is set to True.
         if not (restart_geometry_transformation or end_inner_scf_loop or "Writing RESTART" in content_string):
@@ -86,17 +86,16 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         self.ctx.inputs.parent_calc_folder = calc.outputs.remote_folder
         params = self.ctx.inputs.parameters
 
-        # Check if we need to fix restart snapshot in REFTRAJ MD
-        try:
-            first_snapshot = int(params['MOTION']['MD']['REFTRAJ']['FIRST_SNAPSHOT'])
-            params['MOTION']['MD']['REFTRAJ']['FIRST_SNAPSHOT'] = first_snapshot + calc.outputs.output_trajectory.get_shape('positions')[0]
-        except KeyError:
-            pass
-
         params = add_wfn_restart_section(params, Bool('kpoints' in self.ctx.inputs))
 
         if restart_geometry_transformation:
-            params = add_ext_restart_section(params)
+            # Check if we need to fix restart snapshot in REFTRAJ MD
+            first_snapshot = None
+            try:
+                first_snapshot = int(params['MOTION']['MD']['REFTRAJ']['FIRST_SNAPSHOT']) + calc.outputs.output_trajectory.get_shape('positions')[0]
+            except KeyError:
+                pass                
+            params = add_ext_restart_section(params,first_snapshot=first_snapshot)
 
         self.ctx.inputs.parameters = params  # params (new or old ones) that include the necessary restart information.
         self.report(

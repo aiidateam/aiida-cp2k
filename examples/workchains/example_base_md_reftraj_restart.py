@@ -29,7 +29,7 @@ def example_base(cp2k_code):
 
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
-    print("Testing CP2K ENERGY on H2O (DFT) through a workchain...")
+    print("Testing CP2K MD REFTRAJ on H2 (DFT) through a workchain...")
 
     # Basis set.
     basis_file = SinglefileData(
@@ -67,7 +67,7 @@ def example_base(cp2k_code):
             "GLOBAL": {
                 "RUN_TYPE": "MD",
                 "PRINT_LEVEL": "LOW",
-                "WALLTIME": 5,
+                "WALLTIME": 4,
                 "PROJECT": "aiida",
             },
             "MOTION": {

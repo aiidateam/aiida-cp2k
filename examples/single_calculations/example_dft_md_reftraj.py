@@ -26,7 +26,7 @@ TrajectoryData = DataFactory("core.array.trajectory")
 def example_dft_md_reftraj(cp2k_code):
     """Run simple DFT calculation."""
 
-    print("Testing CP2K ENERGY on H2O (DFT)...")
+    print("Testing CP2K MD REFTRAJ on H2 (DFT)...")
 
     thisdir = os.path.dirname(os.path.realpath(__file__))
 

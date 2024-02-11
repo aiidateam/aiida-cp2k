@@ -10,9 +10,9 @@ import os
 import sys
 import random
 
+import ase.io
 import click
 import numpy as np
-import ase.io
 from aiida.common import NotExistent
 from aiida.engine import run
 from aiida.orm import Dict, SinglefileData, load_code
@@ -36,10 +36,28 @@ def example_dft_md_reftraj(cp2k_code):
     )
 
     # Trajectory.
+<<<<<<< HEAD
     steps=5
     positions = np.array([[[2,2,2.73+0.05*random.random()],[2,2,2]] for i in range(steps)])
     cells = np.array([[[4,0,0],[0,4,0],[0,0,4.75+0.05*random.random()]]for i in range(steps)])
     symbols=['H','H']
+=======
+    positions = np.array(
+        [
+            [[2, 2, 2.73], [2, 2, 2.0]],
+            [[2, 2, 2.74], [2, 2, 2.0]],
+            [[2, 2, 2.75], [2, 2, 2.0]],
+        ]
+    )
+    cells = np.array(
+        [
+            [[4, 0, 0], [0, 4, 0], [0, 0, 4.75]],
+            [[4.4, 0, 0], [0, 4.2, 0], [0, 0, 4.76]],
+            [[4, 0, 0], [0, 4.1, 0], [0, 0, 4.75]],
+        ]
+    )
+    symbols = ["H", "H"]
+>>>>>>> 0579f0ce4b6ee754292a941572730fae741122cd
     trajectory = TrajectoryData()
     trajectory.set_trajectory(symbols, positions, cells=cells)
 
@@ -65,6 +83,7 @@ def example_dft_md_reftraj(cp2k_code):
             "MOTION": {
                 "MD": {
                     "ENSEMBLE": "REFTRAJ",
+<<<<<<< HEAD
                     "STEPS": steps,
                     "REFTRAJ":{
                         'FIRST_SNAPSHOT':1,
@@ -74,6 +93,17 @@ def example_dft_md_reftraj(cp2k_code):
                         'CELL_FILE_NAME':'reftraj.cell',
                         'VARIABLE_VOLUME':'.TRUE.'
                         },
+=======
+                    "STEPS": 3,
+                    "REFTRAJ": {
+                        "FIRST_SNAPSHOT": 1,
+                        "LAST_SNAPSHOT": 3,
+                        "EVAL_FORCES": ".TRUE.",
+                        "TRAJ_FILE_NAME": "trajectory.xyz",
+                        "CELL_FILE_NAME": "reftraj.cell",
+                        "VARIABLE_VOLUME": ".TRUE.",
+                    },
+>>>>>>> 0579f0ce4b6ee754292a941572730fae741122cd
                 },
                 "PRINT": {
                     "RESTART": {
@@ -132,7 +162,7 @@ def example_dft_md_reftraj(cp2k_code):
                         },
                     ],
                 },
-            }
+            },
         }
     )
 

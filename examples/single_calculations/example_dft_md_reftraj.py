@@ -8,6 +8,7 @@
 
 import os
 import sys
+import random
 
 import click
 import numpy as np
@@ -35,8 +36,9 @@ def example_dft_md_reftraj(cp2k_code):
     )
 
     # Trajectory.
-    positions = np.array([[[2,2,2.73],[2,2,2.]],[[2,2,2.74],[2,2,2.]],[[2,2,2.75],[2,2,2.]]])
-    cells = np.array([[[4,0,0],[0,4,0],[0,0,4.75]],[[4.4,0,0],[0,4.2,0],[0,0,4.76]],[[4,0,0],[0,4.1,0],[0,0,4.75]]])
+    steps=5
+    positions = np.array([[[2,2,2.73+0.05*random.random()],[2,2,2]] for i in range(steps)])
+    cells = np.array([[[4,0,0],[0,4,0],[0,0,4.75+0.05*random.random()]]for i in range(steps)])
     symbols=['H','H']
     trajectory = TrajectoryData()
     trajectory.set_trajectory(symbols, positions, cells=cells)
@@ -57,16 +59,16 @@ def example_dft_md_reftraj(cp2k_code):
             "GLOBAL": {
                 "RUN_TYPE": "MD",
                 "PRINT_LEVEL": "LOW",
-                "WALLTIME": 600,
+                "WALLTIME": 100,
                 "PROJECT": "aiida",
             },
             "MOTION": {
                 "MD": {
                     "ENSEMBLE": "REFTRAJ",
-                    "STEPS": 3,
+                    "STEPS": steps,
                     "REFTRAJ":{
                         'FIRST_SNAPSHOT':1,
-                        'LAST_SNAPSHOT':3,
+                        'LAST_SNAPSHOT':steps,
                         'EVAL_FORCES':'.TRUE.',
                         'TRAJ_FILE_NAME':'trajectory.xyz',
                         'CELL_FILE_NAME':'reftraj.cell',

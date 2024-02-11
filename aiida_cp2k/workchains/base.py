@@ -85,6 +85,13 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
 
         self.ctx.inputs.parent_calc_folder = calc.outputs.remote_folder
         params = self.ctx.inputs.parameters
+        
+        # Check if we need to fix restart snapshot in REFTRAJ MD
+        try:
+            first_snapshot = int(params['MOTION']['MD']['REFTRAJ']['FIRST_SNAPSHOT'])
+            params['MOTION']['MD']['REFTRAJ']['FIRST_SNAPSHOT'] = first_snapshot + calc.outputs.output_trajectory.get_shape('positions')[0]
+        except KeyError:
+            pass
 
         params = add_wfn_restart_section(params, Bool('kpoints' in self.ctx.inputs))
 

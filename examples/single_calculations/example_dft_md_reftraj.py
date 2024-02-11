@@ -9,9 +9,9 @@
 import os
 import sys
 
+import ase.io
 import click
 import numpy as np
-import ase.io
 from aiida.common import NotExistent
 from aiida.engine import run
 from aiida.orm import Dict, SinglefileData, load_code
@@ -35,9 +35,21 @@ def example_dft_md_reftraj(cp2k_code):
     )
 
     # Trajectory.
-    positions = np.array([[[2,2,2.73],[2,2,2.]],[[2,2,2.74],[2,2,2.]],[[2,2,2.75],[2,2,2.]]])
-    cells = np.array([[[4,0,0],[0,4,0],[0,0,4.75]],[[4.4,0,0],[0,4.2,0],[0,0,4.76]],[[4,0,0],[0,4.1,0],[0,0,4.75]]])
-    symbols=['H','H']
+    positions = np.array(
+        [
+            [[2, 2, 2.73], [2, 2, 2.0]],
+            [[2, 2, 2.74], [2, 2, 2.0]],
+            [[2, 2, 2.75], [2, 2, 2.0]],
+        ]
+    )
+    cells = np.array(
+        [
+            [[4, 0, 0], [0, 4, 0], [0, 0, 4.75]],
+            [[4.4, 0, 0], [0, 4.2, 0], [0, 0, 4.76]],
+            [[4, 0, 0], [0, 4.1, 0], [0, 0, 4.75]],
+        ]
+    )
+    symbols = ["H", "H"]
     trajectory = TrajectoryData()
     trajectory.set_trajectory(symbols, positions, cells=cells)
 
@@ -64,14 +76,14 @@ def example_dft_md_reftraj(cp2k_code):
                 "MD": {
                     "ENSEMBLE": "REFTRAJ",
                     "STEPS": 3,
-                    "REFTRAJ":{
-                        'FIRST_SNAPSHOT':1,
-                        'LAST_SNAPSHOT':3,
-                        'EVAL_FORCES':'.TRUE.',
-                        'TRAJ_FILE_NAME':'trajectory.xyz',
-                        'CELL_FILE_NAME':'reftraj.cell',
-                        'VARIABLE_VOLUME':'.TRUE.'
-                        },
+                    "REFTRAJ": {
+                        "FIRST_SNAPSHOT": 1,
+                        "LAST_SNAPSHOT": 3,
+                        "EVAL_FORCES": ".TRUE.",
+                        "TRAJ_FILE_NAME": "trajectory.xyz",
+                        "CELL_FILE_NAME": "reftraj.cell",
+                        "VARIABLE_VOLUME": ".TRUE.",
+                    },
                 },
                 "PRINT": {
                     "RESTART": {
@@ -130,7 +142,7 @@ def example_dft_md_reftraj(cp2k_code):
                         },
                     ],
                 },
-            }
+            },
         }
     )
 

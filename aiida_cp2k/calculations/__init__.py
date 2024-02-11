@@ -6,9 +6,9 @@
 ###############################################################################
 """AiiDA-CP2K input plugin."""
 
-import numpy as np
 from operator import add
 
+import numpy as np
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 from aiida.engine import CalcJob
 from aiida.orm import Dict, RemoteData, SinglefileData
@@ -458,7 +458,7 @@ def _trajectory_to_xyz_and_cell(trajectory, atoms):
     xyz = ""
     elem_symbols = kind_names(atoms)
 
-    for (i,step) in enumerate(trajectory.get_array("positions")):
+    for i, step in enumerate(trajectory.get_array("positions")):
         elem_coords = [f"{p[0]:25.16f} {p[1]:25.16f} {p[2]:25.16f}" for p in step]
         xyz += f"{len(elem_coords)}\n"
         xyz += f"i = {i+1} , time = {(i+1)*0.5} \n"

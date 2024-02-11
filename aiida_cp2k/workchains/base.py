@@ -94,7 +94,7 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
             try:
                 first_snapshot = int(params['MOTION']['MD']['REFTRAJ']['FIRST_SNAPSHOT']) + calc.outputs.output_trajectory.get_shape('positions')[0]
             except KeyError:
-                pass                
+                pass
             params = add_ext_restart_section(params,first_snapshot=first_snapshot)
 
         self.ctx.inputs.parameters = params  # params (new or old ones) that include the necessary restart information.

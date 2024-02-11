@@ -207,11 +207,11 @@ def add_wfn_restart_section(input_dict, is_kpoints):
 
 
 @calcfunction
-def add_ext_restart_section(input_dict,first_snapshot=None):
+def add_ext_restart_section(input_dict, first_snapshot=None):
     """Add external restart section to the input dictionary."""
     params = input_dict.get_dict()
     if first_snapshot is not None:
-         params["MOTION"]["MD"]["REFTRAJ"]["FIRST_SNAPSHOT"] = first_snapshot
+        params["MOTION"]["MD"]["REFTRAJ"]["FIRST_SNAPSHOT"] = first_snapshot
     # overwrite the complete EXT_RESTART section if present
     params["EXT_RESTART"] = {"RESTART_FILE_NAME": "./parent_calc/aiida-1.restart"}
     if params["GLOBAL"]["RUN_TYPE"] == "MD":
@@ -221,5 +221,5 @@ def add_ext_restart_section(input_dict,first_snapshot=None):
         params["EXT_RESTART"]["RESTART_VEL"] = ".TRUE."
         params["EXT_RESTART"]["RESTART_CELL"] = ".TRUE."
         params["EXT_RESTART"]["RESTART_THERMOSTAT"] = ".TRUE."
-        params["EXT_RESTART"]["RESTART_CONSTRAINT"] = ".FALSE."    
+        params["EXT_RESTART"]["RESTART_CONSTRAINT"] = ".FALSE."
     return Dict(params)

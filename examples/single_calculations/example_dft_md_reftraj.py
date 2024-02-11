@@ -11,11 +11,11 @@ import sys
 
 import ase.io
 import click
-from ase import Atoms
 from aiida.common import NotExistent
 from aiida.engine import run
-from aiida.orm import Dict, SinglefileData, load_code,
+from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory
+from ase import Atoms
 
 StructureData = DataFactory("core.structure")
 TrajectoryData = DataFactory("core.array.trajectory")
@@ -36,10 +36,10 @@ def example_dft_md_reftraj(cp2k_code):
     # Trajectory.
     positions = np.array([[[3,3,3],[3.7,3,3]],[[3,3,3],[3.75,3,3]],[[3,3,3],[3.73,3,3]]])
     cells = np.array([[[6,0,0],[0,6,0],[0,0,6]],[[6.1,0,0],[0,6.2,0],[0,0,6.3]],[[6,0,0],[0,6.1,0],[0,0,6]]])
-    symbols=['H','H']    
+    symbols=['H','H']
     trajectory = TrajectoryData()
     trajectory.set_trajectory(symbols, positions, cells=cells)
-    
+
     # Basis set.
     basis_file = SinglefileData(
         file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT")
@@ -70,7 +70,7 @@ def example_dft_md_reftraj(cp2k_code):
                         'TRAJ_FILE_NAME':'trajectory.xyz',
                         'CELL_FILE_NAME':'reftraj.cell',
                         'VARIABLE_VOLUME':'.TRUE.'
-                        },                    
+                        },
                 },
                 "PRINT": {
                     "RESTART": {

@@ -9,8 +9,9 @@
 import os
 import sys
 
-import ase.io
 import click
+import numpy as np
+import ase.io
 from aiida.common import NotExistent
 from aiida.engine import run
 from aiida.orm import Dict, SinglefileData, load_code
@@ -30,12 +31,12 @@ def example_dft_md_reftraj(cp2k_code):
 
     # Structure.
     structure = StructureData(
-        ase=Atoms('HH', positions=[[3, 3, 3], [3.75, 3, 3]]))
+        ase=ase.io.read(os.path.join(thisdir, "..", "files", "h2.xyz"))
     )
 
     # Trajectory.
-    positions = np.array([[[3,3,3],[3.7,3,3]],[[3,3,3],[3.75,3,3]],[[3,3,3],[3.73,3,3]]])
-    cells = np.array([[[6,0,0],[0,6,0],[0,0,6]],[[6.1,0,0],[0,6.2,0],[0,0,6.3]],[[6,0,0],[0,6.1,0],[0,0,6]]])
+    positions = np.array([[[2,2,2.73],[2,2,2.]],[[2,2,2.74],[2,2,2.]],[[2,2,2.75],[2,2,2.]]])
+    cells = np.array([[[4,0,0],[0,4,0],[0,0,4.75]],[[4.4,0,0],[0,4.2,0],[0,0,4.76]],[[4,0,0],[0,4.1,0],[0,0,4.75]]])
     symbols=['H','H']
     trajectory = TrajectoryData()
     trajectory.set_trajectory(symbols, positions, cells=cells)
@@ -56,7 +57,7 @@ def example_dft_md_reftraj(cp2k_code):
             "GLOBAL": {
                 "RUN_TYPE": "MD",
                 "PRINT_LEVEL": "LOW",
-                "WALLTIME": 600
+                "WALLTIME": 600,
                 "PROJECT": "aiida",
             },
             "MOTION": {
@@ -162,7 +163,7 @@ def cli(codelabel):
     except NotExistent:
         print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)
-    example_dft(code)
+    example_dft_md_reftraj(code)
 
 
 if __name__ == "__main__":

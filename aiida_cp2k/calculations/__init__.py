@@ -6,6 +6,7 @@
 ###############################################################################
 """AiiDA-CP2K input plugin."""
 
+import numpy as np
 from operator import add
 
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
@@ -446,7 +447,7 @@ def _atoms_to_xyz(atoms):
     return xyz
 
 
-def _trajectory_to_xyz_and_cell(tarjectory, atoms):
+def _trajectory_to_xyz_and_cell(trajectory, atoms):
     """Converts postions and cell from a TrajectoryData  to string, taking care of element tags from ASE atoms.
 
     :param atoms: ASE Atoms instance
@@ -457,14 +458,15 @@ def _trajectory_to_xyz_and_cell(tarjectory, atoms):
     xyz = ""
     elem_symbols = kind_names(atoms)
 
-    for step in trajectory.get_array("positions"):
+    for (i,step) in enumerate(trajectory.get_array("positions")):
         elem_coords = [f"{p[0]:25.16f} {p[1]:25.16f} {p[2]:25.16f}" for p in step]
-        xyz += f"{len(elem_coords)}\n\n"
+        xyz += f"{len(elem_coords)}\n"
+        xyz += f"i = {i+1} , time = {(i+1)*0.5} \n"
         xyz += "\n".join(map(add, elem_symbols, elem_coords))
         xyz += "\n"
     if "cells" in trajectory.get_arraynames():
         cell_vecs = [
-            f"{i+1} {(i+1)*0.5:6.3f} {p[0][0]:25.16f} {p[0][1]:25.16f} {p[0][2]:25.16f} {p[1][0]:25.16f} {p[1][1]:25.16f} {p[1][2]:25.16f} {p[2][0]:25.16f} {p[2][1]:25.16f} {p[2][2]:25.16f}"
+            f"{i+1} {(i+1)*0.5:6.3f} {p[0][0]:25.16f} {p[0][1]:25.16f} {p[0][2]:25.16f} {p[1][0]:25.16f} {p[1][1]:25.16f} {p[1][2]:25.16f} {p[2][0]:25.16f} {p[2][1]:25.16f} {p[2][2]:25.16f} {np.dot(p[0],np.cross(p[1],p[2]))}"
             for (i, p) in enumerate(trajectory.get_array("cells"))
         ]
         cell += "\n".join(cell_vecs)

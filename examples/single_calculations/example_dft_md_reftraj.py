@@ -36,10 +36,17 @@ def example_dft_md_reftraj(cp2k_code):
     )
 
     # Trajectory.
-    steps=5
-    positions = np.array([[[2,2,2.73+0.05*random.random()],[2,2,2]] for i in range(steps)])
-    cells = np.array([[[4,0,0],[0,4,0],[0,0,4.75+0.05*random.random()]]for i in range(steps)])
-    symbols=['H','H']
+    steps = 5
+    positions = np.array(
+        [[[2, 2, 2.73 + 0.05 * random.random()], [2, 2, 2]] for i in range(steps)]
+    )
+    cells = np.array(
+        [
+            [[4, 0, 0], [0, 4, 0], [0, 0, 4.75 + 0.05 * random.random()]]
+            for i in range(steps)
+        ]
+    )
+    symbols = ["H", "H"]
     trajectory = TrajectoryData()
     trajectory.set_trajectory(symbols, positions, cells=cells)
 
@@ -66,14 +73,14 @@ def example_dft_md_reftraj(cp2k_code):
                 "MD": {
                     "ENSEMBLE": "REFTRAJ",
                     "STEPS": steps,
-                    "REFTRAJ":{
-                        'FIRST_SNAPSHOT':1,
-                        'LAST_SNAPSHOT':steps,
-                        'EVAL_FORCES':'.TRUE.',
-                        'TRAJ_FILE_NAME':'trajectory.xyz',
-                        'CELL_FILE_NAME':'reftraj.cell',
-                        'VARIABLE_VOLUME':'.TRUE.'
-                        },
+                    "REFTRAJ": {
+                        "FIRST_SNAPSHOT": 1,
+                        "LAST_SNAPSHOT": steps,
+                        "EVAL_FORCES": ".TRUE.",
+                        "TRAJ_FILE_NAME": "trajectory.xyz",
+                        "CELL_FILE_NAME": "reftraj.cell",
+                        "VARIABLE_VOLUME": ".TRUE.",
+                    },
                 },
                 "PRINT": {
                     "RESTART": {

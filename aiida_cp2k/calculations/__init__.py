@@ -233,8 +233,8 @@ class Cp2kCalculation(CalcJob):
             "output_trajectory",
             valid_type=TrajectoryData,
             required=False,
-            help="The  output trajectory."
-        )       
+            help="The  output trajectory.",
+        )
         spec.output(
             "output_bands",
             valid_type=BandsData,

@@ -46,9 +46,9 @@ class Cp2kCalculation(CalcJob):
     _DEFAULT_TRAJECT_FORCES_FILE_NAME = _DEFAULT_PROJECT_NAME + "-frc-1.xyz"
     _DEFAULT_TRAJECT_CELL_FILE_NAME = _DEFAULT_PROJECT_NAME + "-1.cell"
     _DEFAULT_PARENT_CALC_FLDR_NAME = "parent_calc/"
-    _DEFAULT_COORDS_FILE_NAME = "aiida.coords.xyz"
-    _DEFAULT_INPUT_TRAJECT_XYZ_FILE_NAME = "trajectory.xyz"
-    _DEFAULT_INPUT_CELL_FILE_NAME = "reftraj.cell"
+    _DEFAULT_COORDS_FILE_NAME = _DEFAULT_PROJECT_NAME + ".coords.xyz"
+    _DEFAULT_INPUT_TRAJECT_XYZ_FILE_NAME = _DEFAULT_PROJECT_NAME + "trajectory.xyz"
+    _DEFAULT_INPUT_CELL_FILE_NAME = _DEFAULT_PROJECT_NAME + ".reftraj.cell"
     _DEFAULT_PARSER = "cp2k_base_parser"
 
     @classmethod

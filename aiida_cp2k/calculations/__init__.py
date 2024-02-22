@@ -67,7 +67,7 @@ class Cp2kCalculation(CalcJob):
             "trajectory",
             valid_type=TrajectoryData,
             required=False,
-            help="Possible input trajectory fro REFTRAJMD.",
+            help="Input trajectory for a REFTRAJ simulation.",
         )
         spec.input(
             "settings",

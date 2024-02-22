@@ -286,7 +286,7 @@ class Cp2kCalculation(CalcJob):
                 conflicting_keys=["COORDINATE"],
             )
 
-        # Craeate input trajectory files
+        # Create input trajectory files
         if "trajectory" in self.inputs:
             self._write_trajectories(
                 self.inputs.structure,

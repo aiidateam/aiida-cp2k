@@ -13,14 +13,11 @@ import sys
 import ase.io
 import click
 import numpy as np
-from aiida.common import NotExistent
-from aiida.engine import run
-from aiida.orm import Dict, SinglefileData, load_code
-from aiida.plugins import DataFactory, WorkflowFactory
+from aiida import common, engine, orm, plugins
 
-Cp2kBaseWorkChain = WorkflowFactory("cp2k.base")
-StructureData = DataFactory("core.structure")
-TrajectoryData = DataFactory("core.array.trajectory")
+Cp2kBaseWorkChain = plugins.WorkflowFactory("cp2k.base")
+StructureData = plugins.DataFactory("core.structure")
+TrajectoryData = plugins.DataFactory("core.array.trajectory")
 
 
 def example_base(cp2k_code):
@@ -31,12 +28,12 @@ def example_base(cp2k_code):
     print("Testing CP2K MD REFTRAJ on H2 (DFT) through a workchain...")
 
     # Basis set.
-    basis_file = SinglefileData(
+    basis_file = orm.SinglefileData(
         file=os.path.join(thisdir, "..", "files", "BASIS_MOLOPT")
     )
 
     # Pseudopotentials.
-    pseudo_file = SinglefileData(
+    pseudo_file = orm.SinglefileData(
         file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS")
     )
 
@@ -61,7 +58,7 @@ def example_base(cp2k_code):
     trajectory.set_trajectory(symbols, positions, cells=cells)
 
     # Parameters.
-    parameters = Dict(
+    parameters = orm.Dict(
         {
             "GLOBAL": {
                 "RUN_TYPE": "MD",
@@ -147,7 +144,7 @@ def example_base(cp2k_code):
     builder = Cp2kBaseWorkChain.get_builder()
 
     # Switch on resubmit_unconverged_geometry disabled by default.
-    builder.handler_overrides = Dict(
+    builder.handler_overrides = orm.Dict(
         {"restart_incomplete_calculation": {"enabled": True}}
     )
 
@@ -166,7 +163,7 @@ def example_base(cp2k_code):
     }
 
     print("Submitted calculation...")
-    calc = run(builder)
+    calc = engine.run(builder)
 
     if "EXT_RESTART" in calc["final_input_parameters"].dict:
         print("OK, EXT_RESTART section is present in the final_input_parameters.")
@@ -174,7 +171,23 @@ def example_base(cp2k_code):
         print(
             "ERROR, EXT_RESTART section is NOT present in the final_input_parameters."
         )
-        sys.exit(3)
+        sys.exit(1)
+
+    stepids = np.concatenate(
+        [
+            called.outputs.output_trajectory.get_stepids()
+            for called in calc.called
+            if isinstance(called, orm.CalcJobNode)
+        ]
+    )
+
+    if np.all(stepids == np.arange(1, steps + 1)):
+        print("OK, stepids are correct.")
+    else:
+        print(
+            f"ERROR, stepids are NOT correct. Expected: {np.arange(1, steps + 1)} but got:  {stepids}"
+        )
+        sys.exit(1)
 
 
 @click.command("cli")
@@ -182,8 +195,8 @@ def example_base(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = load_code(codelabel)
-    except NotExistent:
+        code = orm.load_code(codelabel)
+    except common.NotExistent:
         print(f"The code '{codelabel}' does not exist")
         sys.exit(1)
     example_base(code)

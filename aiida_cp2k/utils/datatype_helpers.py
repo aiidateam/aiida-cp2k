@@ -10,7 +10,7 @@ import re
 from collections.abc import Sequence
 
 import numpy as np
-from aiida import common, orm, plugins
+from aiida import common, engine, orm, plugins
 
 
 def _unpack(adict):
@@ -417,13 +417,16 @@ def write_pseudos(inp, pseudos, folder):
     _write_gdt(inp, pseudos, folder, "POTENTIAL_FILE_NAME", "POTENTIAL")
 
 
+@engine.calcfunction
 def merge_trajectory_data(*trajectories):
     if len(trajectories) < 0:
         return None
-
     final_trajectory = orm.TrajectoryData()
+    final_trajectory_dict = {}
 
     array_names = trajectories[0].get_arraynames()
+    symbols = trajectories[0].symbols
+
     for array_name in array_names:
         if any(array_name not in traj.get_arraynames() for traj in trajectories):
             raise ValueError(
@@ -432,6 +435,12 @@ def merge_trajectory_data(*trajectories):
         merged_array = np.concatenate(
             [traj.get_array(array_name) for traj in trajectories], axis=0
         )
-        final_trajectory.set_array(array_name, merged_array)
+        final_trajectory_dict[array_name] = merged_array
+
+    final_trajectory.set_trajectory(
+        symbols=symbols, positions=final_trajectory_dict.pop("positions")
+    )
+    for array_name, array in final_trajectory_dict.items():
+        final_trajectory.set_array(array_name, array)
 
     return final_trajectory

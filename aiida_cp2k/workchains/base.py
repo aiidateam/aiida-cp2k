@@ -46,10 +46,26 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
         super().setup()
         self.ctx.inputs = common.AttributeDict(self.exposed_inputs(Cp2kCalculation, 'cp2k'))
 
+    def _collect_all_trajetories(self):
+        """Collect all trajectories from the children calculations."""
+        trajectories = []
+        for called in self.ctx.children:
+            if isinstance(called, orm.CalcJobNode):
+                try:
+                    trajectories.append(called.outputs.output_trajectory)
+                except AttributeError:
+                    pass
+        return trajectories
+
     def results(self):
         super().results()
         if self.inputs.cp2k.parameters != self.ctx.inputs.parameters:
             self.out('final_input_parameters', self.ctx.inputs.parameters)
+
+        trajectories = self._collect_all_trajetories()
+        if trajectories:
+            self.report("Work chain completed successfully, collecting all trajectories")
+            self.out("output_trajectory", utils.merge_trajectory_data(*trajectories))
 
     def overwrite_input_structure(self):
         if "output_structure" in self.ctx.children[self.ctx.iteration-1].outputs:

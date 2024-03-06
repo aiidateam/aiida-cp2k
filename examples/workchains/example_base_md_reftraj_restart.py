@@ -172,6 +172,8 @@ def example_base(cp2k_code):
             "ERROR, EXT_RESTART section is NOT present in the final_input_parameters."
         )
         sys.exit(1)
+
+    # Check stepids extracted from each individual calculation.
     stepids = np.concatenate(
         [
             called.outputs.output_trajectory.get_stepids()
@@ -185,6 +187,33 @@ def example_base(cp2k_code):
     else:
         print(
             f"ERROR, stepids are NOT correct. Expected: {np.arange(1, steps + 1)} but got:  {stepids}"
+        )
+        sys.exit(1)
+
+    # Check the final trajectory.
+    final_trajectory = outputs["output_trajectory"]
+
+    if np.all(final_trajectory.get_stepids() == np.arange(1, steps + 1)):
+        print("OK, final trajectory stepids are correct.")
+    else:
+        print(
+            f"ERROR, final trajectory stepids are NOT correct. Expected: {np.arange(1, steps + 1)} but got:  {final_trajectory.get_stepids()}"
+        )
+        sys.exit(1)
+
+    if final_trajectory.get_positions().shape == (steps, len(structure.sites), 3):
+        print("OK, the shape of the positions array is correct.")
+    else:
+        print(
+            f"ERROR, the shape of the positions array is NOT correct. Expected: {(steps, len(structure.sites), 3)} but got:  {final_trajectory.get_positions().shape}"
+        )
+        sys.exit(1)
+
+    if final_trajectory.get_cells().shape == (steps, 3, 3):
+        print("OK, the shape of the cells array is correct.")
+    else:
+        print(
+            f"ERROR, the shape of the cells array is NOT correct. Expected: {(steps, 3, 3)} but got:  {final_trajectory.get_cells().shape}"
         )
         sys.exit(1)
 

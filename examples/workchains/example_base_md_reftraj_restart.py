@@ -17,7 +17,6 @@ from aiida.common import NotExistent
 from aiida.engine import run
 from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory, WorkflowFactory
-from ase import Atoms
 
 Cp2kBaseWorkChain = WorkflowFactory("cp2k.base")
 StructureData = DataFactory("core.structure")

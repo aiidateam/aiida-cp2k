@@ -213,13 +213,14 @@ def add_ext_restart_section(input_dict, first_snapshot=None):
     if first_snapshot is not None:
         params["MOTION"]["MD"]["REFTRAJ"]["FIRST_SNAPSHOT"] = first_snapshot
     # overwrite the complete EXT_RESTART section if present
-    params["EXT_RESTART"] = {"RESTART_FILE_NAME": "./parent_calc/aiida-1.restart"}
-    if params["GLOBAL"]["RUN_TYPE"] == "MD":
-        params["EXT_RESTART"]["RESTART_DEFAULT"] = ".TRUE."
-        params["EXT_RESTART"]["RESTART_COUNTERS"] = ".TRUE."
-        params["EXT_RESTART"]["RESTART_POS"] = ".TRUE."
-        params["EXT_RESTART"]["RESTART_VEL"] = ".TRUE."
-        params["EXT_RESTART"]["RESTART_CELL"] = ".TRUE."
-        params["EXT_RESTART"]["RESTART_THERMOSTAT"] = ".TRUE."
-        params["EXT_RESTART"]["RESTART_CONSTRAINT"] = ".FALSE."
+    params["EXT_RESTART"] = {
+        "RESTART_FILE_NAME": "./parent_calc/aiida-1.restart",
+        "RESTART_DEFAULT": ".TRUE.",
+        "RESTART_COUNTERS": ".TRUE.",
+        "RESTART_POS": ".TRUE.",
+        "RESTART_VEL": ".TRUE.",
+        "RESTART_CELL": ".TRUE.",
+        "RESTART_THERMOSTAT": ".TRUE.",
+        "RESTART_CONSTRAINT": ".FALSE.",
+    }
     return Dict(params)

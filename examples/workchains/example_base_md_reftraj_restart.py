@@ -163,20 +163,19 @@ def example_base(cp2k_code):
     }
 
     print("Submitted calculation...")
-    calc = engine.run(builder)
+    outputs, calc_node = engine.run_get_node(builder)
 
-    if "EXT_RESTART" in calc["final_input_parameters"].dict:
+    if "EXT_RESTART" in outputs["final_input_parameters"].dict:
         print("OK, EXT_RESTART section is present in the final_input_parameters.")
     else:
         print(
             "ERROR, EXT_RESTART section is NOT present in the final_input_parameters."
         )
         sys.exit(1)
-
     stepids = np.concatenate(
         [
             called.outputs.output_trajectory.get_stepids()
-            for called in calc.called
+            for called in calc_node.called
             if isinstance(called, orm.CalcJobNode)
         ]
     )

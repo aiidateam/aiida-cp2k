@@ -124,7 +124,7 @@ def parse_cp2k_output_advanced(
 
         # If a tag has been detected, now read the following line knowing what they are
         if line_is in ["eigen_spin1_au", "eigen_spin2_au"]:
-            if "------" in line:
+            if "------" in line or "*** WARNING" in line:
                 continue
             splitted_line = line.split()
             try:

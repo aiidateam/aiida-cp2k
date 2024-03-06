@@ -165,7 +165,6 @@ def example_base(cp2k_code):
         "num_machines": 1,
         "num_mpiprocs_per_machine": 1,
     }
-    builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")
     calc = run(builder)

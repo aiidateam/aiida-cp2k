@@ -10,7 +10,7 @@ from aiida.engine import (
 from aiida.orm import Bool, Dict
 from aiida.plugins import CalculationFactory
 
-from ..utils import add_ext_restart_section, add_wfn_restart_section
+from .. import utils
 
 Cp2kCalculation = CalculationFactory('cp2k')
 
@@ -86,16 +86,18 @@ class Cp2kBaseWorkChain(BaseRestartWorkChain):
         self.ctx.inputs.parent_calc_folder = calc.outputs.remote_folder
         params = self.ctx.inputs.parameters
 
-        params = add_wfn_restart_section(params, Bool('kpoints' in self.ctx.inputs))
+        params = utils.add_wfn_restart_section(params, Bool('kpoints' in self.ctx.inputs))
 
         if restart_geometry_transformation:
             # Check if we need to fix restart snapshot in REFTRAJ MD
             first_snapshot = None
             try:
                 first_snapshot = int(params['MOTION']['MD']['REFTRAJ']['FIRST_SNAPSHOT']) + calc.outputs.output_trajectory.get_shape('positions')[0]
+                if first_snapshot:
+                    params = utils.add_first_snapshot_in_reftraj_section(params, first_snapshot)
             except KeyError:
                 pass
-            params = add_ext_restart_section(params, first_snapshot=first_snapshot)
+            params = utils.add_ext_restart_section(params)
 
         self.ctx.inputs.parameters = params  # params (new or old ones) that include the necessary restart information.
         self.report(

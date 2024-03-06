@@ -6,7 +6,12 @@
 ###############################################################################
 """AiiDA-CP2K utils"""
 
-from .input_generator import Cp2kInput, add_ext_restart_section, add_wfn_restart_section
+from .input_generator import (
+    Cp2kInput,
+    add_ext_restart_section,
+    add_first_snapshot_in_reftraj_section,
+    add_wfn_restart_section,
+)
 from .parser import parse_cp2k_output, parse_cp2k_output_advanced, parse_cp2k_trajectory
 from .workchains import (
     HARTREE2EV,
@@ -23,6 +28,7 @@ from .workchains import (
 __all__ = [
     "Cp2kInput",
     "add_ext_restart_section",
+    "add_first_snapshot_in_reftraj_section",
     "add_wfn_restart_section",
     "parse_cp2k_output",
     "parse_cp2k_output_advanced",

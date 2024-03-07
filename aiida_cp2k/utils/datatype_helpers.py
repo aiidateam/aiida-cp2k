@@ -418,7 +418,7 @@ def write_pseudos(inp, pseudos, folder):
 
 
 @engine.calcfunction
-def merge_trajectory_data(*trajectories):
+def merge_trajectory_data(*trajectories, unique_stepids=False):
     if len(trajectories) < 0:
         return None
     final_trajectory = orm.TrajectoryData()

@@ -6,7 +6,10 @@
 ###############################################################################
 """AiiDA-CP2K utils"""
 
-from .datatype_helpers import merge_trajectory_data
+from .datatype_helpers import (
+    merge_trajectory_data_non_unique,
+    merge_trajectory_data_unique,
+)
 from .input_generator import (
     Cp2kInput,
     add_ext_restart_section,
@@ -43,5 +46,6 @@ __all__ = [
     "merge_Dict",
     "ot_has_small_bandgap",
     "resize_unit_cell",
-    "merge_trajectory_data",
+    "merge_trajectory_data_unique",
+    "merge_trajectory_data_non_unique",
 ]

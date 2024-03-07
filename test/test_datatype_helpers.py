@@ -2,7 +2,10 @@ import numpy as np
 import pytest
 from aiida import orm
 
-from aiida_cp2k.utils import merge_trajectory_data
+from aiida_cp2k.utils import (
+    merge_trajectory_data_non_unique,
+    merge_trajectory_data_unique,
+)
 
 
 @pytest.mark.parametrize(
@@ -46,12 +49,12 @@ def test_merge_trajectory_data(step_ranges):
         unique_elements.extend(range(step_range[0], step_range[1] + 1))
     total_lenght_unique = len(set(unique_elements))
 
-    merged_trajectory = merge_trajectory_data(*trajectories)
+    merged_trajectory = merge_trajectory_data_non_unique(*trajectories)
     assert (
         len(merged_trajectory.get_stepids()) == total_length
     ), "The merged trajectory has the wrong length."
 
-    merged_trajectory_unique = merge_trajectory_data(*trajectories, unique_stepids=True)
+    merged_trajectory_unique = merge_trajectory_data_unique(*trajectories)
     assert (
         len(merged_trajectory_unique.get_stepids()) == total_lenght_unique
     ), "The merged trajectory with unique stepids has the wrong length."

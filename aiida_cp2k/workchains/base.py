@@ -65,7 +65,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
         trajectories = self._collect_all_trajetories()
         if trajectories:
             self.report("Work chain completed successfully, collecting all trajectories")
-            self.out("output_trajectory", utils.merge_trajectory_data(*trajectories))
+            self.out("output_trajectory", utils.merge_trajectory_data_unique(*trajectories))
 
     def overwrite_input_structure(self):
         if "output_structure" in self.ctx.children[self.ctx.iteration-1].outputs:

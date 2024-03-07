@@ -417,15 +417,12 @@ def write_pseudos(inp, pseudos, folder):
     _write_gdt(inp, pseudos, folder, "POTENTIAL_FILE_NAME", "POTENTIAL")
 
 
-@engine.calcfunction
-def merge_trajectory_data(*trajectories, unique_stepids=False):
+def _merge_trajectories_into_dictionary(*trajectories, unique_stepids=False):
     if len(trajectories) < 0:
         return None
-    final_trajectory = orm.TrajectoryData()
     final_trajectory_dict = {}
 
     array_names = trajectories[0].get_arraynames()
-    symbols = trajectories[0].symbols
 
     for array_name in array_names:
         if any(array_name not in traj.get_arraynames() for traj in trajectories):
@@ -437,10 +434,44 @@ def merge_trajectory_data(*trajectories, unique_stepids=False):
         )
         final_trajectory_dict[array_name] = merged_array
 
+    # If unique_stepids is True, we only keep the unique stepids.
+    # The other arrays are then also reduced to the unique stepids.
+    if unique_stepids:
+        stepids = np.concatenate([traj.get_stepids() for traj in trajectories], axis=0)
+        final_trajectory_dict["stepids"], unique_indices = np.unique(
+            stepids, return_index=True
+        )
+
+        for array_name in array_names:
+            final_trajectory_dict[array_name] = final_trajectory_dict[array_name][
+                unique_indices
+            ]
+
+    return final_trajectory_dict
+
+
+def _dictionary_to_trajectory(trajectory_dict, symbols):
+    final_trajectory = orm.TrajectoryData()
     final_trajectory.set_trajectory(
-        symbols=symbols, positions=final_trajectory_dict.pop("positions")
+        symbols=symbols, positions=trajectory_dict.pop("positions")
     )
-    for array_name, array in final_trajectory_dict.items():
+    for array_name, array in trajectory_dict.items():
         final_trajectory.set_array(array_name, array)
 
     return final_trajectory
+
+
+@engine.calcfunction
+def merge_trajectory_data_unique(*trajectories):
+    trajectory_dict = _merge_trajectories_into_dictionary(
+        *trajectories, unique_stepids=True
+    )
+    return _dictionary_to_trajectory(trajectory_dict, trajectories[0].symbols)
+
+
+@engine.calcfunction
+def merge_trajectory_data_non_unique(*trajectories):
+    trajectory_dict = _merge_trajectories_into_dictionary(
+        *trajectories, unique_stepids=False
+    )
+    return _dictionary_to_trajectory(trajectory_dict, trajectories[0].symbols)

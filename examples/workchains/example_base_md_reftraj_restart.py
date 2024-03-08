@@ -7,7 +7,6 @@
 """An example testing the restart calculation handler for geo_opt run in CP2K."""
 
 import os
-import random
 import sys
 
 import ase.io
@@ -44,14 +43,9 @@ def example_base(cp2k_code):
 
     # Trajectory.
     steps = 20
-    positions = np.array(
-        [[[2, 2, 2.73 + 0.05 * random.random()], [2, 2, 2]] for i in range(steps)]
-    )
+    positions = np.array([[[2, 2, 2.73 + 0.01 * i], [2, 2, 2]] for i in range(steps)])
     cells = np.array(
-        [
-            [[4, 0, 0], [0, 4, 0], [0, 0, 4.75 + 0.05 * random.random()]]
-            for i in range(steps)
-        ]
+        [[[4, 0, 0], [0, 4, 0], [0, 0, 4.75 + 0.01 * i]] for i in range(steps)]
     )
     symbols = ["H", "H"]
     trajectory = TrajectoryData()

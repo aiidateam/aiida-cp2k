@@ -31,6 +31,8 @@ pip install -e .  # Also installs aiida, if missing (but not postgres/rabbitmq).
 
 ## For maintainers
 
+### Release
+
 To create a new release, clone the repository, install development dependencies with `pip install '.[dev]'`, and then execute `bumpver update --major/--minor/--patch`.
 This will:
 
@@ -42,6 +44,12 @@ Additional notes:
   - Use the `--dry` option to preview the release change.
   - The release tag (e.g. a/b/rc) is determined from the last release.
     Use the `--tag` option to override the release tag.
+
+### Testing
+
+To run the tests, you need to have Docker installed in your system.
+
+
 
 ## License
 

@@ -5,13 +5,13 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-FROM aiidateam/aiida-core:2.1.2
+FROM aiidateam/aiida-core-with-services:2.5.0
 
 # To prevent the container to exit prematurely.
 ENV KILL_ALL_RPOCESSES_TIMEOUT=50
 
-WORKDIR /opt/
 
+USER root
 # Install statically linked CP2K which is a considerably newer release than Debian builtin.
 # The statically linked CP2K is a non-MPI binary, but we're running all tests with 1 MPI proc.
 RUN set -ex ; \
@@ -21,6 +21,7 @@ RUN set -ex ; \
   echo "1e6fccf901873ebe9c827f45fb29331f599772f6e6281e988d8956c7a3aa143c /usr/bin/cp2k" | sha256sum -c ; \
   chmod +x /usr/bin/cp2k
 
+USER aiida
 # Install aiida-cp2k plugin.
 COPY . aiida-cp2k
 RUN pip install ./aiida-cp2k[dev,docs]

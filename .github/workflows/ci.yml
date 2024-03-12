@@ -47,7 +47,7 @@ jobs:
     - name: Create container from aiida_cp2k_test image and test the plugin inside
       run: |
         export DOCKERID=`docker run -d aiida_cp2k_test`
-        docker exec --tty $DOCKERID wait-for-services
+        sleep 5
         docker logs $DOCKERID
         docker exec --tty --user aiida $DOCKERID /bin/bash -l -c 'cd /home/aiida/aiida-cp2k/ && py.test --cov aiida_cp2k --cov-append .'
 

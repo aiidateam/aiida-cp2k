@@ -23,15 +23,13 @@ RUN set -ex ; \
 
 USER aiida
 # Install aiida-cp2k plugin.
-COPY . aiida-cp2k
+COPY --chown="${SYSTEM_UID}:${SYSTEM_GID}" . /home/aiida/aiida-cp2k
 RUN pip install ./aiida-cp2k[dev,docs]
 
 # Install coverals.
 RUN pip install coveralls
 
 # Install the cp2k code.
-COPY .docker/opt/add-codes.sh /opt/
-COPY .docker/my_init.d/add-codes.sh /etc/my_init.d/50_add-codes.sh
-
-# Add PGSQL bin folder to PATH.
-COPY .docker/my_init.d/add-pgsql-bin-to-path.sh /etc/my_init.d/50_add-pgsql-bin-to-path.sh
+COPY .docker/init/add-codes.sh /etc/init/
+COPY .docker/s6-rc.d/cp2k-code-setup /etc/s6-overlay/s6-rc.d/cp2k-code-setup
+COPY .docker/user/cp2k-code-setup /etc/s6-overlay/s6-rc.d/user/contents.d/cp2k-code-setup

@@ -1,0 +1,7 @@
+#!/command/execlineb -S0
+
+with-contenv
+
+foreground { s6-echo "Setting up CP2K code" }
+
+/etc/init/add-codes.sh

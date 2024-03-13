@@ -149,9 +149,11 @@ class Cp2kBaseParser(parsers.Parser):
         for frame in parse(output_xyz_pos):
             _, positions = zip(*frame["atoms"])
             positions_traj.append(positions)
-            comment_split = frame["comment"].split(',')
+            comment_split = frame["comment"].split(",")
             stepids_traj.append(int(comment_split[0].split()[-1]))
-            energy_index = next((i for i, s in enumerate(comment_split) if "E =" in s), None)
+            energy_index = next(
+                (i for i, s in enumerate(comment_split) if "E =" in s), None
+            )
             energies_traj.append(float(comment_split[energy_index].split()[-1]))
         positions_traj = np.array(positions_traj)
         stepids_traj = np.array(stepids_traj)

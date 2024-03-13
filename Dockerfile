@@ -5,23 +5,23 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-FROM aiidateam/aiida-core:1.6.9
+
+FROM aiidateam/aiida-core-with-services:2.5.0
+
 
 # To prevent the container to exit prematurely.
 ENV KILL_ALL_RPOCESSES_TIMEOUT=50
 
-WORKDIR /opt/
-
-# Install CP2K from conda-forge.
 RUN conda create --yes -c conda-forge -n cp2k cp2k=9.1 && conda clean --all -f -y
 
 # Install aiida-cp2k plugin.
-COPY . aiida-cp2k
+COPY --chown="${SYSTEM_UID}:${SYSTEM_GID}" . /home/aiida/aiida-cp2k
 RUN pip install ./aiida-cp2k[dev,docs]
 
 # Install coverals.
 RUN pip install coveralls
 
 # Install the cp2k code.
-COPY .docker/opt/add-codes.sh /opt/
-COPY .docker/my_init.d/add-codes.sh /etc/my_init.d/50_add-codes.sh
+COPY .docker/init/add-codes.sh /etc/init/
+COPY .docker/s6-rc.d/cp2k-code-setup /etc/s6-overlay/s6-rc.d/cp2k-code-setup
+COPY .docker/user/cp2k-code-setup /etc/s6-overlay/s6-rc.d/user/contents.d/cp2k-code-setup

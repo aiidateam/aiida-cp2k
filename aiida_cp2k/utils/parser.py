@@ -9,6 +9,8 @@
 import math
 import re
 
+import numpy as np
+
 
 def parse_cp2k_output(fstring):
     """Parse CP2K output into a dictionary."""
@@ -28,7 +30,7 @@ def parse_cp2k_output(fstring):
 
 def parse_cp2k_output_advanced(
     fstring,
-):  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
+):
     """Parse CP2K output into a dictionary (ADVANCED: more info parsed @ PRINT_LEVEL MEDIUM)."""
     lines = fstring.splitlines()
 
@@ -84,7 +86,7 @@ def parse_cp2k_output_advanced(
                 result_dict["spin_square_expectation"] = []
             result_dict["spin_square_expectation"].append(float(s2_expect))
 
-        # read the number of electrons in the first scf (NOTE: it may change but it is not updated!)
+        # Read the number of electrons in the first scf (NOTE: it may change but it is not updated!)
         if re.search("Number of electrons: ", line):
             if "init_nel_spin1" not in result_dict.keys():
                 result_dict["init_nel_spin1"] = int(line.split()[3])
@@ -100,17 +102,6 @@ def parse_cp2k_output_advanced(
         if re.search("Smear method", line):
             result_dict["smear_method"] = line.split()[-1]
 
-        if re.search(r"subspace spin", line):
-            if int(line.split()[-1]) == 1:
-                line_is = "eigen_spin1_au"
-                if "eigen_spin1_au" not in result_dict.keys():
-                    result_dict["eigen_spin1_au"] = []
-            elif int(line.split()[-1]) == 2:
-                line_is = "eigen_spin2_au"
-                if "eigen_spin2_au" not in result_dict.keys():
-                    result_dict["eigen_spin2_au"] = []
-            continue
-
         # Parse warnings
         if re.search(r"Using a non-square number of", line):
             result_dict["warnings"].append("Using a non-square number of MPI ranks")
@@ -121,18 +112,25 @@ def parse_cp2k_output_advanced(
         if re.search(r"Specific L-BFGS convergence criteria", line):
             result_dict["warnings"].append("LBFGS converged with specific criteria")
 
+        # Parse eigenvalues.
+        if "subspace spin" in line and "owest" not in line:
+            if int(line.split()[-1]) == 1:
+                line_is = "eigen_spin1_au"
+                result_dict["eigen_spin1_au"] = []
+            elif int(line.split()[-1]) == 2:
+                line_is = "eigen_spin2_au"
+                result_dict["eigen_spin2_au"] = []
+            continue
+
         # If a tag has been detected, now read the following line knowing what they are
-        if line_is is not None:
-            # Read eigenvalues as 4-columns row, then convert to float
-            if line_is in ["eigen_spin1_au", "eigen_spin2_au"]:
-                if re.search(r"-------------", line) or re.search(
-                    r"Reached convergence", line
-                ):
-                    continue
-                if line.split() and len(line.split()) <= 4:
-                    result_dict[line_is] += [float(x) for x in line.split()]
-                else:
-                    line_is = None
+        if line_is in ["eigen_spin1_au", "eigen_spin2_au"]:
+            if "------" in line or "*** WARNING" in line:
+                continue
+            splitted_line = line.split()
+            try:
+                result_dict[line_is] += [float(x) for x in splitted_line]
+            except ValueError:
+                line_is = None
 
         ####################################################################
         #  THIS SECTION PARSES THE PROPERTIES AT GOE_OPT/CELL_OPT/MD STEP  #
@@ -327,8 +325,6 @@ def _parse_bands_cp2k_greater_81(lines, line_n):
 def _parse_bands(lines, n_start, cp2k_version):
     """Parse band structure from the CP2K output."""
 
-    import numpy as np
-
     kpoints = []
     labels = []
     bands_s1 = []
@@ -381,11 +377,7 @@ def _parse_bands(lines, n_start, cp2k_version):
 
 def parse_cp2k_trajectory(content):
     """CP2K trajectory parser."""
-
-    import numpy as np
-
-    # pylint: disable=protected-access
-    # parse coordinate section
+    # Parse coordinate section
     match = re.search(r"\n\s*&COORD\n(.*?)\n\s*&END COORD\n", content, re.DOTALL)
     coord_lines = [line.strip().split() for line in match.group(1).splitlines()]
 

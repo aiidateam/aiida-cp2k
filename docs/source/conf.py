@@ -10,8 +10,6 @@ All configuration values have a default; values that are commented out
 serve to show the default.
 """
 
-# pylint: disable=invalid-name,ungrouped-imports
-
 import os
 import sys
 import time
@@ -32,16 +30,7 @@ if not os.environ.get("READTHEDOCS", None):
     html_theme = "sphinx_rtd_theme"
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
-# let's make sure the entry points are up to date
-try:
-    from aiida.plugins.entry_point import ENTRYPOINT_MANAGER as mgr
-
-    mgr.scan()
-except AttributeError:
-    # .scan may be no longer availabe if we switch away from reentry
-    pass
-
-import aiida_cp2k  # pylint: disable=wrong-import-position
+import aiida_cp2k
 
 # -- General configuration ------------------------------------------------
 
@@ -89,7 +78,6 @@ copyright_year_string = (
     if current_year == copyright_first_year
     else f"{copyright_first_year}-{current_year}"
 )
-# pylint: disable=redefined-builtin
 copyright = f"{copyright_year_string}, {copyright_owners}. All rights reserved."
 
 # The version info for the project you're documenting, acts as replacement for
@@ -369,4 +357,5 @@ nitpick_ignore = [
     ("py:class", "utils.AttributesFrozendict"),
     ("py:class", "State"),
     ("py:class", "Stepper"),
+    ("py:class", "CalcJobNode"),
 ]

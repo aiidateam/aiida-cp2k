@@ -1,4 +1,3 @@
-# pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -15,10 +14,10 @@ import click
 import numpy as np
 from aiida.common import NotExistent
 from aiida.engine import run
-from aiida.orm import Code, Dict, SinglefileData
+from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")
 
 
 def example_precision(cp2k_code):
@@ -48,7 +47,7 @@ def example_precision(cp2k_code):
 
     # Parameters.
     parameters = Dict(
-        dict={
+        {
             "GLOBAL": {
                 "RUN_TYPE": "MD",
             },
@@ -64,7 +63,7 @@ def example_precision(cp2k_code):
                     "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
                     "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
                     "SCF": {
-                        "MAX_SCF": 1,
+                        "MAX_SCF": 10,
                     },
                     "XC": {
                         "XC_FUNCTIONAL": {
@@ -136,7 +135,7 @@ def example_precision(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = Code.get_from_string(codelabel)
+        code = load_code(codelabel)
     except NotExistent:
         print("The code '{codelabel}' does not exist.")
         sys.exit(1)
@@ -144,4 +143,4 @@ def cli(codelabel):
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable=no-value-for-parameter
+    cli()

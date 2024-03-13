@@ -1,11 +1,10 @@
-# pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Run simple DFT calculation through a workchain."""
+"""An example that fails due to lack of restart data."""
 
 import os
 import sys
@@ -14,11 +13,11 @@ import ase.io
 import click
 from aiida.common import NotExistent
 from aiida.engine import run_get_node
-from aiida.orm import Code, Dict, SinglefileData
+from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory, WorkflowFactory
 
 Cp2kBaseWorkChain = WorkflowFactory("cp2k.base")
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")
 
 
 def example_base(cp2k_code):
@@ -45,10 +44,9 @@ def example_base(cp2k_code):
 
     # Parameters.
     parameters = Dict(
-        dict={
+        {
             "GLOBAL": {
-                "RUN_TYPE": "GEO_OPT",
-                "WALLTIME": "00:00:05",  # Can't even do one geo opt step.
+                "RUN_TYPE": "ENERGY",
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
@@ -56,14 +54,14 @@ def example_base(cp2k_code):
                     "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
                     "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
                     "QS": {
-                        "EPS_DEFAULT": 1.0e-12,
+                        "EPS_DEFAULT": 1.0e-16,
                         "WF_INTERPOLATION": "ps",
                         "EXTRAPOLATION_ORDER": 3,
                     },
                     "MGRID": {
                         "NGRIDS": 4,
-                        "CUTOFF": 280,
-                        "REL_CUTOFF": 30,
+                        "CUTOFF": 450,
+                        "REL_CUTOFF": 70,
                     },
                     "XC": {
                         "XC_FUNCTIONAL": {
@@ -98,7 +96,9 @@ def example_base(cp2k_code):
     builder = Cp2kBaseWorkChain.get_builder()
 
     # Switch on resubmit_unconverged_geometry disabled by default.
-    builder.handler_overrides = Dict(dict={"restart_incomplete_calculation": True})
+    builder.handler_overrides = Dict(
+        {"restart_incomplete_calculation": {"enabled": True}}
+    )
 
     # Input structure.
     builder.cp2k.structure = structure
@@ -108,12 +108,17 @@ def example_base(cp2k_code):
         "basis": basis_file,
         "pseudo": pseudo_file,
     }
-    builder.cp2k.metadata.options.resources = {
-        "num_machines": 1,
-        "num_mpiprocs_per_machine": 1,
+    builder.cp2k.metadata.options = {
+        "resources": {
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1,
+        },
+        "max_wallclock_seconds": 1 * 1 * 60,  # 30 min
+        "mpirun_extra_params": [
+            "timeout",
+            "1",
+        ],  # Kill the calculation after 1 second to test the restart failure.
     }
-    builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
-
     print("Submitted calculation...")
     _, process_node = run_get_node(builder)
 
@@ -130,7 +135,7 @@ def example_base(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = Code.get_from_string(codelabel)
+        code = load_code(codelabel)
     except NotExistent:
         print(f"The code '{codelabel}' does not exist")
         sys.exit(1)
@@ -138,4 +143,4 @@ def cli(codelabel):
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable=no-value-for-parameter
+    cli()

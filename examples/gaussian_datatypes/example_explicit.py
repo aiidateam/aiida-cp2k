@@ -1,4 +1,3 @@
-# pylint: disable=import-outside-toplevel
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -18,7 +17,7 @@ from aiida.orm import Code, Dict
 from aiida.plugins import DataFactory
 from gdt_data import load_data
 
-StructureData = DataFactory("structure")  # pylint: disable=invalid-name
+StructureData = DataFactory("core.structure")
 
 
 def example_gdt(cp2k_code):
@@ -52,7 +51,7 @@ def example_gdt(cp2k_code):
 
     # parameters
     parameters = Dict(
-        dict={
+        {
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {
@@ -113,4 +112,4 @@ def cli(codelabel):
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable=no-value-for-parameter
+    cli()

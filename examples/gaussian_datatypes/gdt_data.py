@@ -1,4 +1,3 @@
-# pylint: disable=import-outside-toplevel
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -59,8 +58,8 @@ def load_data(prefix="MY-"):
          0.25682890    0
     """
 
-    BasisSet = DataFactory("gaussian.basisset")  # pylint: disable=invalid-name
-    Pseudo = DataFactory("gaussian.pseudo")  # pylint: disable=invalid-name
+    BasisSet = DataFactory("gaussian.basisset")
+    Pseudo = DataFactory("gaussian.pseudo")
 
     fhandle_bset = StringIO(bset_input)
     fhandle_pseudo = StringIO(pseudo_input)
@@ -74,7 +73,9 @@ def load_data(prefix="MY-"):
             p.element: p
             for p in Pseudo.from_cp2k(fhandle_pseudo, duplicate_handling="error")
         }
-    except UniquenessError:  # if the user already ran the script, fetch the data from the db instead
+    except (
+        UniquenessError
+    ):  # if the user already ran the script, fetch the data from the db instead
         bsets = {
             "H": BasisSet.get("H", f"{prefix}AUTO-DZVP-MOLOPT-GTH"),
             "O": BasisSet.get("O", f"{prefix}AUTO-DZVP-MOLOPT-SR-GTH"),

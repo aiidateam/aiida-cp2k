@@ -1,4 +1,3 @@
-# pylint: disable=invalid-name
 ###############################################################################
 # Copyright (c), The AiiDA-CP2K authors.                                      #
 # SPDX-License-Identifier: MIT                                                #
@@ -12,7 +11,7 @@ import sys
 import click
 from aiida.common import NotExistent
 from aiida.engine import run_get_node
-from aiida.orm import Code, Dict
+from aiida.orm import Dict, load_code
 
 
 def example_failure(cp2k_code):
@@ -21,7 +20,7 @@ def example_failure(cp2k_code):
     print("Testing CP2K failure...")
 
     # a broken CP2K input
-    parameters = Dict(dict={"GLOBAL": {"FOO_BAR_QUUX": 42}})
+    parameters = Dict({"GLOBAL": {"FOO_BAR_QUUX": 42}})
 
     print("Submitted calculation...")
 
@@ -50,7 +49,7 @@ def example_failure(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = Code.get_from_string(codelabel)
+        code = load_code(codelabel)
     except NotExistent:
         print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)
@@ -58,4 +57,4 @@ def cli(codelabel):
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable=no-value-for-parameter
+    cli()

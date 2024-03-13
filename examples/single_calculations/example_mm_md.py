@@ -4,16 +4,14 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""Run molecular mechanics calculation."""
+"""Run molecular dynamics calculation."""
 
 import os
 import sys
 
 import ase.io
 import click
-from aiida.common import NotExistent
-from aiida.engine import run
-from aiida.orm import Dict, SinglefileData, load_code
+from aiida import common, engine, orm
 
 
 def example_mm(cp2k_code):
@@ -44,7 +42,7 @@ def example_mm(cp2k_code):
     END"""
         )
 
-    water_pot = SinglefileData(file=os.path.join("/tmp", "water.pot"))
+    water_pot = orm.SinglefileData(file=os.path.join("/tmp", "water.pot"))
 
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -52,14 +50,15 @@ def example_mm(cp2k_code):
     atoms = ase.io.read(os.path.join(thisdir, "..", "files", "h2o.xyz"))
     atoms.center(vacuum=10.0)
     atoms.write(os.path.join("/tmp", "coords.pdb"), format="proteindatabank")
-    coords_pdb = SinglefileData(file=os.path.join("/tmp", "coords.pdb"))
+    coords_pdb = orm.SinglefileData(file=os.path.join("/tmp", "coords.pdb"))
 
     # Parameters.
     # Based on cp2k/tests/Fist/regtest-1-1/water_1.inp
-    parameters = Dict(
+    parameters = orm.Dict(
         {
             "FORCE_EVAL": {
                 "METHOD": "fist",
+                "STRESS_TENSOR": "analytical",
                 "MM": {
                     "FORCEFIELD": {
                         "PARM_FILE_NAME": "water.pot",
@@ -88,17 +87,35 @@ def example_mm(cp2k_code):
                     },
                 },
             },
-            "GLOBAL": {"CALLGRAPH": "master", "CALLGRAPH_FILE_NAME": "runtime"},
+            "MOTION": {
+                "CONSTRAINT": {},
+                "MD": {
+                    "THERMOSTAT": {"CSVR": {}, "TYPE": "csvr"},
+                    "BAROSTAT": {},
+                    "STEPS": 1000,
+                    "ENSEMBLE": "npt_f",
+                    "TEMPERATURE": 300.0,
+                },
+                "PRINT": {
+                    "TRAJECTORY": {"EACH": {"MD": 5}},
+                    "RESTART": {"EACH": {"MD": 5}},
+                    "RESTART_HISTORY": {"_": "OFF"},
+                    "CELL": {"EACH": {"MD": 5}},
+                    "FORCES": {"EACH": {"MD": 5}, "FORMAT": "XYZ"},
+                },
+            },
+            "GLOBAL": {
+                "CALLGRAPH": "master",
+                "CALLGRAPH_FILE_NAME": "runtime",
+                "PRINT_LEVEL": "medium",
+                "RUN_TYPE": "MD",
+            },
         }
     )
-
-    # Settings.
-    settings = Dict({"additional_retrieve_list": ["runtime.callgraph"]})
 
     # Construct process builder.
     builder = cp2k_code.get_builder()
     builder.parameters = parameters
-    builder.settings = settings
     builder.code = cp2k_code
     builder.file = {
         "water_pot": water_pot,
@@ -111,25 +128,13 @@ def example_mm(cp2k_code):
     builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")
-    calc = run(builder)
+    results = engine.run(builder)
+    assert "output_trajectory" in results, "Output trajectory not found among results."
+    traj = results["output_trajectory"]
 
-    # Check energy.
-    expected_energy = 0.146927412614e-3
-    if abs(calc["output_parameters"]["energy"] - expected_energy) < 1e-10:
-        print("OK, energy has the expected value.")
-    else:
-        print("ERROR!")
-        print(f"Expected energy value: {expected_energy}")
-        print(f"Actual energy value: {calc['output_parameters']['energy']}")
-        sys.exit(3)
-
-    # Check if callgraph is there.
-    if "runtime.callgraph" in calc["retrieved"].base.repository.list_object_names():
-        print("OK, callgraph file was retrived.")
-    else:
-        print("ERROR!")
-        print("Callgraph file was not retrieved.")
-        sys.exit(3)
+    assert traj.get_cells().shape == (201, 3, 3), "Unexpected shape of cells."
+    assert traj.get_positions().shape == (201, 3, 3), "Unexpected shape of positions."
+    assert traj.get_array("forces").shape == (201, 3, 3), "Unexpected shape of forces."
 
 
 @click.command("cli")
@@ -137,8 +142,8 @@ def example_mm(cp2k_code):
 def cli(codelabel):
     """Click interface."""
     try:
-        code = load_code(codelabel)
-    except NotExistent:
+        code = orm.load_code(codelabel)
+    except common.NotExistent:
         print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)
     example_mm(code)

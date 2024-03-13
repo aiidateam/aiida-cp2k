@@ -2,7 +2,6 @@ label: cp2k
 computer: localhost
 description:
 input_plugin: cp2k
-on_computer: True
-remote_abs_path: /opt/conda/envs/cp2k/bin/cp2k.psmp
+filepath_executable: /opt/conda/envs/cp2k/bin/cp2k.psmp
 append_text:
 prepend_text: "conda activate cp2k"

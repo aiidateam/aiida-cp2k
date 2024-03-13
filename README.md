@@ -48,7 +48,28 @@ Additional notes:
 ### Testing
 
 To run the tests, you need to have Docker installed in your system.
+Once this is done, you can build the Docker image with the following command:
 
+```bash
+docker build -t aiida_cp2k_test .
+```
+Then, you can launch the container:
+
+```bash
+DOKERID=`docker run -it aiida_cp2k_test`
+```
+This will remeber the container ID in the variable `DOKERID`.
+You can then run the tests with the following command:
+
+```bash
+docker exec --tty --user aiida $DOCKERID /bin/bash -l -c 'cd /home/aiida/aiida-cp2k/ && pytest'
+```
+
+To enter the container for manual testing do:
+
+```bash
+docker exec -it --user aiida $DOCKERID bash
+```
 
 
 ## License

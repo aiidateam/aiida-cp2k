@@ -91,7 +91,6 @@ def example_base(cp2k_code):
                     ],
                 },
             },
-
             "MOTION": {
                 "CONSTRAINT": {},
                 "MD": {

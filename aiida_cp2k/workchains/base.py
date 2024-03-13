@@ -65,7 +65,11 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
         trajectories = self._collect_all_trajetories()
         if trajectories:
             self.report("Work chain completed successfully, collecting all trajectories")
-            self.out("output_trajectory", utils.merge_trajectory_data_unique(*trajectories))
+            if self.ctx.inputs.parameters.get("GLOBAL", {}).get("RUN_TYPE") == "GEO_OPT":
+                output_trajectory = utils.merge_trajectory_data_non_unique(*trajectories)
+            else:
+                output_trajectory = utils.merge_trajectory_data_unique(*trajectories)
+            self.out("output_trajectory", output_trajectory)
 
     def overwrite_input_structure(self):
         if "output_structure" in self.ctx.children[self.ctx.iteration-1].outputs:

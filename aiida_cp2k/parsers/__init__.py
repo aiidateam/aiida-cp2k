@@ -145,12 +145,19 @@ class Cp2kBaseParser(parsers.Parser):
 
         positions_traj = []
         stepids_traj = []
+        energies_traj = []
         for frame in parse(output_xyz_pos):
             _, positions = zip(*frame["atoms"])
             positions_traj.append(positions)
-            stepids_traj.append(int(frame["comment"].split()[2][:-1]))
+            comment_split = frame["comment"].split(",")
+            stepids_traj.append(int(comment_split[0].split()[-1]))
+            energy_index = next(
+                (i for i, s in enumerate(comment_split) if "E =" in s), None
+            )
+            energies_traj.append(float(comment_split[energy_index].split()[-1]))
         positions_traj = np.array(positions_traj)
         stepids_traj = np.array(stepids_traj)
+        energies_traj = np.array(energies_traj)
 
         cell_traj = None
         cell_traj_fname = self.node.process_class._DEFAULT_TRAJECT_CELL_FILE_NAME
@@ -190,6 +197,7 @@ class Cp2kBaseParser(parsers.Parser):
             symbols=symbols,
             positions=positions_traj,
         )
+        trajectory.set_array("energies", energies_traj)
         if forces_traj is not None:
             trajectory.set_array("forces", forces_traj)
 

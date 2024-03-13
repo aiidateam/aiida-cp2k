@@ -56,7 +56,7 @@ docker build -t aiida_cp2k_test .
 Then, you can launch the container:
 
 ```bash
-DOKERID=`docker run -it aiida_cp2k_test`
+DOKERID=`docker run -d aiida_cp2k_test`
 ```
 This will remeber the container ID in the variable `DOKERID`.
 You can then run the tests with the following command:

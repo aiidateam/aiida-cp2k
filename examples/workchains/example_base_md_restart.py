@@ -47,7 +47,7 @@ def example_base(cp2k_code):
         {
             "GLOBAL": {
                 "RUN_TYPE": "MD",
-                "WALLTIME": "00:00:50",  # too short
+                "WALLTIME": "00:00:30",  # too short
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
@@ -96,7 +96,8 @@ def example_base(cp2k_code):
                 "MD": {
                     "THERMOSTAT": {"CSVR": {}, "TYPE": "csvr"},
                     "BAROSTAT": {},
-                    "STEPS": 10,
+                    "MAX_STEPS": 8,
+                    "STEPS": 10000,
                     "ENSEMBLE": "npt_f",
                     "TEMPERATURE": 300.0,
                 },

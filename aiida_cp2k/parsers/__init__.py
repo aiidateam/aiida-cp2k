@@ -6,9 +6,10 @@
 ###############################################################################
 """AiiDA-CP2K output parser."""
 
+import re
+
 import ase
 import numpy as np
-import re
 from aiida import common, engine, orm, parsers, plugins
 
 from .. import utils

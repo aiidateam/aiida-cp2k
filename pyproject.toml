@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Programming Language :: Python :: 3",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "aiida-core>=2.0.0,<3.0.0",
     "aiida-gaussian-datatypes",
@@ -40,7 +40,7 @@ dev = [
     "pytest~=6.0",
     "pytest-cov~=2.11.1",
     "coverage",
-    "pre-commit~=2.19",
+    "pre-commit~=3.6",
 ]
 docs = [
     "sphinx",

@@ -5,13 +5,14 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-FROM aiidateam/aiida-core:2.1.2
+
+FROM aiidateam/aiida-core-with-services:2.5.0
 
 # To prevent the container to exit prematurely.
 ENV KILL_ALL_RPOCESSES_TIMEOUT=50
 
-WORKDIR /opt/
 
+USER root
 # Install statically linked CP2K which is a considerably newer release than Debian builtin.
 # The statically linked CP2K is a non-MPI binary, but we're running all tests with 1 MPI proc.
 RUN set -ex ; \
@@ -21,16 +22,15 @@ RUN set -ex ; \
   echo "1e6fccf901873ebe9c827f45fb29331f599772f6e6281e988d8956c7a3aa143c /usr/bin/cp2k" | sha256sum -c ; \
   chmod +x /usr/bin/cp2k
 
+USER aiida
 # Install aiida-cp2k plugin.
-COPY . aiida-cp2k
+COPY --chown="${SYSTEM_UID}:${SYSTEM_GID}" . /home/aiida/aiida-cp2k
 RUN pip install ./aiida-cp2k[dev,docs]
 
 # Install coverals.
 RUN pip install coveralls
 
 # Install the cp2k code.
-COPY .docker/opt/add-codes.sh /opt/
-COPY .docker/my_init.d/add-codes.sh /etc/my_init.d/50_add-codes.sh
-
-# Add PGSQL bin folder to PATH.
-COPY .docker/my_init.d/add-pgsql-bin-to-path.sh /etc/my_init.d/50_add-pgsql-bin-to-path.sh
+COPY .docker/init/add-codes.sh /etc/init/
+COPY .docker/s6-rc.d/cp2k-code-setup /etc/s6-overlay/s6-rc.d/cp2k-code-setup
+COPY .docker/user/cp2k-code-setup /etc/s6-overlay/s6-rc.d/user/contents.d/cp2k-code-setup

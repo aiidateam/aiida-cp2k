@@ -2,7 +2,6 @@ label: cp2k
 computer: localhost
 description:
 default_calc_job_plugin: cp2k
-on_computer: True
 filepath_executable: /usr/bin/cp2k
 append_text:
 prepend_text:

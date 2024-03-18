@@ -15,6 +15,10 @@ import sys
 import time
 from typing import Dict
 
+from aiida.manage.configuration import Profile, load_profile
+
+load_profile(Profile('docs', {'process_control': {}, 'storage': {}}))
+
 # If we are not on READTHEDOCS load the Sphinx theme manually
 if not os.environ.get("READTHEDOCS", None):
     import sphinx_rtd_theme

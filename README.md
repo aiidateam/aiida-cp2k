@@ -53,10 +53,15 @@ Once this is done, you can build the Docker image with the following command:
 ```bash
 docker build -t aiida_cp2k_test .
 ```
+To test against another version of aiida-core, you can specify the build agrument `AIIDA_VERSION`:
+```bash
+docker build -t aiida_cp2k_test --build-arg AIIDA_VERSION=2.4.3 .
+```
+
 Then, you can launch the container:
 
 ```bash
-DOKERID=`docker run -d aiida_cp2k_test`
+DOCKERID=`docker run -d aiida_cp2k_test`
 ```
 This will remeber the container ID in the variable `DOKERID`.
 You can then run the tests with the following command:

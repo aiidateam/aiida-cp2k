@@ -6,6 +6,8 @@
 ###############################################################################
 """AiiDA-CP2K output parser."""
 
+import re
+
 import ase
 import numpy as np
 from aiida import common, engine, orm, parsers, plugins
@@ -128,7 +130,7 @@ class Cp2kBaseParser(parsers.Parser):
     def _parse_trajectory(self, structure):
         """CP2K trajectory parser."""
 
-        symbols = [str(site.kind_name) for site in structure.sites]
+        symbols = [re.sub(r"\d+", "", str(site.kind_name)) for site in structure.sites]
 
         # Handle the positions trajectory
         xyz_traj_fname = self.node.process_class._DEFAULT_TRAJECT_XYZ_FILE_NAME

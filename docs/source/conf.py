@@ -15,13 +15,9 @@ import sys
 import time
 from typing import Dict
 
-from aiida.manage.configuration import load_documentation_profile
+from aiida.manage.configuration import Profile, load_profile
 
-# -- AiiDA-related setup --------------------------------------------------
-
-# Load the dummy profile even if we are running locally, this way the documentation will succeed even if the current
-# default profile of the AiiDA installation does not use a Django backend.
-load_documentation_profile()
+load_profile(Profile("docs", {"process_control": {}, "storage": {}}))
 
 # If we are not on READTHEDOCS load the Sphinx theme manually
 if not os.environ.get("READTHEDOCS", None):

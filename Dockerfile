@@ -12,6 +12,13 @@ FROM aiidateam/aiida-core-with-services:2.5.0
 # To prevent the container to exit prematurely.
 ENV KILL_ALL_RPOCESSES_TIMEOUT=50
 
+USER root
+RUN set -ex ; \
+  apt-get update ; \
+  apt-get install -y --no-install-recommends libsymspg1
+
+USER aiida
+
 RUN conda create --yes -c conda-forge -n cp2k cp2k=9.1 && conda clean --all -f -y
 
 # Install aiida-cp2k plugin.

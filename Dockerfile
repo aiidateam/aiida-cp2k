@@ -19,7 +19,7 @@ RUN set -ex ; \
 
 USER aiida
 
-RUN conda create --yes -c conda-forge -n cp2k cp2k=9.1 && conda clean --all -f -y
+RUN mamba create --yes -c conda-forge -n cp2k cp2k=9.1 && mamba clean --all -f -y
 
 # Install aiida-cp2k plugin.
 COPY --chown="${SYSTEM_UID}:${SYSTEM_GID}" . /home/aiida/aiida-cp2k

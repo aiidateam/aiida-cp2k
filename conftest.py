@@ -7,7 +7,9 @@ pytest_plugins = ["aiida.manage.tests.pytest_fixtures"]
 @pytest.fixture(scope="function")
 def cp2k_code(aiida_local_code_factory):
     return aiida_local_code_factory(
-        entry_point="cp2k", executable="/opt/conda/envs/cp2k/bin/cp2k.psmp", prepend_text='eval "$(command conda shell.bash hook 2> /dev/null)"\nconda activate cp2k\n'
+        entry_point="cp2k",
+        executable="/opt/conda/envs/cp2k/bin/cp2k.psmp",
+        prepend_text='eval "$(command conda shell.bash hook 2> /dev/null)"\nconda activate cp2k\n',
     )
 
 

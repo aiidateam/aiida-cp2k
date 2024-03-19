@@ -211,5 +211,22 @@ def add_ext_restart_section(input_dict):
     """Add external restart section to the input dictionary."""
     params = input_dict.get_dict()
     # overwrite the complete EXT_RESTART section if present
-    params["EXT_RESTART"] = {"RESTART_FILE_NAME": "./parent_calc/aiida-1.restart"}
+    params["EXT_RESTART"] = {
+        "RESTART_FILE_NAME": "./parent_calc/aiida-1.restart",
+        "RESTART_DEFAULT": ".TRUE.",
+        "RESTART_COUNTERS": ".TRUE.",
+        "RESTART_POS": ".TRUE.",
+        "RESTART_VEL": ".TRUE.",
+        "RESTART_CELL": ".TRUE.",
+        "RESTART_THERMOSTAT": ".TRUE.",
+        "RESTART_CONSTRAINT": ".FALSE.",
+    }
+    return Dict(params)
+
+
+@calcfunction
+def add_first_snapshot_in_reftraj_section(input_dict, first_snapshot):
+    """Add first_snapshot in REFTRAJ section to the input dictionary."""
+    params = input_dict.get_dict()
+    params["MOTION"]["MD"]["REFTRAJ"]["FIRST_SNAPSHOT"] = first_snapshot
     return Dict(params)

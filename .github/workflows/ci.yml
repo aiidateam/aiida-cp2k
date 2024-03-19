@@ -1,13 +1,22 @@
 name: Continuous Integration
 
 on:
-  [push, pull_request]
+  push:
+      branches:
+          - main
+  pull_request:
 
 jobs:
 
   test-plugin:
 
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        aiida-version:
+          - '2.4.3'
+          - '2.5.1'
+
     timeout-minutes: 30
 
     steps:
@@ -35,6 +44,8 @@ jobs:
         tags: aiida_cp2k_test
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache-new
+        build-args: |
+          AIIDA_VERSION=${{ matrix.aiida-version }}
 
     # Temp fix
     # https://github.com/docker/build-push-action/issues/252
@@ -47,39 +58,18 @@ jobs:
     - name: Create container from aiida_cp2k_test image and test the plugin inside
       run: |
         export DOCKERID=`docker run -d aiida_cp2k_test`
-        docker exec --tty $DOCKERID wait-for-services
+        sleep 5
         docker logs $DOCKERID
         docker exec --tty --user aiida $DOCKERID /bin/bash -l -c 'aiida-pseudo install sssp -v 1.3 -x PBE -p efficiency'
-        docker exec --tty --user aiida $DOCKERID /bin/bash -l -c 'cd /opt/aiida-cp2k/ && py.test --cov aiida_cp2k --cov-append .'
+        docker exec --tty --user aiida $DOCKERID /bin/bash -l -c 'cd /home/aiida/aiida-cp2k/ && py.test --cov aiida_cp2k --cov-append .'
 
-
-  pre-commit:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      matrix:
-        python-version: [3.8]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install python dependencies
-      run: |
-        pip install --upgrade pip
-        pip install -e .[dev,docs]
-    - name: Run pre-commit
-      run: |
-        pre-commit install
-        pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
 
   docs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.11]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}

@@ -46,11 +46,12 @@ def example_base(cp2k_code):
     parameters = Dict(
         {
             "GLOBAL": {
-                "RUN_TYPE": "GEO_OPT",
+                "RUN_TYPE": "MD",
                 "WALLTIME": "00:00:20",  # too short
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
+                "STRESS_TENSOR": "analytical",
                 "DFT": {
                     "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
                     "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
@@ -88,6 +89,20 @@ def example_base(cp2k_code):
                             "POTENTIAL": "GTH-LDA-q1",
                         },
                     ],
+                },
+            },
+            "MOTION": {
+                "CONSTRAINT": {},
+                "MD": {
+                    "THERMOSTAT": {"CSVR": {}, "TYPE": "csvr"},
+                    "BAROSTAT": {},
+                    "MAX_STEPS": 8,
+                    "STEPS": 10000,
+                    "ENSEMBLE": "npt_f",
+                    "TEMPERATURE": 300.0,
+                },
+                "PRINT": {
+                    "RESTART": {"EACH": {"MD": 1}},
                 },
             },
         }

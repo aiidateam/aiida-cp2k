@@ -34,7 +34,7 @@ def pytest_unconfigure(config):
     del sys._called_from_test
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 def setup_sssp_pseudos(aiida_profile):
     """Create an SSSP pseudo potential family from scratch."""
     subprocess.run(

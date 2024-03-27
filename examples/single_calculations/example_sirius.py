@@ -16,7 +16,7 @@ from aiida import common, engine, orm, plugins
 StructureData = plugins.DataFactory("core.structure")
 
 
-def example_sirius(cp2k_code):
+def example_sirius(cp2k_code, setup_sssp_pseudos):
     """Run simple DFT calculation."""
 
     print("Testing CP2K SIRIUS ENERGY on Si (DFT)...")
@@ -119,7 +119,7 @@ def cli(codelabel):
     except common.NotExistent:
         print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)
-    example_sirius(code)
+    example_sirius(code, setup_sssp_pseudos=None)
 
 
 if __name__ == "__main__":

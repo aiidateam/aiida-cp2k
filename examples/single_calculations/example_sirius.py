@@ -42,9 +42,10 @@ def example_sirius(cp2k_code, setup_sssp_pseudos):
                     "PARAMETERS": {
                         "ELECTRONIC_STRUCTURE_METHOD": "pseudopotential",
                         "USE_SYMMETRY": True,
-                        "GK_CUTOFF": 10,
-                        "PW_CUTOFF": 55,
-                        "ENERGY_TOL": 1e-15,
+                        "GK_CUTOFF": 5,
+                        "PW_CUTOFF": 20,
+                        "ENERGY_TOL": 0.1,
+                        "DENSITY_TOL": 0.1,
                         "NUM_DFT_ITER": 400,
                         "SMEARING": "FERMI_DIRAC",
                         "SMEARING_WIDTH": 0.00225,

@@ -1,6 +1,7 @@
 """For pytest initialise a test database and profile."""
-import pytest
 import subprocess
+
+import pytest
 
 pytest_plugins = ["aiida.manage.tests.pytest_fixtures"]
 
@@ -31,6 +32,7 @@ def pytest_unconfigure(config):
     import sys
 
     del sys._called_from_test
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_sssp_pseudos(aiida_profile):

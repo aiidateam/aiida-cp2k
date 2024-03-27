@@ -2,6 +2,8 @@ label: cp2k
 computer: localhost
 description:
 default_calc_job_plugin: cp2k
-filepath_executable: /usr/bin/cp2k
+filepath_executable: /opt/conda/envs/cp2k/bin/cp2k.psmp
 append_text:
-prepend_text:
+prepend_text: |
+  eval "$(command conda shell.bash hook 2> /dev/null)"
+  conda activate cp2k

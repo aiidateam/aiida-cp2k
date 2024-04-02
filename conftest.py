@@ -1,6 +1,6 @@
 """For pytest initialise a test database and profile."""
-import subprocess
 
+import subprocess
 import pytest
 
 pytest_plugins = ["aiida.manage.tests.pytest_fixtures"]

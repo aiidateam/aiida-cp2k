@@ -13,6 +13,7 @@ from aiida.common import CalcInfo, CodeInfo, InputValidationError
 from aiida.engine import CalcJob
 from aiida.orm import Dict, RemoteData, SinglefileData
 from aiida.plugins import DataFactory
+from ase import Atom, Atoms
 
 from ..utils import Cp2kInput
 from ..utils.datatype_helpers import (
@@ -409,7 +410,10 @@ class Cp2kCalculation(CalcJob):
     def _write_structure(structure, folder, name):
         """Function that writes a structure and takes care of element tags."""
 
-        xyz = _atoms_to_xyz(structure.get_ase())
+        atoms = Atoms(cell=structure.cell, pbc=structure.pbc)
+        for site in structure.sites:
+            atoms.append(Atom(site.kind_name, site.position))
+        xyz = _atoms_to_xyz(atoms)
         with open(folder.get_abs_path(name), mode="w", encoding="utf-8") as fobj:
             fobj.write(xyz)
 

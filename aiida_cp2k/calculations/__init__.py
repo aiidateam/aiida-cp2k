@@ -407,9 +407,15 @@ class Cp2kCalculation(CalcJob):
 
     @staticmethod
     def _write_structure(structure, folder, name):
-        """Function that writes a structure and takes care of element tags."""
-
-        xyz = _atoms_to_xyz(structure.get_ase())
+        """Function that writes a structure to a xyz file.
+        The element tags being the names of the kind.
+        """
+        elem_coords = [
+            f"{site.position[0]:25.16f} {site.position[1]:25.16f} {site.position[2]:25.16f}"
+            for site in structure.sites
+        ]
+        xyz = f"{len(elem_coords)}\n\n"
+        xyz += "\n".join(map(add, structure.get_site_kindnames(), elem_coords))
         with open(folder.get_abs_path(name), mode="w", encoding="utf-8") as fobj:
             fobj.write(xyz)
 
@@ -475,7 +481,7 @@ def _trajectory_to_xyz_and_cell(trajectory):
     if "cells" in trajectory.get_arraynames():
         cell = "#   Step   Time [fs]       Ax [Angstrom]       Ay [Angstrom]       Az [Angstrom]       Bx [Angstrom]       By [Angstrom]       Bz [Angstrom]       Cx [Angstrom]       Cy [Angstrom]       Cz [Angstrom]      Volume [Angstrom^3]\n"
         cell_vecs = [
-            f"{stepid+1} {(stepid+1)*0.5:6.3f} {cellvec[0][0]:25.16f} {cellvec[0][1]:25.16f} {cellvec[0][2]:25.16f} {cellvec[1][0]:25.16f} {cellvec[1][1]:25.16f} {cellvec[1][2]:25.16f} {cellvec[2][0]:25.16f} {cellvec[2][1]:25.16f} {cellvec[2][2]:25.16f} {np.dot(cellvec[0],np.cross(cellvec[1],cellvec[2]))}"
+            f"{stepid+1} {(stepid+1)*0.5:6.3f} {cellvec[0][0]:25.16f} {cellvec[0][1]:25.16f} {cellvec[0][2]:25.16f} {cellvec[1][0]:25.16f} {cellvec[1][1]:25.16f} {cellvec[1][2]:25.16f} {cellvec[2][0]:25.16f} {cellvec[2][1]:25.16f} {cellvec[2][2]:25.16f} {np.dot(cellvec[0], np.cross(cellvec[1], cellvec[2]))}"
             for (stepid, cellvec) in zip(stepids, trajectory.get_array("cells"))
         ]
         cell += "\n".join(cell_vecs)

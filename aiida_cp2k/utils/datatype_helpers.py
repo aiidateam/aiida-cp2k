@@ -433,7 +433,7 @@ def _merge_trajectories_into_dictionary(*trajectories, unique_stepids=False):
             [traj.get_array(array_name) for traj in trajectories], axis=0
         )
         final_trajectory_dict[array_name] = merged_array
-        
+
     # reorder arrays to have the same order as in the original whole trajectory
     try:
         stepids = final_trajectory_dict["stepids"]
@@ -444,11 +444,11 @@ def _merge_trajectories_into_dictionary(*trajectories, unique_stepids=False):
         final_trajectory_dict[array_name] = final_trajectory_dict[array_name][
             sorted_indices
         ]
-    
+
     # If unique_stepids is True, we only keep the unique stepids.
     # The other arrays are then also reduced to the unique stepids.
     if unique_stepids:
-        #stepids = np.concatenate([traj.get_stepids() for traj in trajectories], axis=0)
+        # stepids = np.concatenate([traj.get_stepids() for traj in trajectories], axis=0)
         final_trajectory_dict["stepids"], unique_indices = np.unique(
             stepids, return_index=True
         )

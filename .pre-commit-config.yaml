@@ -4,7 +4,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
 
         - id: check-json
@@ -19,14 +19,14 @@ repos:
           exclude: *exclude_pre_commit_hooks
 
   - repo: https://github.com/psf/black
-    rev: 24.3.0
+    rev: 24.10.0
     hooks:
         - id: black
           language_version: python3 # Should be a command that runs python3.6+
           exclude: aiida_cp2k/workchains/base.py
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.0.0
+    rev: 7.1.1
     hooks:
         - id: flake8
           args: [--count, --show-source, --statistics]
@@ -38,13 +38,13 @@ repos:
           args: [--profile, black, --filter-files]
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.2
+    rev: v3.19.1
     hooks:
         - id: pyupgrade
           args: [--py37-plus]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.9.0
+    rev: v1.14.1
     hooks:
         - id: mypy
           additional_dependencies:

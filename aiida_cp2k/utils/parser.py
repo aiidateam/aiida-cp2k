@@ -213,28 +213,46 @@ def parse_cp2k_output_advanced(
                 # Note: with CELL_OPT/LBFGS there is no "STEP 0", while there is with CELL_OPT/BFGS
                 if re.search(r"Informations at step", line):
                     step = int(data[5])
-                # Note fixes v2024.3    
+                # Note fixes v2024.3
                 if re.search(r"OPT\| Step number ", line):
                     step = int(data[3])
-                if re.search(r"Maximum step size                                             ", line):
-                    max_step = float(data[-1])   
+                if re.search(
+                    r"Maximum step size                                             ",
+                    line,
+                ):
+                    max_step = float(data[-1])
                 if re.search(r"Max. step size             =", line):
                     max_step = float(data[-1])
-                if re.search(r"RMS step size                                                 ", line):  
-                    rms_step = float(data[-1])  
+                if re.search(
+                    r"RMS step size                                                 ",
+                    line,
+                ):
+                    rms_step = float(data[-1])
                 if re.search(r"RMS step size              =", line):
                     rms_step = float(data[-1])
-                if re.search(r"Maximum gradient                                              ", line):  
+                if re.search(
+                    r"Maximum gradient                                              ",
+                    line,
+                ):
                     max_grad = float(data[-1])
                 if re.search(r"Max. gradient              =", line):
                     max_grad = float(data[-1])
-                if re.search(r"RMS gradient                                                  ", line):  
+                if re.search(
+                    r"RMS gradient                                                  ",
+                    line,
+                ):
                     rms_grad = float(data[-1])
                 if re.search(r"RMS gradient               =", line):
                     rms_grad = float(data[-1])
                 if (
-                    (len(data) == 1 and data[0] == "---------------------------------------------------") or (len(data) == 10 and data[0] == "OPT|" and data[2] =="peak")or (len(data) == 7 and data[0] == "OPT|" and data[2] =="peak")
-                    ):
+                    (
+                        len(data) == 1
+                        and data[0]
+                        == "---------------------------------------------------"
+                    )
+                    or (len(data) == 10 and data[0] == "OPT|" and data[2] == "peak")
+                    or (len(data) == 7 and data[0] == "OPT|" and data[2] == "peak")
+                ):
                     print_now = True  # 51('-')
                 if re.search(
                     r"Reevaluating energy at the minimum", line

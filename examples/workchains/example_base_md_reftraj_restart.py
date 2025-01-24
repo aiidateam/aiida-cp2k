@@ -151,12 +151,12 @@ def example_base(cp2k_code):
         "basis": basis_file,
         "pseudo": pseudo_file,
     }
-    builder.cp2k.metadata.options={
-        "max_wallclock_seconds":100,
-        "resources" : {
-        "num_machines": 1,
-        "num_mpiprocs_per_machine": 1,
-    }
+    builder.cp2k.metadata.options = {
+        "max_wallclock_seconds": 100,
+        "resources": {
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1,
+        },
     }
 
     print("Submitted calculation...")

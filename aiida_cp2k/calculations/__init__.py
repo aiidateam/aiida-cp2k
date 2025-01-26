@@ -205,6 +205,7 @@ class Cp2kCalculation(CalcJob):
             "ERROR_OUT_OF_WALLTIME",
             message="The calculation stopped prematurely because it ran out of walltime.",
         )
+        spec.exit_code(450, "ERROR_SCF_NOT_CONVERGED", message="SCF cycle did not converge for thegiven threshold.")
         spec.exit_code(
             500,
             "ERROR_GEOMETRY_CONVERGENCE_NOT_REACHED",

@@ -78,14 +78,19 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
     @engine.process_handler(priority=401, exit_codes=[
         Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
         Cp2kCalculation.exit_codes.ERROR_OUTPUT_INCOMPLETE,
+        Cp2kCalculation.exit_codes.ERROR_SCF_NOT_CONVERGED,
     ], enabled=False)
     def restart_incomplete_calculation(self, calc):
         """This handler restarts incomplete calculations."""
         content_string = calc.outputs.retrieved.base.repository.get_object_content(calc.base.attributes.get('output_filename'))
+        
+        # Check if time wase exceeded
+        walltime_exceeded = calc.exit_status == Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status
 
         # CP2K was updating geometry - continue with that.
         restart_geometry_transformation = "Max. gradient              =" in content_string or "MD| Step number" in content_string
         end_inner_scf_loop = "Total energy: " in content_string
+
         # The message is written in the log file when the CP2K input parameter `LOG_PRINT_KEY` is set to True.
         if not (restart_geometry_transformation or end_inner_scf_loop or "Writing RESTART" in content_string):
             self.report("It seems that the restart of CP2K calculation wouldn't be able to fix the problem as the "
@@ -99,7 +104,12 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
         params = self.ctx.inputs.parameters
 
         params = utils.add_wfn_restart_section(params, orm.Bool('kpoints' in self.ctx.inputs))
-
+        
+        # After version 9.1 Check if calculation aborted due to SCF convergence failure and in case ignore_convergence_failure is set
+        scf_gradient = utils.get_last_convergence_value(content_string)
+        scf_restart_thr = 1e-5 # if ABORT for not SCF convergence, but RMS gradient is small, continue
+        ignore_convergence_failure = "SCF run NOT converged. To continue the calculation regardless" in content_string
+        is_geo_opt = params.get_dict().get("GLOBAL", {}).get("RUN_TYPE") == "GEO_OPT"
         if restart_geometry_transformation:
             # Check if we need to fix restart snapshot in REFTRAJ MD
             first_snapshot = None
@@ -111,8 +121,14 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
                 pass
             params = utils.add_ext_restart_section(params)
 
+        if ignore_convergence_failure and scf_gradient and scf_gradient < scf_restart_thr and not walltime_exceeded and is_geo_opt:
+            # add ignore_convergence_failure to the input parameters
+            self.report("The SCF was not converged, but the SCF gradient is small and we are doing GEO_OPT. Adding IGNORE_CONVERGENCE_FAILURE.")
+            params = utils.add_ignore_convergence_failure(params)
+
         self.ctx.inputs.parameters = params  # params (new or old ones) that include the necessary restart information.
         self.report(
             "The CP2K calculation wasn't completed. The restart of the calculation might be able to "
             "fix the problem.")
         return engine.ProcessHandlerReport(False)
+

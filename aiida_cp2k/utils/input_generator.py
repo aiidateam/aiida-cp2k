@@ -230,3 +230,9 @@ def add_first_snapshot_in_reftraj_section(input_dict, first_snapshot):
     params = input_dict.get_dict()
     params["MOTION"]["MD"]["REFTRAJ"]["FIRST_SNAPSHOT"] = first_snapshot
     return Dict(params)
+@calcfunction
+def add_ignore_convergence_failure(input_dict):
+    """Add IGNORE_CONVERGENCE_FAILURE for non converged SCF runs."""
+    params = input_dict.get_dict()
+    params["FORCE_EVAL"]["DFT"]["SCF"]["IGNORE_CONVERGENCE_FAILURE"] = ".TRUE."
+    return Dict(params)

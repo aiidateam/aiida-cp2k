@@ -83,7 +83,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
     def restart_incomplete_calculation(self, calc):
         """This handler restarts incomplete calculations."""
         content_string = calc.outputs.retrieved.base.repository.get_object_content(calc.base.attributes.get('output_filename'))
-        
+
         # Check if time was exceeded
         walltime_exceeded = calc.exit_status == Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status
 
@@ -113,7 +113,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
         params = self.ctx.inputs.parameters
 
         params = utils.add_wfn_restart_section(params, orm.Bool('kpoints' in self.ctx.inputs))
-        
+
         if restart_geometry_transformation:
             # Check if we need to fix restart snapshot in REFTRAJ MD
             first_snapshot = None

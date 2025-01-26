@@ -14,8 +14,8 @@ from .input_generator import (
     Cp2kInput,
     add_ext_restart_section,
     add_first_snapshot_in_reftraj_section,
-    add_wfn_restart_section,
     add_ignore_convergence_failure,
+    add_wfn_restart_section,
 )
 from .parser import parse_cp2k_output, parse_cp2k_output_advanced, parse_cp2k_trajectory
 from .workchains import (
@@ -24,11 +24,11 @@ from .workchains import (
     check_resize_unit_cell,
     get_input_multiplicity,
     get_kinds_section,
+    get_last_convergence_value,
     merge_dict,
     merge_Dict,
     ot_has_small_bandgap,
     resize_unit_cell,
-    get_last_convergence_value,
 )
 
 __all__ = [

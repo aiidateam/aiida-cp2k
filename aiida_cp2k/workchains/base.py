@@ -83,7 +83,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
     def restart_incomplete_calculation(self, calc):
         """This handler restarts incomplete calculations."""
         content_string = calc.outputs.retrieved.base.repository.get_object_content(calc.base.attributes.get('output_filename'))
-        
+
         # Check if time wase exceeded
         walltime_exceeded = calc.exit_status == Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status
 
@@ -104,7 +104,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
         params = self.ctx.inputs.parameters
 
         params = utils.add_wfn_restart_section(params, orm.Bool('kpoints' in self.ctx.inputs))
-        
+
         # After version 9.1 Check if calculation aborted due to SCF convergence failure and in case ignore_convergence_failure is set
         scf_gradient = utils.get_last_convergence_value(content_string)
         scf_restart_thr = 1e-5 # if ABORT for not SCF convergence, but RMS gradient is small, continue
@@ -131,4 +131,3 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
             "The CP2K calculation wasn't completed. The restart of the calculation might be able to "
             "fix the problem.")
         return engine.ProcessHandlerReport(False)
-

@@ -47,7 +47,7 @@ def example_base(cp2k_code):
         {
             "GLOBAL": {
                 "RUN_TYPE": "GEO_OPT",
-                "WALLTIME": "00:02:30",  
+                "WALLTIME": "00:02:30",
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
@@ -74,10 +74,10 @@ def example_base(cp2k_code):
                         "PSOLVER": "MT",
                     },
                     "SCF": {
-                        "MAX_SCF" : 10, # not enough to converge
-                        "EPS_SCF" : "1.e-6",
-                        "PRINT": {"RESTART": {"_": "ON"}}
-                        },
+                        "MAX_SCF": 10,  # not enough to converge
+                        "EPS_SCF": "1.e-6",
+                        "PRINT": {"RESTART": {"_": "ON"}},
+                    },
                 },
                 "SUBSYS": {
                     "KIND": [

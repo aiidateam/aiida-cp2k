@@ -135,4 +135,3 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
             "The CP2K calculation wasn't completed. The restart of the calculation might be able to "
             "fix the problem.")
         return engine.ProcessHandlerReport(False)
-

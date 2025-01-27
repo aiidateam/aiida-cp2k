@@ -208,7 +208,7 @@ class Cp2kCalculation(CalcJob):
         spec.exit_code(
             450,
             "ERROR_SCF_NOT_CONVERGED",
-            message="SCF cycle did not converge for thegiven threshold.",
+            message="SCF cycle did not converge for the given threshold.",
         )
         spec.exit_code(
             500,

@@ -127,6 +127,8 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
         is_geo_opt = params.get_dict().get("GLOBAL", {}).get("RUN_TYPE") == "GEO_OPT"
         if ignore_convergence_failure and not bad_scf_gradient and not walltime_exceeded and is_geo_opt:
             # add ignore_convergence_failure to the input parameters
+            # still in the output a WARNING for SCF convergence failure will be present in case SCF does not converge thus, if GEO_OPT is completed
+            # but SCF not converged the SCF not converged (ABORT will be absent) will trigger one resubmission
             self.report("The SCF was not converged, but the SCF gradient is small and we are doing GEO_OPT. Adding IGNORE_CONVERGENCE_FAILURE.")
             params = utils.add_ignore_convergence_failure(params)
 

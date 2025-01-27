@@ -57,7 +57,7 @@ def example_base(cp2k_code):
             "GLOBAL": {
                 "RUN_TYPE": "MD",
                 "PRINT_LEVEL": "LOW",
-                "WALLTIME": 4,
+                "WALLTIME": 3,
                 "PROJECT": "aiida",
             },
             "MOTION": {

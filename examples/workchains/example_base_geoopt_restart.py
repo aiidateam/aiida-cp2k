@@ -47,7 +47,11 @@ def example_base(cp2k_code):
         {
             "GLOBAL": {
                 "RUN_TYPE": "GEO_OPT",
-                "WALLTIME": "00:00:20",  # too short
+            },
+            "MOTION": {
+                "GEO_OPT": {
+                    "MAX_ITER": 8,
+                },
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",

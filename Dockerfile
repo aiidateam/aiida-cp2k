@@ -5,7 +5,7 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-ARG AIIDA_VERSION=2.5.0
+ARG AIIDA_VERSION=2.5.2
 
 FROM aiidateam/aiida-core-with-services:${AIIDA_VERSION}
 
@@ -24,6 +24,10 @@ RUN mamba create --yes -c conda-forge -n cp2k cp2k=9.1 && mamba clean --all -f -
 
 # Install aiida-cp2k plugin.
 COPY --chown="${SYSTEM_UID}:${SYSTEM_GID}" . /home/aiida/aiida-cp2k
+
+# Test fix, cause latest aiida-core was not put on Dockerhub.
+RUN pip install aiida-core==2.6.3
+
 RUN pip install ./aiida-cp2k[dev,docs]
 
 # Install coverals.

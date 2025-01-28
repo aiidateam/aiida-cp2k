@@ -78,6 +78,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
     @engine.process_handler(priority=401, exit_codes=[
         Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
         Cp2kCalculation.exit_codes.ERROR_OUTPUT_INCOMPLETE,
+        Cp2kCalculation.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED,
     ], enabled=False)
     def restart_incomplete_calculation(self, calc):
         """This handler restarts incomplete calculations."""
@@ -110,6 +111,11 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
             except KeyError:
                 pass
             params = utils.add_ext_restart_section(params)
+
+        if calc.exit_code == Cp2kCalculation.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED:
+            # If the maximum number of optimization steps is reached, we increase the number of steps by 40%.
+            print(type(params))
+            params = utils.increase_geo_opt_max_iter_by_factor(params, 1.4)
 
         self.ctx.inputs.parameters = params  # params (new or old ones) that include the necessary restart information.
         self.report(

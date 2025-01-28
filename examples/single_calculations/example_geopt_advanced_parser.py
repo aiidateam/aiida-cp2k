@@ -132,10 +132,19 @@ def example_geopt(cp2k_code):
         print(f"Expected dist value: {expected_dist}")
         print(f"Actual dist value: {dist}")
         sys.exit(3)
-    
+
     # Check motion step information.
-    assert calc['output_parameters']['motion_step_info']['step'] == [0, 1, 2], "ERROR: motion step info is incorrect"
-    assert calc['output_parameters']['motion_step_info']['cell_a_angs'] == [4.0, 4.0, 4.0], "ERROR: motion step info is incorrect"
+    assert calc["output_parameters"]["motion_step_info"]["step"] == [
+        0,
+        1,
+        2,
+    ], "ERROR: motion step info is incorrect"
+    assert calc["output_parameters"]["motion_step_info"]["cell_a_angs"] == [
+        4.0,
+        4.0,
+        4.0,
+    ], "ERROR: motion step info is incorrect"
+
 
 @click.command("cli")
 @click.argument("codelabel")

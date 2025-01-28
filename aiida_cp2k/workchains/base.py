@@ -137,7 +137,6 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
 
         if calc.exit_code == Cp2kCalculation.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED:
             # If the maximum number of optimization steps is reached, we increase the number of steps by 40%.
-            print(type(params))
             params = utils.increase_geo_opt_max_iter_by_factor(params, 1.4)
 
         self.ctx.inputs.parameters = params  # params (new or old ones) that include the necessary restart information.

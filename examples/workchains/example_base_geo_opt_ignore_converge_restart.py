@@ -47,7 +47,6 @@ def example_base(cp2k_code):
         {
             "GLOBAL": {
                 "RUN_TYPE": "GEO_OPT",
-                "WALLTIME": "00:02:30",
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
@@ -118,7 +117,7 @@ def example_base(cp2k_code):
             "num_machines": 1,
             "num_mpiprocs_per_machine": 1,
         },
-        "max_wallclock_seconds": 1 * 1 * 60,
+        "max_wallclock_seconds": 1 * 10 * 60,
     }
 
     print("Submitted calculation...")
@@ -128,7 +127,7 @@ def example_base(cp2k_code):
         print("Work chain is finished correctly.")
     else:
         print("ERROR! Work chain failed.")
-        sys.exit(3)
+        sys.exit(1)
 
 
 @click.command("cli")

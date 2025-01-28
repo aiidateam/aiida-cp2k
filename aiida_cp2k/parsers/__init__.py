@@ -24,6 +24,10 @@ class Cp2kBaseParser(parsers.Parser):
     def parse(self, **kwargs):
         """Receives in input a dictionary of retrieved nodes. Does all the logic here."""
 
+        self.SEVERE_ERRORS = [
+            self.exit_codes.ERROR_OUTPUT_CONTAINS_ABORT,
+        ]
+
         try:
             _ = self.retrieved
         except common.NotExistent:
@@ -68,13 +72,15 @@ class Cp2kBaseParser(parsers.Parser):
 
         # Check the standard output for errors.
         exit_code = self._check_stdout_for_errors(output_string)
-        if exit_code:
+
+        # Return the error code if an error was severe enough to stop the parsing.
+        if exit_code in self.SEVERE_ERRORS:
             return exit_code
 
         # Parse the standard output.
         result_dict = utils.parse_cp2k_output(output_string)
         self.out("output_parameters", orm.Dict(dict=result_dict))
-        return None
+        return exit_code
 
     def _parse_final_structure(self):
         """CP2K trajectory parser."""
@@ -112,11 +118,6 @@ class Cp2kBaseParser(parsers.Parser):
 
         if "PROGRAM STOPPED IN" not in output_string:
             return self.exit_codes.ERROR_OUTPUT_INCOMPLETE
-
-        if (
-            "SCF run NOT converged ***" in output_string
-        ):  # This is needed for old versions of CP2K.
-            return self.exit_codes.ERROR_SCF_NOT_CONVERGED
 
         if "MAXIMUM NUMBER OF OPTIMIZATION STEPS REACHED" in output_string:
             return self.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED
@@ -229,7 +230,9 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
 
         # Check the standard output for errors.
         exit_code = self._check_stdout_for_errors(output_string)
-        if exit_code:
+
+        # Return the error code if an error was severe enough to stop the parsing.
+        if exit_code in self.SEVERE_ERRORS:
             return exit_code
 
         # Parse the standard output.
@@ -267,7 +270,7 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
             self.out("output_bands", bnds)
 
         self.out("output_parameters", orm.Dict(dict=result_dict))
-        return None
+        return exit_code
 
 
 class Cp2kToolsParser(Cp2kBaseParser):
@@ -285,7 +288,9 @@ class Cp2kToolsParser(Cp2kBaseParser):
 
         # Check the standard output for errors.
         exit_code = self._check_stdout_for_errors(output_string)
-        if exit_code:
+
+        # Return the error code if an error was severe enough to stop the parsing.
+        if exit_code in self.SEVERE_ERRORS:
             return exit_code
 
         # Parse the standard output.
@@ -306,4 +311,4 @@ class Cp2kToolsParser(Cp2kBaseParser):
             pass
 
         self.out("output_parameters", orm.Dict(dict=result_dict))
-        return None
+        return exit_code

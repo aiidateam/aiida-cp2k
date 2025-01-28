@@ -96,11 +96,11 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
 
         # After version 9.1 Check if calculation aborted due to SCF convergence failure and in case ignore_convergence_failure is set
         scf_gradient = utils.get_last_convergence_value(content_string)
-        scf_restart_thr = 1e-5 # if ABORT for not SCF convergence, but SCF gradient is small, continue
+        scf_restart_thr = 1e-5  # if ABORT for not SCF convergence, but SCF gradient is small, continue
         ignore_convergence_failure = "SCF run NOT converged. To continue the calculation regardless" in content_string
 
         # condition for unrecoverable error
-        bad_scf_gradient = scf_gradient is None or  scf_gradient > scf_restart_thr
+        bad_scf_gradient = scf_gradient is None or scf_gradient > scf_restart_thr
         unrecoverable = not (restart_geometry_transformation or end_inner_scf_loop or "Writing RESTART" in content_string)
         unrecoverable = unrecoverable or (ignore_convergence_failure and bad_scf_gradient)
         # The message is written in the log file when the CP2K input parameter `LOG_PRINT_KEY` is set to True.

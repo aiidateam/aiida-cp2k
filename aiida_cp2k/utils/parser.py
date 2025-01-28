@@ -178,7 +178,7 @@ def parse_cp2k_output_advanced(
                 edens_rspace = None
                 scf_converged = True
 
-            print_now = False
+            dump_step_info = False
             data = line.split()
             # Parse general info
             if line.startswith(" CELL|"):
@@ -208,7 +208,7 @@ def parse_cp2k_output_advanced(
             # Parse specific info
             if result_dict["run_type"] in ["ENERGY", "ENERGY_FORCE"]:
                 if energy is not None and not result_dict["motion_step_info"]["step"]:
-                    print_now = True
+                    dump_step_info = True
             if result_dict["run_type"] in ["GEO_OPT", "CELL_OPT"]:
                 # Note: with CELL_OPT/LBFGS there is no "STEP 0", while there is with CELL_OPT/BFGS
 
@@ -246,15 +246,10 @@ def parse_cp2k_output_advanced(
                     rms_grad = float(data[-1])
 
                 if (
-                    (
-                        len(data) == 1
-                        and data[0]
-                        == "---------------------------------------------------"
-                    )
-                    or (len(data) == 10 and data[0] == "OPT|" and data[2] == "peak")
-                    or (len(data) == 7 and data[0] == "OPT|" and data[2] == "peak")
-                ):
-                    print_now = True  # 51('-')
+                    len(data) == 1
+                    and data[0] == "---------------------------------------------------"
+                ) or re.search(r"OPT\| Estimated peak process memory", line):
+                    dump_step_info = True  # 51('-')
                 if re.search(
                     r"Reevaluating energy at the minimum", line
                 ):  # not clear why it is doing a last one...
@@ -268,16 +263,16 @@ def parse_cp2k_output_advanced(
                     step = int(data[3])
                 if re.search(r"INITIAL PRESSURE\[bar\]", line):
                     pressure = float(data[3])
-                    print_now = True
+                    dump_step_info = True
                 if re.search(r"PRESSURE \[bar\]", line):
                     pressure = float(data[3])
-                    print_now = True
+                    dump_step_info = True
             if result_dict["run_type"] == "MD-NPT_F":
                 if re.search(r"^ STEP NUMBER", line):
                     step = int(data[3])
                 if re.search(r"^ INITIAL PRESSURE\[bar\]", line):
                     pressure = float(data[3])
-                    print_now = True
+                    dump_step_info = True
                 if re.search(r"^ PRESSURE \[bar\]", line):
                     pressure = float(data[3])
                 if re.search(r"^ VOLUME\[bohr\^3\]", line):
@@ -290,9 +285,9 @@ def parse_cp2k_output_advanced(
                     cell_alp = float(data[3])
                     cell_bet = float(data[4])
                     cell_gam = float(data[5])
-                    print_now = True
+                    dump_step_info = True
 
-            if print_now and energy is not None:
+            if dump_step_info and energy is not None:
                 result_dict["motion_step_info"]["step"].append(step)
                 result_dict["motion_step_info"]["energy_au"].append(energy)
                 result_dict["motion_step_info"]["dispersion_energy_au"].append(

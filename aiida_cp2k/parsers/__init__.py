@@ -98,14 +98,13 @@ class Cp2kBaseParser(parsers.Parser):
 
     def _check_stdout_for_errors(self, output_string):
         """This function checks the CP2K output file for some basic errors."""
-        if (
-            "ABORT" in output_string
-            and "SCF run NOT converged. To continue the calculation regardless"
-            in output_string
-        ):
-            return self.exit_codes.ERROR_SCF_NOT_CONVERGED
 
         if "ABORT" in output_string:
+            if (
+                "SCF run NOT converged. To continue the calculation regardless"
+                in output_string
+            ):
+                return self.exit_codes.ERROR_SCF_NOT_CONVERGED
             return self.exit_codes.ERROR_OUTPUT_CONTAINS_ABORT
 
         if "exceeded requested execution time" in output_string:
@@ -114,7 +113,9 @@ class Cp2kBaseParser(parsers.Parser):
         if "PROGRAM STOPPED IN" not in output_string:
             return self.exit_codes.ERROR_OUTPUT_INCOMPLETE
 
-        if "SCF run NOT converged ***" in output_string:
+        if (
+            "SCF run NOT converged ***" in output_string
+        ):  # This is needed for old versions of CP2K.
             return self.exit_codes.ERROR_SCF_NOT_CONVERGED
 
         if "MAXIMUM NUMBER OF OPTIMIZATION STEPS REACHED" in output_string:

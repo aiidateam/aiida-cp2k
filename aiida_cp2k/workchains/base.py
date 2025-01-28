@@ -1,5 +1,7 @@
 """Base work chain to run a CP2K calculation."""
 
+import re
+
 from aiida import common, engine, orm, plugins
 
 from .. import utils
@@ -79,6 +81,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
         Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
         Cp2kCalculation.exit_codes.ERROR_OUTPUT_INCOMPLETE,
         Cp2kCalculation.exit_codes.ERROR_SCF_NOT_CONVERGED,
+        Cp2kCalculation.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED,
     ], enabled=False)
     def restart_incomplete_calculation(self, calc):
         """This handler restarts incomplete calculations."""
@@ -88,7 +91,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
         walltime_exceeded = calc.exit_status == Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status
 
         # CP2K was updating geometry - continue with that.
-        restart_geometry_transformation = "Max. gradient              =" in content_string or "MD| Step number" in content_string
+        restart_geometry_transformation = re.search(r"Max. gradient\s+=", content_string) or re.search(r"OPT\| Maximum gradient\s*[-+]?\d*\.?\d+", content_string) or "MD| Step number" in content_string
         end_inner_scf_loop = "Total energy: " in content_string
 
         # After version 9.1 Check if calculation aborted due to SCF convergence failure and in case ignore_convergence_failure is set
@@ -131,6 +134,11 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
             # but SCF not converged the SCF not converged (ABORT will be absent) will trigger one resubmission
             self.report("The SCF was not converged, but the SCF gradient is small and we are doing GEO_OPT. Adding IGNORE_CONVERGENCE_FAILURE.")
             params = utils.add_ignore_convergence_failure(params)
+
+        if calc.exit_code == Cp2kCalculation.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED:
+            # If the maximum number of optimization steps is reached, we increase the number of steps by 40%.
+            print(type(params))
+            params = utils.increase_geo_opt_max_iter_by_factor(params, 1.4)
 
         self.ctx.inputs.parameters = params  # params (new or old ones) that include the necessary restart information.
         self.report(

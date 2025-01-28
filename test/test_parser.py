@@ -273,8 +273,18 @@ geo_opt_v9_1_out_advanced_result = {
     "motion_opt_converged": True,
     "motion_step_info": {
         "step": [0, 1, 2, 3],
-        "energy_au": [-13.725689111701854, -13.726149722666982, -13.726193267757822, -13.726193434870883],
-        "dispersion_energy_au": [-0.00046165125791, -0.00046785269957, -0.000470377617, -0.00047049995296],
+        "energy_au": [
+            -13.725689111701854,
+            -13.726149722666982,
+            -13.726193267757822,
+            -13.726193434870883,
+        ],
+        "dispersion_energy_au": [
+            -0.00046165125791,
+            -0.00046785269957,
+            -0.000470377617,
+            -0.00047049995296,
+        ],
         "pressure_bar": [None, None, None, None],
         "cell_vol_angs3": [1475.364128, 1475.364128, 1475.364128, 1475.364128],
         "cell_a_angs": [12.424154, 12.424154, 12.424154, 12.424154],
@@ -290,7 +300,6 @@ geo_opt_v9_1_out_advanced_result = {
         "edens_rspace": [-0.0, -0.0, -0.0, -0.0],
         "scf_converged": [True, True, True, True],
     },
-
 }
 
 geo_opt_v2024_3_out_advanced_result = {
@@ -300,8 +309,18 @@ geo_opt_v2024_3_out_advanced_result = {
     "motion_opt_converged": True,
     "motion_step_info": {
         "step": [0, 1, 2, 3],
-        "energy_au": [-13.725689111701852, -13.726149722666458, -13.726193267757864, -13.726193434870929],
-        "dispersion_energy_au": [-0.00046165125791, -0.00046785269954, -0.00047037761701, -0.00047049995297],
+        "energy_au": [
+            -13.725689111701852,
+            -13.726149722666458,
+            -13.726193267757864,
+            -13.726193434870929,
+        ],
+        "dispersion_energy_au": [
+            -0.00046165125791,
+            -0.00046785269954,
+            -0.00047037761701,
+            -0.00047049995297,
+        ],
         "pressure_bar": [None, None, None, None],
         "cell_vol_angs3": [1475.364128, 1475.364128, 1475.364128, 1475.364128],
         "cell_a_angs": [12.424154, 12.424154, 12.424154, 12.424154],
@@ -318,6 +337,7 @@ geo_opt_v2024_3_out_advanced_result = {
         "scf_converged": [True, True, True, True],
     },
 }
+
 
 @pytest.mark.parametrize(
     "output_file, reference_dict",

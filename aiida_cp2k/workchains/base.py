@@ -87,24 +87,26 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
         """This handler restarts incomplete calculations."""
         content_string = calc.outputs.retrieved.base.repository.get_object_content(calc.base.attributes.get('output_filename'))
 
-        # Check if time was exceeded
-        walltime_exceeded = calc.exit_status == Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status
+        # CP2K was updating geometry.
+        possible_geometry_restart = re.search(r"Max. gradient\s+=", content_string) or re.search(r"OPT\| Maximum gradient\s*[-+]?\d*\.?\d+", content_string) or "MD| Step number" in content_string
 
-        # CP2K was updating geometry - continue with that.
-        restart_geometry_transformation = re.search(r"Max. gradient\s+=", content_string) or re.search(r"OPT\| Maximum gradient\s*[-+]?\d*\.?\d+", content_string) or "MD| Step number" in content_string
-        end_inner_scf_loop = "Total energy: " in content_string
+        # CP2K wrote a wavefunction restart file.
+        possible_scf_restart = "Total energy: " in content_string
 
-        # After version 9.1 Check if calculation aborted due to SCF convergence failure and in case ignore_convergence_failure is set
-        scf_gradient = utils.get_last_convergence_value(content_string)
-        scf_restart_thr = 1e-5  # if ABORT for not SCF convergence, but SCF gradient is small, continue
-        ignore_convergence_failure = "SCF run NOT converged. To continue the calculation regardless" in content_string
+        # External restart file was written.
+        possible_ext_restart = "Writing RESTART" in content_string
 
-        # condition for unrecoverable error
-        bad_scf_gradient = scf_gradient is None or scf_gradient > scf_restart_thr
-        unrecoverable = not (restart_geometry_transformation or end_inner_scf_loop or "Writing RESTART" in content_string)
-        unrecoverable = unrecoverable or (ignore_convergence_failure and bad_scf_gradient)
-        # The message is written in the log file when the CP2K input parameter `LOG_PRINT_KEY` is set to True.
-        if unrecoverable:
+        # Check if calculation aborted due to SCF convergence failure.
+        scf_didnt_converge_and_aborted = "SCF run NOT converged. To continue the calculation regardless" in content_string
+        good_scf_gradient = None
+        if scf_didnt_converge_and_aborted:
+            scf_gradient = utils.get_last_convergence_value(content_string)
+            scf_restart_thr = 1e-5  # if ABORT for not SCF convergence, but SCF gradient is small, continue
+            good_scf_gradient = (scf_gradient is not None) and (scf_gradient < scf_restart_thr)
+
+        # Condition for allowing restart.
+        restart_possible = any([possible_geometry_restart, possible_scf_restart, possible_ext_restart]) and good_scf_gradient is not False
+        if not restart_possible:  # The message is written in the log file when the CP2K input parameter `LOG_PRINT_KEY` is set to True.
             self.report("It seems that the restart of CP2K calculation wouldn't be able to fix the problem as the "
                         "previous calculation didn't produce any output to restart from. "
                         "Sending a signal to stop the Base work chain.")
@@ -117,7 +119,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
 
         params = utils.add_wfn_restart_section(params, orm.Bool('kpoints' in self.ctx.inputs))
 
-        if restart_geometry_transformation:
+        if possible_geometry_restart:
             # Check if we need to fix restart snapshot in REFTRAJ MD
             first_snapshot = None
             try:
@@ -127,8 +129,9 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
             except KeyError:
                 pass
             params = utils.add_ext_restart_section(params)
-        is_geo_opt = params.get_dict().get("GLOBAL", {}).get("RUN_TYPE") == "GEO_OPT"
-        if ignore_convergence_failure and not bad_scf_gradient and not walltime_exceeded and is_geo_opt:
+
+        is_geo_opt = params.get_dict().get("GLOBAL", {}).get("RUN_TYPE") in ["GEO_OPT", "CELL_OPT"]
+        if is_geo_opt and good_scf_gradient:
             # add ignore_convergence_failure to the input parameters
             # still in the output a WARNING for SCF convergence failure will be present in case SCF does not converge thus, if GEO_OPT is completed
             # but SCF not converged the SCF not converged (ABORT will be absent) will trigger one resubmission

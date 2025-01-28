@@ -231,6 +231,7 @@ def add_first_snapshot_in_reftraj_section(input_dict, first_snapshot):
     params["MOTION"]["MD"]["REFTRAJ"]["FIRST_SNAPSHOT"] = first_snapshot
     return Dict(params)
 
+
 @calcfunction
 def increase_geo_opt_max_iter_by_factor(input_dict, factor):
     """Increase the MAX_ITER in GEO_OPT section by a factor."""
@@ -239,6 +240,7 @@ def increase_geo_opt_max_iter_by_factor(input_dict, factor):
         factor * params.get("MOTION", {}).get("GEO_OPT", {}).get("MAX_ITER", 100)
     )
     return Dict(params)
+
 
 @calcfunction
 def add_ignore_convergence_failure(input_dict):

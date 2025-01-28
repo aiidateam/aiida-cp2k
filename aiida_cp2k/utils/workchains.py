@@ -6,6 +6,8 @@
 ###############################################################################
 """AiiDA-CP2K utilities for workchains"""
 
+import re
+
 from aiida.engine import calcfunction
 from aiida.orm import Dict
 from aiida.plugins import DataFactory
@@ -98,6 +100,34 @@ def ot_has_small_bandgap(cp2k_input, cp2k_output, bandgap_thr_ev):
     )
     is_bandgap_small = min_bandgap_ev < bandgap_thr_ev
     return using_ot and is_bandgap_small
+
+
+def get_last_convergence_value(input_string):
+    """Search for last "OT CG" and returns the SCF gradient.
+
+    If no "OT CG", searches for last "DIIS/Diag" and returns the gradient.
+
+    Args:
+        input_string (str): the cp2k output string.
+
+    Returns:
+        float or None: the SCF gradient or None if not found.
+    """
+    # Search all  "OT CG" lines and gets the 6th column.
+    ot_cg_pattern = r"OT CG\s+\S+\s+\S+\s+\S+\s+\S+\s+([\d.E+-]+)"
+    ot_cg_matches = re.findall(ot_cg_pattern, input_string)
+
+    if ot_cg_matches:
+        return float(ot_cg_matches[-1])  # Last value found for "OT CG".
+
+    # Search for  "DIIS/Diag" lines and returns the 5th column.
+    diis_diag_pattern = r"DIIS/Diag\.\s+\S+\s+\S+\s+\S+\s+([\d.E+-]+)"
+    diis_diag_matches = re.findall(diis_diag_pattern, input_string)
+
+    if diis_diag_matches:
+        return float(diis_diag_matches[-1])  # Last value found for  "DIIS/Diag".
+
+    return None  # No value found.
 
 
 @calcfunction

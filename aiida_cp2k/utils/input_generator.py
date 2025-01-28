@@ -240,3 +240,13 @@ def increase_geo_opt_max_iter_by_factor(input_dict, factor):
         factor * params.get("MOTION", {}).get("GEO_OPT", {}).get("MAX_ITER", 100)
     )
     return Dict(params)
+
+
+@calcfunction
+def add_ignore_convergence_failure(input_dict):
+    """Add IGNORE_CONVERGENCE_FAILURE for non converged SCF runs."""
+    params = input_dict.get_dict()
+    params.setdefault("FORCE_EVAL", {}).setdefault("DFT", {}).setdefault("SCF", {})[
+        "IGNORE_CONVERGENCE_FAILURE"
+    ] = ".TRUE."
+    return Dict(params)

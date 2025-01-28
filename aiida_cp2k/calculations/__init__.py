@@ -206,6 +206,11 @@ class Cp2kCalculation(CalcJob):
             message="The calculation stopped prematurely because it ran out of walltime.",
         )
         spec.exit_code(
+            450,
+            "ERROR_SCF_NOT_CONVERGED",
+            message="SCF cycle did not converge for the given threshold.",
+        )
+        spec.exit_code(
             500,
             "ERROR_GEOMETRY_CONVERGENCE_NOT_REACHED",
             message="The ionic minimization cycle did not converge for the given thresholds.",

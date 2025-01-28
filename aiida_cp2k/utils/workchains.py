@@ -103,8 +103,8 @@ def ot_has_small_bandgap(cp2k_input, cp2k_output, bandgap_thr_ev):
 
 
 def get_last_convergence_value(input_string):
-    """
-    Search for last "OT CG" and returns the SCF gradient.
+    """Search for last "OT CG" and returns the SCF gradient.
+
     If no "OT CG", searches for last "DIIS/Diag" and returns the gradient.
 
     Args:
@@ -113,21 +113,21 @@ def get_last_convergence_value(input_string):
     Returns:
         float or None: the SCF gradient or None if not found.
     """
-    # Search all  "OT CG" lines and gets the 6th column
+    # Search all  "OT CG" lines and gets the 6th column.
     ot_cg_pattern = r"OT CG\s+\S+\s+\S+\s+\S+\s+\S+\s+([\d.E+-]+)"
     ot_cg_matches = re.findall(ot_cg_pattern, input_string)
 
     if ot_cg_matches:
-        return float(ot_cg_matches[-1])  # Last value found for "OT CG"
+        return float(ot_cg_matches[-1])  # Last value found for "OT CG".
 
-    # Search for  "DIIS/Diag" lines and returns the 5th column
+    # Search for  "DIIS/Diag" lines and returns the 5th column.
     diis_diag_pattern = r"DIIS/Diag\.\s+\S+\s+\S+\s+\S+\s+([\d.E+-]+)"
     diis_diag_matches = re.findall(diis_diag_pattern, input_string)
 
     if diis_diag_matches:
-        return float(diis_diag_matches[-1])  # RLast value found for  "DIIS/Diag"
+        return float(diis_diag_matches[-1])  # Last value found for  "DIIS/Diag".
 
-    return None  # No value found
+    return None  # No value found.
 
 
 @calcfunction

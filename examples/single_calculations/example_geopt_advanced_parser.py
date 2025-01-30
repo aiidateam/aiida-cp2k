@@ -4,7 +4,7 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""An example testing the restart calculation handler for geo_opt run in CP2K."""
+"""Run DFT geometry optimization."""
 
 import os
 import sys
@@ -14,18 +14,22 @@ import click
 from aiida.common import NotExistent
 from aiida.engine import run
 from aiida.orm import Dict, SinglefileData, load_code
-from aiida.plugins import DataFactory, WorkflowFactory
+from aiida.plugins import DataFactory
 
-Cp2kBaseWorkChain = WorkflowFactory("cp2k.base")
 StructureData = DataFactory("core.structure")
 
 
-def example_base(cp2k_code):
-    """Run simple DFT calculation through a workchain."""
+def example_geopt(cp2k_code):
+    """Run DFT geometry optimization."""
+
+    print("Testing CP2K GEO_OPT on H2O (DFT)...")
 
     thisdir = os.path.dirname(os.path.realpath(__file__))
 
-    print("Testing CP2K ENERGY on H2O (DFT) through a workchain...")
+    # Structure.
+    structure = StructureData(
+        ase=ase.io.read(os.path.join(thisdir, "..", "files", "h2.xyz"))
+    )
 
     # Basis set.
     basis_file = SinglefileData(
@@ -37,21 +41,14 @@ def example_base(cp2k_code):
         file=os.path.join(thisdir, "..", "files", "GTH_POTENTIALS")
     )
 
-    # Structure.
-    structure = StructureData(
-        ase=ase.io.read(os.path.join(thisdir, "..", "files", "h2o.xyz"))
-    )
-
     # Parameters.
     parameters = Dict(
         {
             "GLOBAL": {
-                "RUN_TYPE": "MD",
-                "WALLTIME": "00:00:14",  # too short
+                "RUN_TYPE": "GEO_OPT",
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
-                "STRESS_TENSOR": "analytical",
                 "DFT": {
                     "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
                     "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
@@ -67,79 +64,86 @@ def example_base(cp2k_code):
                     },
                     "XC": {
                         "XC_FUNCTIONAL": {
-                            "_": "LDA",
+                            "_": "PBE",
                         },
                     },
                     "POISSON": {
                         "PERIODIC": "none",
                         "PSOLVER": "MT",
                     },
-                    "SCF": {"PRINT": {"RESTART": {"_": "ON"}}},
                 },
                 "SUBSYS": {
                     "KIND": [
                         {
                             "_": "O",
                             "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
-                            "POTENTIAL": "GTH-LDA-q6",
+                            "POTENTIAL": "GTH-PBE-q6",
                         },
                         {
                             "_": "H",
                             "BASIS_SET": "DZVP-MOLOPT-SR-GTH",
-                            "POTENTIAL": "GTH-LDA-q1",
+                            "POTENTIAL": "GTH-PBE-q1",
                         },
                     ],
-                },
-            },
-            "MOTION": {
-                "CONSTRAINT": {},
-                "MD": {
-                    "THERMOSTAT": {"CSVR": {}, "TYPE": "csvr"},
-                    "BAROSTAT": {},
-                    "MAX_STEPS": 8,
-                    "STEPS": 10000,
-                    "ENSEMBLE": "npt_f",
-                    "TEMPERATURE": 300.0,
-                },
-                "PRINT": {
-                    "RESTART": {"EACH": {"MD": 1}},
                 },
             },
         }
     )
 
     # Construct process builder.
-    builder = Cp2kBaseWorkChain.get_builder()
-
-    # Switch on resubmit_unconverged_geometry disabled by default.
-    builder.handler_overrides = Dict(
-        {"restart_incomplete_calculation": {"enabled": True}}
-    )
-
-    # Input structure.
-    builder.cp2k.structure = structure
-    builder.cp2k.parameters = parameters
-    builder.cp2k.code = cp2k_code
-    builder.cp2k.file = {
+    builder = cp2k_code.get_builder()
+    builder.structure = structure
+    builder.parameters = parameters
+    builder.code = cp2k_code
+    builder.file = {
         "basis": basis_file,
         "pseudo": pseudo_file,
     }
-    builder.cp2k.metadata.options.resources = {
+    builder.metadata.options.resources = {
         "num_machines": 1,
         "num_mpiprocs_per_machine": 1,
     }
-    builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
+    builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
+    builder.metadata.options.parser_name = "cp2k_advanced_parser"
 
     print("Submitted calculation...")
     calc = run(builder)
 
-    if "EXT_RESTART" in calc["final_input_parameters"].dict:
-        print("OK, EXT_RESTART section is present in the final_input_parameters.")
+    # Check walltime not exceeded.
+    assert calc["output_parameters"]["exceeded_walltime"] is False
+
+    # Check energy.
+    expected_energy = -1.17212345935
+    if abs(calc["output_parameters"]["energy"] - expected_energy) < 1e-10:
+        print("OK, energy has the expected value.")
     else:
-        print(
-            "ERROR, EXT_RESTART section is NOT present in the final_input_parameters."
-        )
+        print("ERROR!")
+        print(f"Expected energy value: {expected_energy}")
+        print(f"Actual energy value: {calc['output_parameters']['energy']}")
         sys.exit(3)
+
+    # Check geometry.
+    expected_dist = 0.732594809575
+    dist = calc["output_structure"].get_ase().get_distance(0, 1)
+    if abs(dist - expected_dist) < 1e-7:
+        print("OK, H-H distance has the expected value.")
+    else:
+        print("ERROR!")
+        print(f"Expected dist value: {expected_dist}")
+        print(f"Actual dist value: {dist}")
+        sys.exit(3)
+
+    # Check motion step information.
+    assert calc["output_parameters"]["motion_step_info"]["step"] == [
+        0,
+        1,
+        2,
+    ], "ERROR: motion step info is incorrect"
+    assert calc["output_parameters"]["motion_step_info"]["cell_a_angs"] == [
+        4.0,
+        4.0,
+        4.0,
+    ], "ERROR: motion step info is incorrect"
 
 
 @click.command("cli")
@@ -149,9 +153,9 @@ def cli(codelabel):
     try:
         code = load_code(codelabel)
     except NotExistent:
-        print(f"The code '{codelabel}' does not exist")
+        print(f"The code '{codelabel}' does not exist.")
         sys.exit(1)
-    example_base(code)
+    example_geopt(code)
 
 
 if __name__ == "__main__":

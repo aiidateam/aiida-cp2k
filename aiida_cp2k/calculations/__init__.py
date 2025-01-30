@@ -217,6 +217,11 @@ class Cp2kCalculation(CalcJob):
             message="The calculation stopped prematurely because it ran out of walltime.",
         )
         spec.exit_code(
+            450,
+            "ERROR_SCF_NOT_CONVERGED",
+            message="SCF cycle did not converge for the given threshold.",
+        )
+        spec.exit_code(
             500,
             "ERROR_GEOMETRY_CONVERGENCE_NOT_REACHED",
             message="The ionic minimization cycle did not converge for the given thresholds.",
@@ -492,7 +497,7 @@ def _trajectory_to_xyz_and_cell(trajectory):
     if "cells" in trajectory.get_arraynames():
         cell = "#   Step   Time [fs]       Ax [Angstrom]       Ay [Angstrom]       Az [Angstrom]       Bx [Angstrom]       By [Angstrom]       Bz [Angstrom]       Cx [Angstrom]       Cy [Angstrom]       Cz [Angstrom]      Volume [Angstrom^3]\n"
         cell_vecs = [
-            f"{stepid+1} {(stepid+1)*0.5:6.3f} {cellvec[0][0]:25.16f} {cellvec[0][1]:25.16f} {cellvec[0][2]:25.16f} {cellvec[1][0]:25.16f} {cellvec[1][1]:25.16f} {cellvec[1][2]:25.16f} {cellvec[2][0]:25.16f} {cellvec[2][1]:25.16f} {cellvec[2][2]:25.16f} {np.dot(cellvec[0],np.cross(cellvec[1],cellvec[2]))}"
+            f"{stepid+1} {(stepid+1)*0.5:6.3f} {cellvec[0][0]:25.16f} {cellvec[0][1]:25.16f} {cellvec[0][2]:25.16f} {cellvec[1][0]:25.16f} {cellvec[1][1]:25.16f} {cellvec[1][2]:25.16f} {cellvec[2][0]:25.16f} {cellvec[2][1]:25.16f} {cellvec[2][2]:25.16f} {np.dot(cellvec[0], np.cross(cellvec[1], cellvec[2]))}"
             for (stepid, cellvec) in zip(stepids, trajectory.get_array("cells"))
         ]
         cell += "\n".join(cell_vecs)

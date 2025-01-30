@@ -4,7 +4,7 @@
 # AiiDA-CP2K is hosted on GitHub at https://github.com/aiidateam/aiida-cp2k   #
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
-"""An example testing the restart calculation handler for geo_opt run in CP2K."""
+"""An example testing the restart calculation handler for ENERGY run in CP2K."""
 
 import os
 import sys
@@ -12,7 +12,7 @@ import sys
 import ase.io
 import click
 from aiida.common import NotExistent
-from aiida.engine import run
+from aiida.engine import run_get_node
 from aiida.orm import Dict, SinglefileData, load_code
 from aiida.plugins import DataFactory, WorkflowFactory
 
@@ -46,24 +46,22 @@ def example_base(cp2k_code):
     parameters = Dict(
         {
             "GLOBAL": {
-                "RUN_TYPE": "MD",
-                "WALLTIME": "00:00:14",  # too short
+                "RUN_TYPE": "GEO_OPT",
             },
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
-                "STRESS_TENSOR": "analytical",
                 "DFT": {
                     "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
                     "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
                     "QS": {
-                        "EPS_DEFAULT": 1.0e-12,
+                        "EPS_DEFAULT": 1.0e-16,
                         "WF_INTERPOLATION": "ps",
                         "EXTRAPOLATION_ORDER": 3,
                     },
                     "MGRID": {
                         "NGRIDS": 4,
-                        "CUTOFF": 280,
-                        "REL_CUTOFF": 30,
+                        "CUTOFF": 450,
+                        "REL_CUTOFF": 70,
                     },
                     "XC": {
                         "XC_FUNCTIONAL": {
@@ -74,7 +72,11 @@ def example_base(cp2k_code):
                         "PERIODIC": "none",
                         "PSOLVER": "MT",
                     },
-                    "SCF": {"PRINT": {"RESTART": {"_": "ON"}}},
+                    "SCF": {
+                        "MAX_SCF": 10,  # not enough to converge
+                        "EPS_SCF": "1.e-6",
+                        "PRINT": {"RESTART": {"_": "ON"}},
+                    },
                 },
                 "SUBSYS": {
                     "KIND": [
@@ -89,20 +91,6 @@ def example_base(cp2k_code):
                             "POTENTIAL": "GTH-LDA-q1",
                         },
                     ],
-                },
-            },
-            "MOTION": {
-                "CONSTRAINT": {},
-                "MD": {
-                    "THERMOSTAT": {"CSVR": {}, "TYPE": "csvr"},
-                    "BAROSTAT": {},
-                    "MAX_STEPS": 8,
-                    "STEPS": 10000,
-                    "ENSEMBLE": "npt_f",
-                    "TEMPERATURE": 300.0,
-                },
-                "PRINT": {
-                    "RESTART": {"EACH": {"MD": 1}},
                 },
             },
         }
@@ -124,22 +112,22 @@ def example_base(cp2k_code):
         "basis": basis_file,
         "pseudo": pseudo_file,
     }
-    builder.cp2k.metadata.options.resources = {
-        "num_machines": 1,
-        "num_mpiprocs_per_machine": 1,
+    builder.cp2k.metadata.options = {
+        "resources": {
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1,
+        },
+        "max_wallclock_seconds": 1 * 10 * 60,
     }
-    builder.cp2k.metadata.options.max_wallclock_seconds = 1 * 3 * 60
 
     print("Submitted calculation...")
-    calc = run(builder)
+    _, process_node = run_get_node(builder)
 
-    if "EXT_RESTART" in calc["final_input_parameters"].dict:
-        print("OK, EXT_RESTART section is present in the final_input_parameters.")
+    if process_node.exit_status == 0:
+        print("Work chain is finished correctly.")
     else:
-        print(
-            "ERROR, EXT_RESTART section is NOT present in the final_input_parameters."
-        )
-        sys.exit(3)
+        print("ERROR! Work chain failed.")
+        sys.exit(1)
 
 
 @click.command("cli")

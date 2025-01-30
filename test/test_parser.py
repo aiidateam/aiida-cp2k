@@ -266,6 +266,79 @@ ot_v9_1_out_advanced_result = {
 }
 
 
+geo_opt_v9_1_out_advanced_result = {
+    "exceeded_walltime": False,
+    "cp2k_version": 9.1,
+    "run_type": "GEO_OPT",
+    "motion_opt_converged": True,
+    "motion_step_info": {
+        "step": [0, 1, 2, 3],
+        "energy_au": [
+            -13.725689111701854,
+            -13.726149722666982,
+            -13.726193267757822,
+            -13.726193434870883,
+        ],
+        "dispersion_energy_au": [
+            -0.00046165125791,
+            -0.00046785269957,
+            -0.000470377617,
+            -0.00047049995296,
+        ],
+        "pressure_bar": [None, None, None, None],
+        "cell_vol_angs3": [1475.364128, 1475.364128, 1475.364128, 1475.364128],
+        "cell_a_angs": [12.424154, 12.424154, 12.424154, 12.424154],
+        "cell_b_angs": [11.874962, 11.874962, 11.874962, 11.874962],
+        "cell_c_angs": [10.000004, 10.000004, 10.000004, 10.000004],
+        "cell_alp_deg": [90.0, 90.0, 90.0, 90.0],
+        "cell_bet_deg": [90.0, 90.0, 90.0, 90.0],
+        "cell_gam_deg": [90.0, 90.0, 90.0, 90.0],
+        "max_step_au": [None, 0.0376199092, 0.0155526726, 0.0003463701],
+        "rms_step_au": [None, 0.0189431999, 0.0076510487, 0.000182772],
+        "max_grad_au": [None, 0.0015528294, 0.0003036618, 7.28782e-05],
+        "rms_grad_au": [None, 0.0007719361, 0.000107814, 2.58819e-05],
+        "edens_rspace": [-0.0, -0.0, -0.0, -0.0],
+        "scf_converged": [True, True, True, True],
+    },
+}
+
+geo_opt_v2024_3_out_advanced_result = {
+    "exceeded_walltime": False,
+    "cp2k_version": 2024.3,
+    "run_type": "GEO_OPT",
+    "motion_opt_converged": True,
+    "motion_step_info": {
+        "step": [0, 1, 2, 3],
+        "energy_au": [
+            -13.725689111701852,
+            -13.726149722666458,
+            -13.726193267757864,
+            -13.726193434870929,
+        ],
+        "dispersion_energy_au": [
+            -0.00046165125791,
+            -0.00046785269954,
+            -0.00047037761701,
+            -0.00047049995297,
+        ],
+        "pressure_bar": [None, None, None, None],
+        "cell_vol_angs3": [1475.364128, 1475.364128, 1475.364128, 1475.364128],
+        "cell_a_angs": [12.424154, 12.424154, 12.424154, 12.424154],
+        "cell_b_angs": [11.874962, 11.874962, 11.874962, 11.874962],
+        "cell_c_angs": [10.000004, 10.000004, 10.000004, 10.000004],
+        "cell_alp_deg": [90.0, 90.0, 90.0, 90.0],
+        "cell_bet_deg": [90.0, 90.0, 90.0, 90.0],
+        "cell_gam_deg": [90.0, 90.0, 90.0, 90.0],
+        "max_step_au": [None, 0.037619909, 0.0155526727, 0.0003463702],
+        "rms_step_au": [None, 0.0189431999, 0.0076510488, 0.000182772],
+        "max_grad_au": [None, 0.0015528293, 0.0003036619, 7.28784e-05],
+        "rms_grad_au": [None, 0.0007719361, 0.000107814, 2.58819e-05],
+        "edens_rspace": [-0.0, -0.0, -0.0, -0.0],
+        "scf_converged": [True, True, True, True],
+    },
+}
+
+
 @pytest.mark.parametrize(
     "output_file, reference_dict",
     [
@@ -274,6 +347,8 @@ ot_v9_1_out_advanced_result = {
         ("BSSE_output_v5.1_.out", bsse_output_v5_1_out_advanced_result),
         ("cdft_dos_cp2k_6.0.out", cdft_dos_cp2k_6_0_out_advanced_result),
         ("OT_v9.1.out", ot_v9_1_out_advanced_result),
+        ("GEO_OPT_v9.1.out", geo_opt_v9_1_out_advanced_result),
+        ("GEO_OPT_v2024.3.out", geo_opt_v2024_3_out_advanced_result),
     ],
 )
 def test_cp2k_output_advanced(output_file, reference_dict):
@@ -301,5 +376,4 @@ def test_trajectory_parser_pbc():
         with open(OUTPUTS_DIR / file) as fobj:
             content = fobj.read()
             structure_data = parse_cp2k_trajectory(content)
-
             assert structure_data["pbc"] == boundary_cond

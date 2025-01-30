@@ -1,5 +1,7 @@
 """Base work chain to run a CP2K calculation."""
 
+import re
+
 from aiida import common, engine, orm, plugins
 
 from .. import utils
@@ -78,16 +80,33 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
     @engine.process_handler(priority=401, exit_codes=[
         Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
         Cp2kCalculation.exit_codes.ERROR_OUTPUT_INCOMPLETE,
+        Cp2kCalculation.exit_codes.ERROR_SCF_NOT_CONVERGED,
+        Cp2kCalculation.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED,
     ], enabled=False)
     def restart_incomplete_calculation(self, calc):
         """This handler restarts incomplete calculations."""
         content_string = calc.outputs.retrieved.base.repository.get_object_content(calc.base.attributes.get('output_filename'))
 
-        # CP2K was updating geometry - continue with that.
-        restart_geometry_transformation = "Max. gradient              =" in content_string or "MD| Step number" in content_string
-        end_inner_scf_loop = "Total energy: " in content_string
-        # The message is written in the log file when the CP2K input parameter `LOG_PRINT_KEY` is set to True.
-        if not (restart_geometry_transformation or end_inner_scf_loop or "Writing RESTART" in content_string):
+        # CP2K was updating geometry.
+        possible_geometry_restart = re.search(r"Max. gradient\s+=", content_string) or re.search(r"OPT\| Maximum gradient\s*[-+]?\d*\.?\d+", content_string) or "MD| Step number" in content_string
+
+        # CP2K wrote a wavefunction restart file.
+        possible_scf_restart = "Total energy: " in content_string
+
+        # External restart file was written.
+        possible_ext_restart = "Writing RESTART" in content_string
+
+        # Check if calculation aborted due to SCF convergence failure.
+        scf_didnt_converge_and_aborted = "SCF run NOT converged. To continue the calculation regardless" in content_string
+        good_scf_gradient = None
+        if scf_didnt_converge_and_aborted:
+            scf_gradient = utils.get_last_convergence_value(content_string)
+            scf_restart_thr = 1e-5  # if ABORT for not SCF convergence, but SCF gradient is small, continue
+            good_scf_gradient = (scf_gradient is not None) and (scf_gradient < scf_restart_thr)
+
+        # Condition for allowing restart.
+        restart_possible = any([possible_geometry_restart, possible_scf_restart, possible_ext_restart]) and good_scf_gradient is not False
+        if not restart_possible:  # The message is written in the log file when the CP2K input parameter `LOG_PRINT_KEY` is set to True.
             self.report("It seems that the restart of CP2K calculation wouldn't be able to fix the problem as the "
                         "previous calculation didn't produce any output to restart from. "
                         "Sending a signal to stop the Base work chain.")
@@ -100,7 +119,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
 
         params = utils.add_wfn_restart_section(params, orm.Bool('kpoints' in self.ctx.inputs))
 
-        if restart_geometry_transformation:
+        if possible_geometry_restart:
             # Check if we need to fix restart snapshot in REFTRAJ MD
             first_snapshot = None
             try:
@@ -110,6 +129,15 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
             except KeyError:
                 pass
             params = utils.add_ext_restart_section(params)
+
+        is_geo_opt = params.get_dict().get("GLOBAL", {}).get("RUN_TYPE") in ["GEO_OPT", "CELL_OPT"]
+        if is_geo_opt and good_scf_gradient:
+            self.report("The SCF was not converged, but the SCF gradient is small and we are optimising geometry. Enabling IGNORE_CONVERGENCE_FAILURE.")
+            params = utils.add_ignore_convergence_failure(params)
+
+        if calc.exit_code == Cp2kCalculation.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED:
+            # If the maximum number of optimization steps is reached, we increase the number of steps by 40%.
+            params = utils.increase_geo_opt_max_iter_by_factor(params, 1.4)
 
         self.ctx.inputs.parameters = params  # params (new or old ones) that include the necessary restart information.
         self.report(

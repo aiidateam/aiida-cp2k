@@ -429,9 +429,15 @@ class Cp2kCalculation(CalcJob):
 
     @staticmethod
     def _write_structure(structure, folder, name):
-        """Function that writes a structure and takes care of element tags."""
-
-        xyz = _atoms_to_xyz(structure.get_ase())
+        """Function that writes a structure to a xyz file.
+        The element tags being the names of the kind.
+        """
+        elem_coords = [
+            f"{site.position[0]:25.16f} {site.position[1]:25.16f} {site.position[2]:25.16f}"
+            for site in structure.sites
+        ]
+        xyz = f"{len(elem_coords)}\n\n"
+        xyz += "\n".join(map(add, structure.get_site_kindnames(), elem_coords))
         with open(folder.get_abs_path(name), mode="w", encoding="utf-8") as fobj:
             fobj.write(xyz)
 

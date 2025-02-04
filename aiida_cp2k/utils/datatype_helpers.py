@@ -438,9 +438,7 @@ def _merge_trajectories_into_dictionary(*trajectories, unique_stepids=False):
     # The other arrays are then also reduced to the unique stepids.
     if unique_stepids:
         stepids = np.concatenate([traj.get_stepids() for traj in trajectories], axis=0)
-        final_trajectory_dict["stepids"], unique_indices = np.unique(
-            stepids, return_index=True
-        )
+        _, unique_indices = np.unique(stepids, return_index=True)
 
         for array_name in array_names:
             final_trajectory_dict[array_name] = final_trajectory_dict[array_name][

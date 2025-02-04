@@ -124,6 +124,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
             first_snapshot = None
             try:
                 first_snapshot = int(params['MOTION']['MD']['REFTRAJ']['FIRST_SNAPSHOT']) + calc.outputs.output_trajectory.get_shape('positions')[0]
+                self.report(f"First snapshot changed from {int(params['MOTION']['MD']['REFTRAJ']['FIRST_SNAPSHOT'])} to {first_snapshot}")
                 if first_snapshot:
                     params = utils.add_first_snapshot_in_reftraj_section(params, first_snapshot)
             except KeyError:

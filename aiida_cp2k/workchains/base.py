@@ -79,7 +79,7 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
 
     @engine.process_handler(priority=303, exit_codes=[
         Cp2kCalculation.exit_codes.ERROR_OUTPUT_INCOMPLETE,
-        Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,  
+        Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
         Cp2kCalculation.exit_codes.ERROR_SCF_NOT_CONVERGED,
         Cp2kCalculation.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED,
     ], enabled=False)

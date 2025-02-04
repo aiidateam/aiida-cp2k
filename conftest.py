@@ -16,11 +16,6 @@ def cp2k_code(aiida_local_code_factory):
     )
 
 
-@pytest.fixture(scope="function", autouse=True)
-def clear_database(aiida_profile_clean):
-    """Automatically clear database in between tests."""
-
-
 # from https://stackoverflow.com/a/25188424
 # required for examples for optional features to show appropriate error messages
 def pytest_configure(config):

@@ -77,9 +77,9 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
         if "output_structure" in self.ctx.children[self.ctx.iteration-1].outputs:
             self.ctx.inputs.structure = self.ctx.children[self.ctx.iteration-1].outputs.output_structure
 
-    @engine.process_handler(priority=303, exit_codes=[
-        Cp2kCalculation.exit_codes.ERROR_OUTPUT_INCOMPLETE,
+    @engine.process_handler(priority=401, exit_codes=[
         Cp2kCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
+        Cp2kCalculation.exit_codes.ERROR_OUTPUT_INCOMPLETE,
         Cp2kCalculation.exit_codes.ERROR_SCF_NOT_CONVERGED,
         Cp2kCalculation.exit_codes.ERROR_MAXIMUM_NUMBER_OPTIMIZATION_STEPS_REACHED,
     ], enabled=False)

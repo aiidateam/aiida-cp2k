@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from aiida_cp2k.parsers import _update_bandgaps
 from aiida_cp2k.utils.parser import (
     _parse_bands,
     parse_cp2k_output,
@@ -357,6 +358,94 @@ def test_cp2k_output_advanced(output_file, reference_dict):
         lines = fobj.read()
         parsed_dict = parse_cp2k_output_advanced(lines)
         assert dict_is_subset(reference_dict, parsed_dict)
+
+
+def test_ot_unoccupied_eigenvalues_are_parsed():
+    """Test parsing of the separate OT unoccupied eigenvalue block."""
+
+    with open(OUTPUTS_DIR / "OT_v9.1.out") as fobj:
+        parsed_dict = parse_cp2k_output_advanced(fobj.read())
+
+    assert len(parsed_dict["eigen_spin1_au"]) == 4560
+    assert parsed_dict["eigen_spin1_au"][-1] == pytest.approx(-0.06436553)
+    assert parsed_dict["unoccupied_eigen_spin1_au"] == pytest.approx([-0.06400983])
+    assert parsed_dict["printed_bandgap_spin1_ev"] == pytest.approx(0.009679)
+
+
+def test_ot_uks_warning_lines_do_not_break_eigenvalue_parsing():
+    """Test OT eigenvalue parsing with non-numeric lines inside the blocks."""
+
+    with open(OUTPUTS_DIR / "OT_UKS_with_warnings.out") as fobj:
+        parsed_dict = parse_cp2k_output_advanced(fobj.read())
+    _update_bandgaps(parsed_dict)
+
+    assert len(parsed_dict["eigen_spin1_au"]) == 20
+    assert len(parsed_dict["eigen_spin2_au"]) == 19
+    assert parsed_dict["eigen_spin1_au"][-1] == pytest.approx(-0.11270121)
+    assert parsed_dict["eigen_spin2_au"][-1] == pytest.approx(-0.17710200)
+    assert parsed_dict["unoccupied_eigen_spin1_au"] == pytest.approx([-0.00937424])
+    assert parsed_dict["unoccupied_eigen_spin2_au"] == pytest.approx([-0.07426995])
+    assert parsed_dict["printed_bandgap_spin1_ev"] == pytest.approx(2.811670)
+    assert parsed_dict["printed_bandgap_spin2_ev"] == pytest.approx(2.798202)
+    assert parsed_dict["bandgap_spin1_au"] * 27.211386245988 == pytest.approx(
+        2.811670, abs=1e-4
+    )
+    assert parsed_dict["bandgap_spin2_au"] * 27.211386245988 == pytest.approx(
+        2.798202, abs=1e-4
+    )
+
+
+def test_update_bandgaps_uses_printed_gap_when_available():
+    """Test that CP2K's printed HOMO-LUMO gap is stored when available."""
+
+    result_dict = {
+        "warnings": [],
+        "dft_type": "RKS",
+        "init_nel_spin1": 1,
+        "init_nel_spin2": 1,
+        "eigen_spin1_au": [-0.06436553],
+        "unoccupied_eigen_spin1_au": [-0.06400983],
+        "printed_bandgap_spin1_ev": 0.009679,
+    }
+    _update_bandgaps(result_dict)
+
+    assert result_dict["bandgap_spin1_au"] == pytest.approx(0.009679 / 27.211386245988)
+    assert result_dict["bandgap_spin2_au"] == pytest.approx(0.009679 / 27.211386245988)
+    assert result_dict["warnings"] == []
+
+
+def test_update_bandgaps_leaves_gap_absent_without_lumo():
+    """Test that no occupied-occupied spacing is reported as bandgap."""
+
+    result_dict = {
+        "warnings": [],
+        "dft_type": "UKS",
+        "init_nel_spin1": 2,
+        "init_nel_spin2": 2,
+        "eigen_spin1_au": [-0.2, -0.1],
+        "eigen_spin2_au": [-0.3, -0.15],
+    }
+    _update_bandgaps(result_dict)
+
+    assert "bandgap_spin1_au" not in result_dict
+    assert "bandgap_spin2_au" not in result_dict
+
+
+def test_update_bandgaps_warns_when_printed_gap_differs():
+    """Test non-fatal warning for inconsistent parsed and printed gaps."""
+
+    result_dict = {
+        "warnings": [],
+        "dft_type": "UKS",
+        "eigen_spin1_au": [-0.2],
+        "unoccupied_eigen_spin1_au": [-0.1],
+        "printed_bandgap_spin1_ev": 9.0,
+    }
+    _update_bandgaps(result_dict)
+
+    assert result_dict["bandgap_spin1_au"] == pytest.approx(9.0 / 27.211386245988)
+    assert len(result_dict["warnings"]) == 1
+    assert "differs from CP2K printed gap" in result_dict["warnings"][0]
 
 
 def test_trajectory_parser_pbc():

@@ -17,6 +17,58 @@ from .. import utils
 StructureData = plugins.DataFactory("core.structure")
 BandsData = plugins.DataFactory("core.array.bands")
 
+HARTREE_TO_EV = 27.211386245988
+
+
+def _update_bandgaps(result_dict):
+    """Add bandgaps to parsed CP2K output when real LUMOs are available."""
+
+    if "eigen_spin1_au" not in result_dict:
+        return
+
+    if result_dict["dft_type"] == "RKS":
+        result_dict["eigen_spin2_au"] = result_dict["eigen_spin1_au"]
+        if "unoccupied_eigen_spin1_au" in result_dict:
+            result_dict["unoccupied_eigen_spin2_au"] = result_dict[
+                "unoccupied_eigen_spin1_au"
+            ]
+
+    for spin in (1, 2):
+        eigen_key = f"eigen_spin{spin}_au"
+        unoccupied_key = f"unoccupied_eigen_spin{spin}_au"
+        bandgap_key = f"bandgap_spin{spin}_au"
+        printed_gap_key = f"printed_bandgap_spin{spin}_ev"
+        if eigen_key not in result_dict or not result_dict[eigen_key]:
+            continue
+
+        homo = result_dict[eigen_key][-1]
+        lumo = None
+        if result_dict.get(unoccupied_key):
+            lumo = result_dict[unoccupied_key][0]
+        else:
+            lumo_idx = result_dict.get(f"init_nel_spin{spin}")
+            if lumo_idx is not None and lumo_idx < len(result_dict[eigen_key]):
+                lumo = result_dict[eigen_key][lumo_idx]
+                homo = result_dict[eigen_key][lumo_idx - 1]
+
+        printed_gap = result_dict.get(printed_gap_key)
+        if printed_gap is not None:
+            result_dict[bandgap_key] = printed_gap / HARTREE_TO_EV
+            if lumo is not None:
+                computed_gap_ev = (lumo - homo) * HARTREE_TO_EV
+                if abs(computed_gap_ev - printed_gap) > 1e-4:
+                    result_dict["warnings"].append(
+                        f"Computed bandgap for spin {spin} "
+                        f"({computed_gap_ev:.6f} eV) differs from CP2K "
+                        f"printed gap ({printed_gap:.6f} eV)."
+                    )
+            continue
+
+        if lumo is None:
+            continue
+
+        result_dict[bandgap_key] = lumo - homo
+
 
 class Cp2kBaseParser(parsers.Parser):
     """Basic AiiDA parser for the output of CP2K."""
@@ -238,25 +290,7 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
         # Parse the standard output.
         result_dict = utils.parse_cp2k_output_advanced(output_string)
 
-        # Compute the bandgap for Spin1 and Spin2 if eigen was parsed (works also with smearing!)
-        if "eigen_spin1_au" in result_dict:
-            if result_dict["dft_type"] == "RKS":
-                result_dict["eigen_spin2_au"] = result_dict["eigen_spin1_au"]
-
-            lumo_spin1_idx = result_dict["init_nel_spin1"]
-            lumo_spin2_idx = result_dict["init_nel_spin2"]
-            if (lumo_spin1_idx > len(result_dict["eigen_spin1_au"]) - 1) or (
-                lumo_spin2_idx > len(result_dict["eigen_spin2_au"]) - 1
-            ):
-                # electrons jumped from spin1 to spin2 (or opposite): assume last eigen is lumo
-                lumo_spin1_idx = len(result_dict["eigen_spin1_au"]) - 1
-                lumo_spin2_idx = len(result_dict["eigen_spin2_au"]) - 1
-            homo_spin1 = result_dict["eigen_spin1_au"][lumo_spin1_idx - 1]
-            homo_spin2 = result_dict["eigen_spin2_au"][lumo_spin2_idx - 1]
-            lumo_spin1 = result_dict["eigen_spin1_au"][lumo_spin1_idx]
-            lumo_spin2 = result_dict["eigen_spin2_au"][lumo_spin2_idx]
-            result_dict["bandgap_spin1_au"] = lumo_spin1 - homo_spin1
-            result_dict["bandgap_spin2_au"] = lumo_spin2 - homo_spin2
+        _update_bandgaps(result_dict)
 
         kpoint_data = result_dict.pop("kpoint_data", None)
         if kpoint_data:

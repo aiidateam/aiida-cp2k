@@ -393,12 +393,12 @@ def test_ot_uks_warning_lines_do_not_break_eigenvalue_parsing():
     assert parsed_dict["bandgap_spin2_au"] * 27.211386245988 == pytest.approx(
         2.798202, abs=1e-4
     )
-    assert parsed_dict["eigenvalue_bandgap_spin1_au"] * 27.211386245988 == pytest.approx(
-        2.811670, abs=1e-4
-    )
-    assert parsed_dict["eigenvalue_bandgap_spin2_au"] * 27.211386245988 == pytest.approx(
-        2.798202, abs=1e-4
-    )
+    assert parsed_dict[
+        "eigenvalue_bandgap_spin1_au"
+    ] * 27.211386245988 == pytest.approx(2.811670, abs=1e-4)
+    assert parsed_dict[
+        "eigenvalue_bandgap_spin2_au"
+    ] * 27.211386245988 == pytest.approx(2.798202, abs=1e-4)
 
 
 def test_update_bandgaps_uses_printed_gap_when_available():

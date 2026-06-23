@@ -51,16 +51,12 @@ def _update_bandgaps(result_dict):
                 unoccupied_key, []
             )
             homo_idx = lumo_idx - 1
-            if 0 <= homo_idx < len(all_eigenvalues) and lumo_idx < len(
-                all_eigenvalues
-            ):
+            if 0 <= homo_idx < len(all_eigenvalues) and lumo_idx < len(all_eigenvalues):
                 eigenvalue_homo = all_eigenvalues[homo_idx]
                 eigenvalue_lumo = all_eigenvalues[lumo_idx]
                 result_dict[eigenvalue_homo_key] = eigenvalue_homo
                 result_dict[eigenvalue_lumo_key] = eigenvalue_lumo
-                result_dict[eigenvalue_bandgap_key] = (
-                    eigenvalue_lumo - eigenvalue_homo
-                )
+                result_dict[eigenvalue_bandgap_key] = eigenvalue_lumo - eigenvalue_homo
 
         printed_gap = result_dict.get(printed_gap_key)
         if printed_gap is not None:

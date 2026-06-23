@@ -353,4 +353,7 @@ nitpick_ignore = [
     ("py:class", "State"),
     ("py:class", "Stepper"),
     ("py:class", "CalcJobNode"),
+    ("py:class", "aiida.engine.processes.calcjobs.calcjob.CalcJob"),
+    ("py:class", "aiida.parsers.parser.Parser"),
+    ("py:class", "aiida.engine.processes.workchains.restart.BaseRestartWorkChain"),
 ]

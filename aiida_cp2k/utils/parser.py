@@ -124,8 +124,7 @@ def parse_cp2k_output_advanced(
 
         if "HOMO - LUMO gap [eV]" in line:
             spin = 1 + sum(
-                key.startswith("printed_bandgap_spin")
-                for key in result_dict
+                key.startswith("printed_bandgap_spin") for key in result_dict
             )
             key = f"printed_bandgap_spin{spin}_ev"
             result_dict[key] = float(line.split()[-1])

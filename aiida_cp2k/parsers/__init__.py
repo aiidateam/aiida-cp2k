@@ -21,7 +21,7 @@ HARTREE_TO_EV = 27.211386245988
 
 
 def _update_bandgaps(result_dict):
-    """Add bandgaps to parsed CP2K output when real LUMOs are available."""
+    """Add printed and eigenvalue-count bandgaps to parsed CP2K output."""
 
     if "eigen_spin1_au" not in result_dict:
         return
@@ -36,38 +36,48 @@ def _update_bandgaps(result_dict):
     for spin in (1, 2):
         eigen_key = f"eigen_spin{spin}_au"
         unoccupied_key = f"unoccupied_eigen_spin{spin}_au"
-        bandgap_key = f"bandgap_spin{spin}_au"
         printed_gap_key = f"printed_bandgap_spin{spin}_ev"
+        bandgap_key = f"bandgap_spin{spin}_au"
+        eigenvalue_homo_key = f"eigenvalue_homo_spin{spin}_au"
+        eigenvalue_lumo_key = f"eigenvalue_lumo_spin{spin}_au"
+        eigenvalue_bandgap_key = f"eigenvalue_bandgap_spin{spin}_au"
+
         if eigen_key not in result_dict or not result_dict[eigen_key]:
             continue
 
-        homo = result_dict[eigen_key][-1]
-        lumo = None
-        if result_dict.get(unoccupied_key):
-            lumo = result_dict[unoccupied_key][0]
-        else:
-            lumo_idx = result_dict.get(f"init_nel_spin{spin}")
-            if lumo_idx is not None and lumo_idx < len(result_dict[eigen_key]):
-                lumo = result_dict[eigen_key][lumo_idx]
-                homo = result_dict[eigen_key][lumo_idx - 1]
+        lumo_idx = result_dict.get(f"init_nel_spin{spin}")
+        if lumo_idx is not None:
+            all_eigenvalues = result_dict[eigen_key] + result_dict.get(
+                unoccupied_key, []
+            )
+            homo_idx = lumo_idx - 1
+            if 0 <= homo_idx < len(all_eigenvalues) and lumo_idx < len(
+                all_eigenvalues
+            ):
+                eigenvalue_homo = all_eigenvalues[homo_idx]
+                eigenvalue_lumo = all_eigenvalues[lumo_idx]
+                result_dict[eigenvalue_homo_key] = eigenvalue_homo
+                result_dict[eigenvalue_lumo_key] = eigenvalue_lumo
+                result_dict[eigenvalue_bandgap_key] = (
+                    eigenvalue_lumo - eigenvalue_homo
+                )
 
         printed_gap = result_dict.get(printed_gap_key)
         if printed_gap is not None:
             result_dict[bandgap_key] = printed_gap / HARTREE_TO_EV
-            if lumo is not None:
-                computed_gap_ev = (lumo - homo) * HARTREE_TO_EV
-                if abs(computed_gap_ev - printed_gap) > 1e-4:
+            eigenvalue_bandgap = result_dict.get(eigenvalue_bandgap_key)
+            if eigenvalue_bandgap is not None:
+                eigenvalue_bandgap_ev = eigenvalue_bandgap * HARTREE_TO_EV
+                if abs(eigenvalue_bandgap_ev - printed_gap) > 1e-4:
                     result_dict["warnings"].append(
-                        f"Computed bandgap for spin {spin} "
-                        f"({computed_gap_ev:.6f} eV) differs from CP2K "
-                        f"printed gap ({printed_gap:.6f} eV)."
+                        f"Eigenvalue-count bandgap for spin {spin} "
+                        f"({eigenvalue_bandgap_ev:.6f} eV) differs from "
+                        f"CP2K printed gap ({printed_gap:.6f} eV)."
                     )
             continue
 
-        if lumo is None:
-            continue
-
-        result_dict[bandgap_key] = lumo - homo
+        if eigenvalue_bandgap_key in result_dict:
+            result_dict[bandgap_key] = result_dict[eigenvalue_bandgap_key]
 
 
 class Cp2kBaseParser(parsers.Parser):

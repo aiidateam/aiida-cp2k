@@ -393,6 +393,12 @@ def test_ot_uks_warning_lines_do_not_break_eigenvalue_parsing():
     assert parsed_dict["bandgap_spin2_au"] * 27.211386245988 == pytest.approx(
         2.798202, abs=1e-4
     )
+    assert parsed_dict["eigenvalue_bandgap_spin1_au"] * 27.211386245988 == pytest.approx(
+        2.811670, abs=1e-4
+    )
+    assert parsed_dict["eigenvalue_bandgap_spin2_au"] * 27.211386245988 == pytest.approx(
+        2.798202, abs=1e-4
+    )
 
 
 def test_update_bandgaps_uses_printed_gap_when_available():
@@ -411,6 +417,9 @@ def test_update_bandgaps_uses_printed_gap_when_available():
 
     assert result_dict["bandgap_spin1_au"] == pytest.approx(0.009679 / 27.211386245988)
     assert result_dict["bandgap_spin2_au"] == pytest.approx(0.009679 / 27.211386245988)
+    assert result_dict["eigenvalue_homo_spin1_au"] == pytest.approx(-0.06436553)
+    assert result_dict["eigenvalue_lumo_spin1_au"] == pytest.approx(-0.06400983)
+    assert result_dict["eigenvalue_bandgap_spin1_au"] == pytest.approx(0.00035570)
     assert result_dict["warnings"] == []
 
 
@@ -432,18 +441,22 @@ def test_update_bandgaps_leaves_gap_absent_without_lumo():
 
 
 def test_update_bandgaps_warns_when_printed_gap_differs():
-    """Test non-fatal warning for inconsistent parsed and printed gaps."""
+    """Test non-fatal warning for distinct printed and eigenvalue gaps."""
 
     result_dict = {
         "warnings": [],
         "dft_type": "UKS",
-        "eigen_spin1_au": [-0.2],
-        "unoccupied_eigen_spin1_au": [-0.1],
-        "printed_bandgap_spin1_ev": 9.0,
+        "init_nel_spin1": 3,
+        "eigen_spin1_au": [-4.1, -3.8, -2.0, -1.6, -1.5],
+        "unoccupied_eigen_spin1_au": [-1.3, -1.0],
+        "printed_bandgap_spin1_ev": 0.2 * 27.211386245988,
     }
     _update_bandgaps(result_dict)
 
-    assert result_dict["bandgap_spin1_au"] == pytest.approx(9.0 / 27.211386245988)
+    assert result_dict["bandgap_spin1_au"] == pytest.approx(0.2)
+    assert result_dict["eigenvalue_homo_spin1_au"] == pytest.approx(-2.0)
+    assert result_dict["eigenvalue_lumo_spin1_au"] == pytest.approx(-1.6)
+    assert result_dict["eigenvalue_bandgap_spin1_au"] == pytest.approx(0.4)
     assert len(result_dict["warnings"]) == 1
     assert "differs from CP2K printed gap" in result_dict["warnings"][0]
 

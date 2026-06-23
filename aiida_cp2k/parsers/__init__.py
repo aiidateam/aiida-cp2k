@@ -34,6 +34,10 @@ def _update_bandgaps(result_dict):
             result_dict["unoccupied_eigen_spin2_au"] = result_dict[
                 "unoccupied_eigen_spin1_au"
             ]
+        if "printed_bandgap_spin1_ev" in result_dict:
+            result_dict["printed_bandgap_spin2_ev"] = result_dict[
+                "printed_bandgap_spin1_ev"
+            ]
 
     for spin in (1, 2):
         eigen_key = f"eigen_spin{spin}_au"

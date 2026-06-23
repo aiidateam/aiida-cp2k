@@ -417,6 +417,7 @@ def test_update_bandgaps_uses_printed_gap_when_available():
     }
     _update_bandgaps(result_dict)
 
+    assert result_dict["printed_bandgap_spin2_ev"] == pytest.approx(0.009679)
     assert result_dict["bandgap_spin1_au"] == pytest.approx(0.009679 / 27.211386245988)
     assert result_dict["bandgap_spin2_au"] == pytest.approx(0.009679 / 27.211386245988)
     assert result_dict["eigenvalue_homo_spin1_au"] == pytest.approx(-0.06436553)

@@ -123,10 +123,12 @@ def parse_cp2k_output_advanced(
             continue
 
         if "HOMO - LUMO gap [eV]" in line:
-            spin = len(result_dict.get("printed_bandgaps_ev", [])) + 1
+            spin = 1 + sum(
+                key.startswith("printed_bandgap_spin")
+                for key in result_dict
+            )
             key = f"printed_bandgap_spin{spin}_ev"
             result_dict[key] = float(line.split()[-1])
-            result_dict.setdefault("printed_bandgaps_ev", []).append(result_dict[key])
 
         # If a tag has been detected, now read the following line knowing what they are
         eigenvalue_keys = [

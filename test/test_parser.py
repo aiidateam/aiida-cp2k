@@ -370,6 +370,7 @@ def test_ot_unoccupied_eigenvalues_are_parsed():
     assert parsed_dict["eigen_spin1_au"][-1] == pytest.approx(-0.06436553)
     assert parsed_dict["unoccupied_eigen_spin1_au"] == pytest.approx([-0.06400983])
     assert parsed_dict["printed_bandgap_spin1_ev"] == pytest.approx(0.009679)
+    assert "printed_bandgaps_ev" not in parsed_dict
 
 
 def test_ot_uks_warning_lines_do_not_break_eigenvalue_parsing():
@@ -387,6 +388,7 @@ def test_ot_uks_warning_lines_do_not_break_eigenvalue_parsing():
     assert parsed_dict["unoccupied_eigen_spin2_au"] == pytest.approx([-0.07426995])
     assert parsed_dict["printed_bandgap_spin1_ev"] == pytest.approx(2.811670)
     assert parsed_dict["printed_bandgap_spin2_ev"] == pytest.approx(2.798202)
+    assert "printed_bandgaps_ev" not in parsed_dict
     assert parsed_dict["bandgap_spin1_au"] * 27.211386245988 == pytest.approx(
         2.811670, abs=1e-4
     )

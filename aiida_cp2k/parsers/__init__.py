@@ -26,6 +26,8 @@ def _update_bandgaps(result_dict):
     if "eigen_spin1_au" not in result_dict:
         return
 
+    # RKS calculations print a single spin channel. Mirror it so downstream code
+    # can use the same spin-indexed keys for RKS and UKS outputs.
     if result_dict["dft_type"] == "RKS":
         result_dict["eigen_spin2_au"] = result_dict["eigen_spin1_au"]
         if "unoccupied_eigen_spin1_au" in result_dict:
@@ -45,6 +47,10 @@ def _update_bandgaps(result_dict):
         if eigen_key not in result_dict or not result_dict[eigen_key]:
             continue
 
+        # The eigenvalue-count gap follows the requested number of electrons:
+        # HOMO is orbital nel, LUMO is orbital nel + 1. For OT calculations the
+        # LUMO may be printed in the separate unoccupied-subspace block, so we
+        # concatenate occupied and unoccupied eigenvalue lists before indexing.
         lumo_idx = result_dict.get(f"init_nel_spin{spin}")
         if lumo_idx is not None:
             all_eigenvalues = result_dict[eigen_key] + result_dict.get(
@@ -58,12 +64,17 @@ def _update_bandgaps(result_dict):
                 result_dict[eigenvalue_lumo_key] = eigenvalue_lumo
                 result_dict[eigenvalue_bandgap_key] = eigenvalue_lumo - eigenvalue_homo
 
+        # Keep the historical bandgap_spin*_au fields tied to the gap CP2K
+        # explicitly prints when it is available. With smearing or fractional
+        # occupations, this can differ from the electron-count gap above.
         printed_gap = result_dict.get(printed_gap_key)
         if printed_gap is not None:
             result_dict[bandgap_key] = printed_gap / HARTREE_TO_EV
             eigenvalue_bandgap = result_dict.get(eigenvalue_bandgap_key)
             if eigenvalue_bandgap is not None:
                 eigenvalue_bandgap_ev = eigenvalue_bandgap * HARTREE_TO_EV
+                # A mismatch is useful diagnostic information, but it does not
+                # make the CP2K output unparsable.
                 if abs(eigenvalue_bandgap_ev - printed_gap) > 1e-4:
                     result_dict["warnings"].append(
                         f"Eigenvalue-count bandgap for spin {spin} "
@@ -72,6 +83,8 @@ def _update_bandgaps(result_dict):
                     )
             continue
 
+        # If CP2K did not print a gap, expose the electron-count gap through the
+        # legacy bandgap key only when both frontier eigenvalues were available.
         if eigenvalue_bandgap_key in result_dict:
             result_dict[bandgap_key] = result_dict[eigenvalue_bandgap_key]
 

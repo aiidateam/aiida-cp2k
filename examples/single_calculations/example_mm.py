@@ -23,8 +23,7 @@ def example_mm(cp2k_code):
 
     # Force field.
     with open(os.path.join("/tmp", "water.pot"), "w") as f:
-        f.write(
-            """BONDS
+        f.write("""BONDS
     H    H       0.000     1.5139
     O    H     450.000     0.9572
 
@@ -41,8 +40,7 @@ def example_mm(cp2k_code):
 
     HBOND CUTHB 0.5
 
-    END"""
-        )
+    END""")
 
     water_pot = SinglefileData(file=os.path.join("/tmp", "water.pot"))
 

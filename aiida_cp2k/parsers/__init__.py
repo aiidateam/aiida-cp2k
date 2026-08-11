@@ -13,6 +13,7 @@ import numpy as np
 from aiida import common, engine, orm, parsers, plugins
 
 from .. import utils
+from ..utils.xyz import parse as parse_xyz
 
 StructureData = plugins.DataFactory("core.structure")
 BandsData = plugins.DataFactory("core.array.bands")
@@ -154,12 +155,10 @@ class Cp2kBaseParser(parsers.Parser):
         except OSError:
             return self.exit_codes.ERROR_COORDINATES_TRAJECTORY_READ
 
-        from cp2k_output_tools.trajectories.xyz import parse
-
         positions_traj = []
         stepids_traj = []
         energies_traj = []
-        for frame in parse(output_xyz_pos):
+        for frame in parse_xyz(output_xyz_pos):
             _, positions = zip(*frame["atoms"])
             positions_traj.append(positions)
             comment_split = frame["comment"].split(",")
@@ -196,7 +195,7 @@ class Cp2kBaseParser(parsers.Parser):
                     forces_traj_fname
                 )
                 forces_traj = []
-                for frame in parse(output_forces):
+                for frame in parse_xyz(output_forces):
                     _, forces = zip(*frame["atoms"])
                     forces_traj.append(forces)
                 forces_traj = np.array(forces_traj)
@@ -279,7 +278,13 @@ class Cp2kToolsParser(Cp2kBaseParser):
     def _parse_stdout(self):
         """Very advanced CP2K output file parser."""
 
-        from cp2k_output_tools import parse_iter
+        try:
+            from cp2k_output_tools import parse_iter
+        except ImportError as exception:
+            raise ImportError(
+                "Cp2kToolsParser requires the optional cp2k-output-tools "
+                "dependency. Install aiida-cp2k[output-tools] to use this parser."
+            ) from exception
 
         # Read the standard output of CP2K.
         exit_code, output_string = self._read_stdout()

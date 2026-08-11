@@ -24,7 +24,6 @@ dependencies = [
     "aiida-gaussian-datatypes",
     "ase",
     "ruamel.yaml>=0.16.5",
-    "cp2k-output-tools",
     "aiida-pseudo~=1.2",
     "upf-to-json>=0.9",
 ]
@@ -36,6 +35,9 @@ name = "The AiiDA team"
 Homepage = "https://github.com/aiidateam/aiida-cp2k"
 
 [project.optional-dependencies]
+output-tools = [
+    "cp2k-output-tools",
+]
 dev = [
     "bumpver==2022.1119",
     "pgtest~=1.3",

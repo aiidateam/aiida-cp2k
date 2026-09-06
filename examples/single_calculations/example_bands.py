@@ -172,9 +172,6 @@ def example_bands(cp2k_code):
                     }
                 },
             },
-            "GLOBAL": {
-                "EXTENDED_FFT_LENGTHS": True,  # Needed for large systems
-            },
         }
     )
 

@@ -46,9 +46,8 @@ extensions = [
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    # AiiDA 2.7.1 is the latest 2.x inventory that publishes the class targets
-    # required by ``show-inheritance``. Newer inventories omit these API targets.
-    "aiida": ("https://aiida.readthedocs.io/projects/aiida-core/en/v2.7.1/", None),
+    # AiiDA 2.8+ no longer publishes the API reference (aiida-core#7056).
+    "aiida": ("https://aiida.readthedocs.io/projects/aiida-core/en/v2.7.3/", None),
 }
 
 # Add any paths that contain templates here, relative to this directory.

@@ -55,7 +55,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        python-version: [3.11]
+        python-version: [3.12]
     steps:
     - uses: actions/checkout@v7
     - name: Set up Python ${{ matrix.python-version }}

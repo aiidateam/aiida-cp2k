@@ -13,9 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        aiida-version:
-          - '2.4.3'
-          - '2.5.1'
+        include:
+          - aiida-version: '2.4.3'
+            image-version: '2.4.3'
+          - aiida-version: '2.5.1'
+            image-version: '2.5.1'
+          - aiida-version: '2.9.2'
+            image-version: '2.5.2'
 
     timeout-minutes: 30
 
@@ -36,6 +40,7 @@ jobs:
         cache-from: type=gha,scope=aiida-${{ matrix.aiida-version }}
         cache-to: type=gha,mode=max,scope=aiida-${{ matrix.aiida-version }}
         build-args: |
+          AIIDA_IMAGE_VERSION=${{ matrix.image-version }}
           AIIDA_VERSION=${{ matrix.aiida-version }}
 
     - name: Create container from aiida_cp2k_test image and test the plugin inside

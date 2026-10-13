@@ -60,7 +60,7 @@ The test image installs AiiDA 2.9.2 by default. The services-image tag and the t
 docker build -t aiida_cp2k_test --build-arg AIIDA_VERSION=2.9.2 .
 ```
 
-The default services image is `aiidateam/aiida-core-with-services:2.5.2`. Override its tag with `AIIDA_IMAGE_VERSION` when needed. The build checks that the installed AiiDA package matches `AIIDA_VERSION`.
+The default services image is `aiidateam/aiida-core-with-services:2.5.2`. The build upgrades its interpreter to Python 3.12, overriding the image's Python 3.10 pin. Override the image tag with `AIIDA_IMAGE_VERSION` when needed. The build checks both Python 3.12 and the installed AiiDA package against `AIIDA_VERSION`.
 
 Then, you can launch the container:
 

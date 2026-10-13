@@ -36,7 +36,13 @@ COPY --chown="${SYSTEM_UID}:${SYSTEM_GID}" . /home/aiida/aiida-cp2k
 
 # Resolve the requested AiiDA version together with the plugin dependencies.
 # Refresh compatible dependencies retained by the older Conda image as well.
-RUN pip install --upgrade --upgrade-strategy eager "aiida-core==${AIIDA_VERSION}" "./aiida-cp2k[dev,docs]"
+# PyPI cp2k-input-tools 0.9.1 still requires Pint <0.24. Upstream PR #106
+# permits Pint 0.24, which supports NumPy 2; use that exact fix in CI until released.
+RUN pip install --upgrade --upgrade-strategy eager \
+    "aiida-core==${AIIDA_VERSION}" \
+    "cp2k-input-tools @ git+https://github.com/cp2k/cp2k-input-tools.git@027cc072012e373265ba8368973a4a7158e33a19" \
+    "pint==0.24.4" \
+    "./aiida-cp2k[dev,docs]"
 RUN python -c "import sys; import importlib.metadata as m; print('Testing Python', sys.version); assert sys.version_info[:2] == (3, 12); print('Testing aiida-core', m.version('aiida-core')); assert m.version('aiida-core') == '${AIIDA_VERSION}'"
 
 # Install coverals.

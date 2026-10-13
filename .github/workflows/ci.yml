@@ -12,6 +12,7 @@ jobs:
 
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - aiida-version: '2.4.3'

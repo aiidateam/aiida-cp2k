@@ -36,6 +36,8 @@ def setup_sssp_pseudos(aiida_profile):
     subprocess.run(
         [
             "aiida-pseudo",
+            "--profile",
+            aiida_profile.name,
             "install",
             "sssp",
             "-p",
@@ -44,5 +46,6 @@ def setup_sssp_pseudos(aiida_profile):
             "PBE",
             "-v",
             "1.3",
-        ]
+        ],
+        check=True,
     )

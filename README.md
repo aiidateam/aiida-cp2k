@@ -10,6 +10,8 @@
 
 ## Installation
 
+Requires AiiDA `>=2.8,<3`.
+
 If you use `pip`, you can install it as:
 ```
 pip install aiida-cp2k

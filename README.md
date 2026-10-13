@@ -10,7 +10,7 @@
 
 ## Installation
 
-Requires AiiDA `>=2.8,<3`.
+Requires Python `>=3.12` and AiiDA `>=2.8,<3`.
 
 If you use `pip`, you can install it as:
 ```

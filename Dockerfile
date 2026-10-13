@@ -25,7 +25,9 @@ USER aiida
 
 # Run the plugin and service setup with the supported Python interpreter.
 # The older services image pins Python 3.10; override that pin for CI.
-RUN mamba install --yes --no-pin -n base -c conda-forge "python=3.12" pip mamba && mamba clean --all -f -y
+RUN sed -i 's/^python .*/python 3.12/' "${CONDA_DIR}/conda-meta/pinned" && \
+    mamba install --yes -n base -c conda-forge "python=3.12" pip mamba && \
+    mamba clean --all -f -y
 
 RUN mamba create --yes -c conda-forge -n cp2k cp2k=9.1 && mamba clean --all -f -y
 

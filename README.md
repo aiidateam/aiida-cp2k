@@ -53,10 +53,12 @@ Once this is done, you can build the Docker image with the following command:
 ```bash
 docker build -t aiida_cp2k_test .
 ```
-To test against another version of aiida-core, you can specify the build agrument `AIIDA_VERSION`:
+The test image installs AiiDA 2.9.2 by default. The services-image tag and the tested AiiDA package version are separate because a services image is not published for every AiiDA release. To select another package version, set `AIIDA_VERSION`:
 ```bash
-docker build -t aiida_cp2k_test --build-arg AIIDA_VERSION=2.4.3 .
+docker build -t aiida_cp2k_test --build-arg AIIDA_VERSION=2.9.2 .
 ```
+
+The default services image is `aiidateam/aiida-core-with-services:2.5.2`. Override its tag with `AIIDA_IMAGE_VERSION` when needed. The build checks that the installed AiiDA package matches `AIIDA_VERSION`.
 
 Then, you can launch the container:
 

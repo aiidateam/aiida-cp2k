@@ -5,6 +5,7 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 """Test writing structures to xyz format"""
+
 from ase import Atoms
 
 from aiida_cp2k.calculations import _atoms_to_xyz

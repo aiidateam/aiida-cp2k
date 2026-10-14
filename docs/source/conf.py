@@ -45,8 +45,9 @@ extensions = [
 ]
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/2.7", None),
-    "aiida": ("http://aiida-core.readthedocs.io/en/latest/", None),
+    "python": ("https://docs.python.org/3", None),
+    # AiiDA 2.8+ no longer publishes the API reference (aiida-core#7056).
+    "aiida": ("https://aiida.readthedocs.io/projects/aiida-core/en/v2.7.3/", None),
 }
 
 # Add any paths that contain templates here, relative to this directory.
@@ -353,7 +354,4 @@ nitpick_ignore = [
     ("py:class", "State"),
     ("py:class", "Stepper"),
     ("py:class", "CalcJobNode"),
-    ("py:class", "aiida.engine.processes.calcjobs.calcjob.CalcJob"),
-    ("py:class", "aiida.parsers.parser.Parser"),
-    ("py:class", "aiida.engine.processes.workchains.restart.BaseRestartWorkChain"),
 ]

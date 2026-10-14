@@ -1,0 +1,79 @@
+ CP2K| version string:                                       CP2K version 2023.1
+ DFT| Spin unrestricted (spin-polarized) Kohn-Sham calculation               UKS
+ Number of electrons:                                                          2
+ Number of electrons:                                                          1
+
+  Eigenvalues of the occupied subspace spin            1
+ ---------------------------------------------
+      -0.34355131     -0.20468727
+ Fermi Energy [eV] :   -5.569824
+
+  Eigenvalues of the occupied subspace spin            2
+ ---------------------------------------------
+      -0.30288037
+ Fermi Energy [eV] :   -8.241794
+
+  Lowest Eigenvalues of the unoccupied subspace spin            1
+ -----------------------------------------------------
+ OT| Eigensolver reached convergence in 53 iterations
+       0.10313544
+
+  Lowest Eigenvalues of the unoccupied subspace spin            2
+ -----------------------------------------------------
+ OT| Eigensolver reached convergence in 21 iterations
+      -0.10002314
+
+ HOMO - LUMO gap [eV] :    8.376282
+ HOMO - LUMO gap [eV] :    5.520026
+
+ ENERGY| Total FORCE_EVAL ( QS ) energy [a.u.]:               -1.606226045640716
+
+  Eigenvalues of the occupied subspace spin            1
+ ---------------------------------------------
+      -0.43084102     -0.19962558
+ Fermi Energy [eV] :   -5.432088
+
+  Eigenvalues of the occupied subspace spin            2
+ ---------------------------------------------
+      -0.38816576
+ Fermi Energy [eV] :  -10.562527
+
+  Lowest Eigenvalues of the unoccupied subspace spin            1
+ -----------------------------------------------------
+ OT| Eigensolver reached convergence in 23 iterations
+       0.16454445
+
+  Lowest Eigenvalues of the unoccupied subspace spin            2
+ -----------------------------------------------------
+ OT| Eigensolver reached convergence in 25 iterations
+      -0.10036832
+
+ HOMO - LUMO gap [eV] :    9.909570
+ HOMO - LUMO gap [eV] :    7.831367
+
+ ENERGY| Total FORCE_EVAL ( QS ) energy [a.u.]:               -1.649312185796065
+
+  Eigenvalues of the occupied subspace spin            1
+ ---------------------------------------------
+      -0.47252777     -0.19515752
+ Fermi Energy [eV] :   -5.310506
+
+  Eigenvalues of the occupied subspace spin            2
+ ---------------------------------------------
+      -0.42953873
+ Fermi Energy [eV] :  -11.688343
+
+  Lowest Eigenvalues of the unoccupied subspace spin            1
+ -----------------------------------------------------
+ OT| Eigensolver reached convergence in 21 iterations
+       0.15714467
+
+  Lowest Eigenvalues of the unoccupied subspace spin            2
+ -----------------------------------------------------
+ OT| Eigensolver reached convergence in 23 iterations
+      -0.09699089
+
+ HOMO - LUMO gap [eV] :    9.586630
+ HOMO - LUMO gap [eV] :    9.049087
+
+ ENERGY| Total FORCE_EVAL ( QS ) energy [a.u.]:               -1.648739827384167

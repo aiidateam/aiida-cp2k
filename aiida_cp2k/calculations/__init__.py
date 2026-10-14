@@ -439,7 +439,7 @@ class Cp2kCalculation(CalcJob):
     def _write_trajectories(trajectory, folder, name_pos, name_cell):
         """Function that writes a structure and takes care of element tags."""
 
-        (xyz, cell) = _trajectory_to_xyz_and_cell(trajectory)
+        xyz, cell = _trajectory_to_xyz_and_cell(trajectory)
         with open(folder.get_abs_path(name_pos), mode="w", encoding="utf-8") as fobj:
             fobj.write(xyz)
         if cell is not None:

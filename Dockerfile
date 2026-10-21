@@ -9,6 +9,7 @@ ARG AIIDA_VERSION=2.9.3
 
 FROM aiidateam/aiida-core-with-services:aiida-${AIIDA_VERSION}
 
+# Re-declare to make the pre-FROM value available to RUN instructions.
 ARG AIIDA_VERSION
 
 # To prevent the container to exit prematurely.

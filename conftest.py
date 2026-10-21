@@ -12,7 +12,7 @@ def cp2k_code(aiida_local_code_factory):
     return aiida_local_code_factory(
         entry_point="cp2k",
         executable="/opt/conda/envs/cp2k/bin/cp2k.psmp",
-        prepend_text='eval "$(command conda shell.bash hook 2> /dev/null)"\nconda activate cp2k\n',
+        prepend_text='eval "$(mamba shell hook --shell bash)"\nmamba activate /opt/conda/envs/cp2k\n',
     )
 
 
@@ -32,10 +32,12 @@ def pytest_unconfigure(config):
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_sssp_pseudos(aiida_profile):
-    """Create an SSSP pseudo potential family from scratch."""
+    """Install the SSSP family into the isolated pytest profile."""
     subprocess.run(
         [
             "aiida-pseudo",
+            "--profile",
+            aiida_profile.name,
             "install",
             "sssp",
             "-p",
@@ -44,5 +46,6 @@ def setup_sssp_pseudos(aiida_profile):
             "PBE",
             "-v",
             "1.3",
-        ]
+        ],
+        check=True,
     )

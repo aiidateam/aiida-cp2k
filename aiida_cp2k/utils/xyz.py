@@ -85,7 +85,7 @@ class BlockIterator(Iterator):
         self._catom += 1
 
         if self._catom > self._natoms:
-            raise TypeError(
+            raise ValueError(
                 f"Number of atom entries {self._catom} is larger than "
                 f"the number of atoms {self._natoms}"
             )

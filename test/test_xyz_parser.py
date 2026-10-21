@@ -80,5 +80,5 @@ H 0.0 0.0 0.0
 H 1.0 1.0 1.0
 """
 
-    with pytest.raises(TypeError, match="2 is larger than the number of atoms 1"):
+    with pytest.raises(ValueError, match="2 is larger than the number of atoms 1"):
         parse(content)

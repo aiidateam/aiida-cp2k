@@ -5,10 +5,12 @@
 # For further information on the license, see the LICENSE.txt file.           #
 ###############################################################################
 
-ARG AIIDA_VERSION=2.5.2
+ARG AIIDA_VERSION=2.9.3
 
-FROM aiidateam/aiida-core-with-services:${AIIDA_VERSION}
+FROM aiidateam/aiida-core-with-services:aiida-${AIIDA_VERSION}
 
+# Re-declare to make the pre-FROM value available to RUN instructions.
+ARG AIIDA_VERSION
 
 # To prevent the container to exit prematurely.
 ENV KILL_ALL_RPOCESSES_TIMEOUT=50
@@ -25,10 +27,8 @@ RUN mamba create --yes -c conda-forge -n cp2k cp2k=9.1 && mamba clean --all -f -
 # Install aiida-cp2k plugin.
 COPY --chown="${SYSTEM_UID}:${SYSTEM_GID}" . /home/aiida/aiida-cp2k
 
-# Test fix, cause latest aiida-core was not put on Dockerhub.
-RUN pip install aiida-core==2.6.3
-
-RUN pip install ./aiida-cp2k[dev,docs]
+# Pin aiida-core so the plugin install cannot replace the image's version.
+RUN pip install "aiida-core==${AIIDA_VERSION}" ./aiida-cp2k[dev,docs]
 
 # Install coverals.
 RUN pip install coveralls

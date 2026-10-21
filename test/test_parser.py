@@ -445,6 +445,28 @@ def test_update_bandgaps_leaves_gap_absent_without_lumo():
     assert "bandgap_spin2_au" not in result_dict
 
 
+@pytest.mark.parametrize(
+    "electron_counts",
+    [{}, {"init_nel_spin1": 0}],
+    ids=["no_electron_count", "zero_electrons"],
+)
+def test_update_bandgaps_without_usable_electron_count(electron_counts):
+    """Without a usable electron count, only the printed gap is reported."""
+    result_dict = {
+        "warnings": [],
+        "dft_type": "UKS",
+        "eigen_spin1_au": [-0.3, -0.2],
+        "unoccupied_eigen_spin1_au": [0.1],
+        "printed_bandgap_spin1_ev": 8.0,
+        **electron_counts,
+    }
+    _update_bandgaps(result_dict)
+
+    assert result_dict["bandgap_spin1_au"] * HARTREE2EV == pytest.approx(8.0)
+    assert not any(key.startswith("eigenvalue_") for key in result_dict)
+    assert result_dict["warnings"] == []
+
+
 def test_update_bandgaps_warns_when_printed_gap_differs():
     """Test non-fatal warning for distinct printed and eigenvalue gaps."""
 

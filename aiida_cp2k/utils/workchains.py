@@ -81,7 +81,8 @@ def get_input_multiplicity(structure, protocol_settings):
 def ot_has_small_bandgap(cp2k_input, cp2k_output, bandgap_thr_ev):
     """Returns True if the calculation used OT and had a smaller bandgap then the guess needed for the OT.
     (NOTE: It has been observed also negative bandgap with OT in CP2K!)
-    Returns False if no bandgap was parsed, e.g. OT without printed LUMOs.
+    Returns False if no bandgap was parsed: OT prints LUMOs only on request,
+    e.g. with DFT/PRINT/MO_CUBES NLUMO 1 and WRITE_CUBE F.
     cp2k_input: dict
     cp2k_output: dict
     bandgap_thr_ev: float [eV]

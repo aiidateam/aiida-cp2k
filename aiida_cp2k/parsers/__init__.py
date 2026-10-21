@@ -27,7 +27,9 @@ def _update_bandgaps(result_dict):
 
     - ``eigenvalue_homo_spinN_au``, ``eigenvalue_lumo_spinN_au`` and
       ``eigenvalue_bandgap_spinN_au``: orbitals ``nel`` and ``nel + 1`` of the
-      occupied and unoccupied eigenvalues, when both exist.
+      occupied and unoccupied eigenvalues, when both exist. ``nel`` comes from
+      the first SCF and can be stale, e.g. for BSSE, see
+      https://github.com/aiidateam/aiida-cp2k/issues/235.
     - ``bandgap_spinN_au``: the printed gap in Hartree if CP2K printed one,
       otherwise the eigenvalue gap. Absent when neither exists, e.g. for OT
       without printed LUMOs.

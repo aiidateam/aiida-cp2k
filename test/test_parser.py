@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from aiida_cp2k.parsers import _update_bandgaps
+from aiida_cp2k.utils import ot_has_small_bandgap
 from aiida_cp2k.utils.parser import (
     _parse_bands,
     parse_cp2k_output,
@@ -581,6 +582,25 @@ def test_ot_incomplete_uks_gap_pair_does_not_reuse_second_gap():
     assert parsed_dict["bandgap_spin1_au"] * 27.211386245988 == pytest.approx(9.586630)
     assert parsed_dict["bandgap_spin2_au"] == pytest.approx(-0.09699089 + 0.42953873)
     assert parsed_dict["warnings"] == []
+
+
+def test_ot_has_small_bandgap_with_and_without_lumo():
+    """The OT small-gap check uses the parsed gap and tolerates its absence."""
+    output = (OUTPUTS_DIR / "OT_RKS_multiple_steps.out").read_text()
+    cp2k_input = {"FORCE_EVAL": {"DFT": {"SCF": {"OT": {}}}}}
+
+    parsed_dict = parse_cp2k_output_advanced(output)
+    _update_bandgaps(parsed_dict)
+    # Final printed gap is 11.791197 eV.
+    assert ot_has_small_bandgap(cp2k_input, parsed_dict, 12.0)
+    assert not ot_has_small_bandgap(cp2k_input, parsed_dict, 11.0)
+
+    final_group = output.rindex("  Eigenvalues of the occupied subspace spin")
+    stop = output.index("  Lowest Eigenvalues", final_group)
+    parsed_dict = parse_cp2k_output_advanced(output[:stop])
+    _update_bandgaps(parsed_dict)
+    assert "bandgap_spin1_au" not in parsed_dict
+    assert not ot_has_small_bandgap(cp2k_input, parsed_dict, 12.0)
 
 
 def test_trajectory_parser_pbc():

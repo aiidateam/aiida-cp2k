@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from aiida_cp2k.parsers import _update_bandgaps
-from aiida_cp2k.utils import ot_has_small_bandgap
+from aiida_cp2k.utils import HARTREE2EV, ot_has_small_bandgap
 from aiida_cp2k.utils.parser import (
     _parse_bands,
     parse_cp2k_output,
@@ -464,6 +464,34 @@ def test_update_bandgaps_warns_when_printed_gap_differs():
     assert result_dict["eigenvalue_bandgap_spin1_au"] == pytest.approx(0.4)
     assert len(result_dict["warnings"]) == 1
     assert "differs from CP2K printed gap" in result_dict["warnings"][0]
+
+
+@pytest.mark.parametrize(
+    "output_file, gaps_ev, n_gap_warnings",
+    [
+        # BSSE fragments have 282, 16 and 298 electrons, but init_nel comes from
+        # the first one, so only the printed gap describes the final group.
+        ("BSSE_output_v5.1_.out", [2.183774, 2.183774], 2),
+        ("GEO_OPT_v2024.3.out", [5.770362, 5.770362], 0),
+        ("GEO_OPT_v9.1.out", [5.770362, 5.770362], 0),
+        ("cdft_dos_cp2k_6.0.out", [1.729910, 0.731308], 0),
+        ("tddft_cp2k_6.0.out", [3.248614, 3.254121], 0),
+    ],
+)
+def test_reference_outputs_report_printed_bandgap(output_file, gaps_ev, n_gap_warnings):
+    """Pin bandgap_spin*_au to CP2K's printed gap for the reference outputs."""
+    parsed_dict = parse_cp2k_output_advanced((OUTPUTS_DIR / output_file).read_text())
+    _update_bandgaps(parsed_dict)
+
+    for spin, gap_ev in enumerate(gaps_ev, start=1):
+        bandgap_ev = parsed_dict[f"bandgap_spin{spin}_au"] * HARTREE2EV
+        assert bandgap_ev == pytest.approx(gap_ev)
+    gap_warnings = [
+        warning
+        for warning in parsed_dict["warnings"]
+        if "differs from CP2K printed gap" in warning
+    ]
+    assert len(gap_warnings) == n_gap_warnings
 
 
 @pytest.mark.parametrize(

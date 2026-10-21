@@ -1,0 +1,41 @@
+ CP2K| version string:                                       CP2K version 2024.3
+ DFT| Spin unrestricted (spin-polarized) Kohn-Sham calculation               UKS
+ Number of electrons:                                                         20
+ Number of electrons:                                                         19
+
+  Eigenvalues of the occupied subspace spin            1
+ *** WARNING in eigensolver: synthetic parser regression warning
+ ---------------------------------------------
+      -0.83090727     -0.81058173     -0.71191354     -0.65328182
+      -0.57973669     -0.51554029     -0.49871382     -0.45849802
+      -0.44102779     -0.41900139     -0.40228553     -0.36566034
+      -0.34801049     -0.32555859     -0.31528747     -0.29991130
+      -0.28300737     -0.24174251     -0.18376970     -0.11270121
+ Fermi Energy [eV] :   -3.066756
+
+  Eigenvalues of the occupied subspace spin            2
+ Skipping GPU init, should have already been initialized
+ ---------------------------------------------
+      -0.82590368     -0.80632991     -0.70661862     -0.64953624
+      -0.56881760     -0.51144861     -0.49560813     -0.45619315
+      -0.43885307     -0.41518800     -0.40085094     -0.36178451
+      -0.34468978     -0.32399244     -0.29971065     -0.29734511
+      -0.26908843     -0.22942007     -0.17710200
+ Fermi Energy [eV] :   -4.819190
+
+  Lowest Eigenvalues of the unoccupied subspace spin            1
+ *** WARNING synthetic unoccupied-block warning
+ -----------------------------------------------------
+ OT| Eigensolver reached convergence in 53 iterations
+      -0.00937424
+
+  Lowest Eigenvalues of the unoccupied subspace spin            2
+ OT| Eigensolver reached convergence in 0 warmup iterations
+ -----------------------------------------------------
+ OT| Eigensolver reached convergence in 71 iterations
+      -0.07426995
+
+ HOMO - LUMO gap [eV] :    2.811670
+ HOMO - LUMO gap [eV] :    2.798202
+
+ ENERGY| Total FORCE_EVAL ( QS ) energy [a.u.]:              -53.635904027468868

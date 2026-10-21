@@ -14,7 +14,7 @@ from aiida.plugins import DataFactory
 
 StructureData = DataFactory("core.structure")
 
-HARTREE2EV = 27.211399
+HARTREE2EV = 27.211386245988
 HARTREE2KJMOL = 2625.500
 
 
@@ -81,6 +81,8 @@ def get_input_multiplicity(structure, protocol_settings):
 def ot_has_small_bandgap(cp2k_input, cp2k_output, bandgap_thr_ev):
     """Returns True if the calculation used OT and had a smaller bandgap then the guess needed for the OT.
     (NOTE: It has been observed also negative bandgap with OT in CP2K!)
+    Returns False if no bandgap was parsed: OT prints LUMOs only on request,
+    e.g. with DFT/PRINT/MO_CUBES NLUMO 1 and WRITE_CUBE F.
     cp2k_input: dict
     cp2k_output: dict
     bandgap_thr_ev: float [eV]
@@ -94,11 +96,14 @@ def ot_has_small_bandgap(cp2k_input, cp2k_output, bandgap_thr_ev):
             using_ot = False
     except KeyError:
         using_ot = False
-    min_bandgap_ev = (
-        min(cp2k_output["bandgap_spin1_au"], cp2k_output["bandgap_spin2_au"])
-        * HARTREE2EV
-    )
-    is_bandgap_small = min_bandgap_ev < bandgap_thr_ev
+    bandgaps_au = [
+        cp2k_output[key]
+        for key in ("bandgap_spin1_au", "bandgap_spin2_au")
+        if key in cp2k_output
+    ]
+    if not bandgaps_au:
+        return False
+    is_bandgap_small = min(bandgaps_au) * HARTREE2EV < bandgap_thr_ev
     return using_ot and is_bandgap_small
 
 

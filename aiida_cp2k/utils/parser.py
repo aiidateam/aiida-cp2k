@@ -37,6 +37,18 @@ def parse_cp2k_output_advanced(
     result_dict = {"exceeded_walltime": False}
     result_dict["warnings"] = []
     line_is = None
+    printed_gap_spin = 1
+    eigenvalue_keys = [
+        "eigen_spin1_au",
+        "eigen_spin2_au",
+        "unoccupied_eigen_spin1_au",
+        "unoccupied_eigen_spin2_au",
+    ]
+    # Keys of one MO output group; the next group replaces all of them.
+    mo_group_keys = eigenvalue_keys + [
+        "printed_bandgap_spin1_ev",
+        "printed_bandgap_spin2_ev",
+    ]
     energy = None
     bohr2ang = 0.529177208590000
 
@@ -112,25 +124,40 @@ def parse_cp2k_output_advanced(
         if re.search(r"Specific L-BFGS convergence criteria", line):
             result_dict["warnings"].append("LBFGS converged with specific criteria")
 
-        # Parse eigenvalues.
-        if "subspace spin" in line and "owest" not in line:
-            if int(line.split()[-1]) == 1:
-                line_is = "eigen_spin1_au"
-                result_dict["eigen_spin1_au"] = []
-            elif int(line.split()[-1]) == 2:
-                line_is = "eigen_spin2_au"
-                result_dict["eigen_spin2_au"] = []
+        # Parse occupied and unoccupied eigenvalues.
+        if "subspace spin" in line:
+            spin = int(line.split()[-1])
+            if "lowest" in line.lower():
+                line_is = f"unoccupied_eigen_spin{spin}_au"
+            else:
+                if spin == 1:
+                    # Spin 1 opens a new MO group: forget the previous one.
+                    printed_gap_spin = 1
+                    for key in mo_group_keys:
+                        result_dict.pop(key, None)
+                line_is = f"eigen_spin{spin}_au"
+            result_dict[line_is] = []
             continue
 
+        if "HOMO - LUMO gap [eV]" in line:
+            # Gap lines follow all MO blocks of the group, in spin order.
+            key = f"printed_bandgap_spin{printed_gap_spin}_ev"
+            result_dict[key] = float(line.split()[-1])
+            printed_gap_spin += 1
+
         # If a tag has been detected, now read the following line knowing what they are
-        if line_is in ["eigen_spin1_au", "eigen_spin2_au"]:
-            if "------" in line or "*** WARNING" in line:
-                continue
-            splitted_line = line.split()
+        if line_is in eigenvalue_keys:
             try:
-                result_dict[line_is] += [float(x) for x in splitted_line]
+                result_dict[line_is] += [float(x) for x in line.split()]
             except ValueError:
-                line_is = None
+                # Skip noise (warnings, solver or GPU messages) until the block ends.
+                if (
+                    "Fermi Energy" in line
+                    or "HOMO - LUMO" in line
+                    or line.startswith(" ENERGY| ")
+                ):
+                    line_is = None
+                continue
 
         ####################################################################
         #  THIS SECTION PARSES THE PROPERTIES AT GOE_OPT/CELL_OPT/MD STEP  #

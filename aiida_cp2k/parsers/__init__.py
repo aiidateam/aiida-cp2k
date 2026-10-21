@@ -18,6 +18,86 @@ StructureData = plugins.DataFactory("core.structure")
 BandsData = plugins.DataFactory("core.array.bands")
 
 
+def _update_bandgaps(result_dict):
+    """Add printed and eigenvalue-count bandgaps to parsed CP2K output.
+
+    Uses the eigenvalues, printed gaps and electron counts found by
+    ``parse_cp2k_output_advanced``. RKS outputs mirror spin 1 to spin 2;
+    spin channels without occupied eigenvalues are skipped. For each spin N:
+
+    - ``eigenvalue_homo_spinN_au``, ``eigenvalue_lumo_spinN_au`` and
+      ``eigenvalue_bandgap_spinN_au``: orbitals ``nel`` and ``nel + 1`` of the
+      occupied and unoccupied eigenvalues, when both exist. ``nel`` comes from
+      the first SCF and can be stale, e.g. for BSSE, see
+      https://github.com/aiidateam/aiida-cp2k/issues/235.
+    - ``bandgap_spinN_au``: the printed gap in Hartree if CP2K printed one,
+      otherwise the eigenvalue gap. Absent when neither exists, e.g. for OT
+      without printed LUMOs.
+
+    Adds a warning when the printed and eigenvalue gaps differ by more than
+    1e-4 eV.
+    """
+
+    if "eigen_spin1_au" not in result_dict:
+        return
+
+    # RKS prints only spin 1; mirror it to spin 2.
+    if result_dict["dft_type"] == "RKS":
+        result_dict["eigen_spin2_au"] = result_dict["eigen_spin1_au"]
+        if "unoccupied_eigen_spin1_au" in result_dict:
+            result_dict["unoccupied_eigen_spin2_au"] = result_dict[
+                "unoccupied_eigen_spin1_au"
+            ]
+        if "printed_bandgap_spin1_ev" in result_dict:
+            result_dict["printed_bandgap_spin2_ev"] = result_dict[
+                "printed_bandgap_spin1_ev"
+            ]
+
+    for spin in (1, 2):
+        eigen_key = f"eigen_spin{spin}_au"
+        unoccupied_key = f"unoccupied_eigen_spin{spin}_au"
+        printed_gap_key = f"printed_bandgap_spin{spin}_ev"
+        bandgap_key = f"bandgap_spin{spin}_au"
+        eigenvalue_homo_key = f"eigenvalue_homo_spin{spin}_au"
+        eigenvalue_lumo_key = f"eigenvalue_lumo_spin{spin}_au"
+        eigenvalue_bandgap_key = f"eigenvalue_bandgap_spin{spin}_au"
+
+        if not result_dict.get(eigen_key):
+            continue
+
+        # HOMO is orbital nel and LUMO nel + 1; OT prints the LUMO separately.
+        nel = result_dict.get(f"init_nel_spin{spin}")
+        if nel is not None:
+            all_eigenvalues = result_dict[eigen_key] + result_dict.get(
+                unoccupied_key, []
+            )
+            if 0 < nel < len(all_eigenvalues):
+                eigenvalue_homo = all_eigenvalues[nel - 1]
+                eigenvalue_lumo = all_eigenvalues[nel]
+                result_dict[eigenvalue_homo_key] = eigenvalue_homo
+                result_dict[eigenvalue_lumo_key] = eigenvalue_lumo
+                result_dict[eigenvalue_bandgap_key] = eigenvalue_lumo - eigenvalue_homo
+
+        # Prefer CP2K's printed gap; with smearing it may differ from the one above.
+        printed_gap = result_dict.get(printed_gap_key)
+        if printed_gap is not None:
+            result_dict[bandgap_key] = printed_gap / utils.HARTREE2EV
+            eigenvalue_bandgap = result_dict.get(eigenvalue_bandgap_key)
+            if eigenvalue_bandgap is not None:
+                eigenvalue_bandgap_ev = eigenvalue_bandgap * utils.HARTREE2EV
+                if abs(eigenvalue_bandgap_ev - printed_gap) > 1e-4:
+                    result_dict["warnings"].append(
+                        f"Eigenvalue-count bandgap for spin {spin} "
+                        f"({eigenvalue_bandgap_ev:.6f} eV) differs from "
+                        f"CP2K printed gap ({printed_gap:.6f} eV)."
+                    )
+            continue
+
+        # Otherwise fall back to the eigenvalue gap, if there is one.
+        if eigenvalue_bandgap_key in result_dict:
+            result_dict[bandgap_key] = result_dict[eigenvalue_bandgap_key]
+
+
 class Cp2kBaseParser(parsers.Parser):
     """Basic AiiDA parser for the output of CP2K."""
 
@@ -238,25 +318,7 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
         # Parse the standard output.
         result_dict = utils.parse_cp2k_output_advanced(output_string)
 
-        # Compute the bandgap for Spin1 and Spin2 if eigen was parsed (works also with smearing!)
-        if "eigen_spin1_au" in result_dict:
-            if result_dict["dft_type"] == "RKS":
-                result_dict["eigen_spin2_au"] = result_dict["eigen_spin1_au"]
-
-            lumo_spin1_idx = result_dict["init_nel_spin1"]
-            lumo_spin2_idx = result_dict["init_nel_spin2"]
-            if (lumo_spin1_idx > len(result_dict["eigen_spin1_au"]) - 1) or (
-                lumo_spin2_idx > len(result_dict["eigen_spin2_au"]) - 1
-            ):
-                # electrons jumped from spin1 to spin2 (or opposite): assume last eigen is lumo
-                lumo_spin1_idx = len(result_dict["eigen_spin1_au"]) - 1
-                lumo_spin2_idx = len(result_dict["eigen_spin2_au"]) - 1
-            homo_spin1 = result_dict["eigen_spin1_au"][lumo_spin1_idx - 1]
-            homo_spin2 = result_dict["eigen_spin2_au"][lumo_spin2_idx - 1]
-            lumo_spin1 = result_dict["eigen_spin1_au"][lumo_spin1_idx]
-            lumo_spin2 = result_dict["eigen_spin2_au"][lumo_spin2_idx]
-            result_dict["bandgap_spin1_au"] = lumo_spin1 - homo_spin1
-            result_dict["bandgap_spin2_au"] = lumo_spin2 - homo_spin2
+        _update_bandgaps(result_dict)
 
         kpoint_data = result_dict.pop("kpoint_data", None)
         if kpoint_data:

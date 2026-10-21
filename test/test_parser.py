@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pytest
 
+from aiida_cp2k.parsers import _update_bandgaps
+from aiida_cp2k.utils import HARTREE2EV, ot_has_small_bandgap
 from aiida_cp2k.utils.parser import (
     _parse_bands,
     parse_cp2k_output,
@@ -23,6 +25,23 @@ OUTPUTS_DIR = THIS_DIR / "outputs"
 
 def dict_is_subset(a, b):
     return a.items() <= b.items()
+
+
+def _parse_output(output):
+    """Parse CP2K output and derive bandgaps, as Cp2kAdvancedParser does."""
+    parsed_dict = parse_cp2k_output_advanced(output)
+    _update_bandgaps(parsed_dict)
+    return parsed_dict
+
+
+def _parse_truncated(output_file, marker):
+    """Parse the full output and the output cut at ``marker`` in its final MO group."""
+    output = (OUTPUTS_DIR / output_file).read_text()
+    final_group = output.rindex(
+        "  Eigenvalues of the occupied subspace spin            1"
+    )
+    stop = output.index(marker, final_group)
+    return _parse_output(output), _parse_output(output[:stop])
 
 
 @pytest.mark.parametrize(
@@ -358,6 +377,184 @@ def test_cp2k_output_advanced(output_file, reference_dict):
         lines = fobj.read()
         parsed_dict = parse_cp2k_output_advanced(lines)
         assert dict_is_subset(reference_dict, parsed_dict)
+
+
+@pytest.mark.parametrize(
+    "output_file, gaps_ev, frontiers_au, n_gap_warnings",
+    [
+        ("OT_v9.1.out", [0.009679, 0.009679], [(-0.06436553, -0.06400983)], 0),
+        (
+            "OT_UKS_with_warnings.out",
+            [2.811670, 2.798202],
+            [(-0.11270121, -0.00937424), (-0.17710200, -0.07426995)],
+            0,
+        ),
+        (
+            "OT_RKS_multiple_steps.out",
+            [11.791197, 11.791197],
+            [(-0.34398766, 0.08933089)],
+            0,
+        ),
+        (
+            "OT_UKS_multiple_steps.out",
+            [9.586630, 9.049087],
+            [(-0.19515752, 0.15714467), (-0.42953873, -0.09699089)],
+            0,
+        ),
+        # init_nel is from the first BSSE fragment, so only the printed gap is valid.
+        ("BSSE_output_v5.1_.out", [2.183774, 2.183774], [], 2),
+        (
+            "GEO_OPT_v2024.3.out",
+            [5.770362, 5.770362],
+            [(-0.24103549, -0.02897857)],
+            0,
+        ),
+        ("GEO_OPT_v9.1.out", [5.770362, 5.770362], [(-0.24103549, -0.02897857)], 0),
+        (
+            "cdft_dos_cp2k_6.0.out",
+            [1.729910, 0.731308],
+            [(-0.07246038, -0.00888736), (-0.07243564, -0.04556056)],
+            0,
+        ),
+        (
+            "tddft_cp2k_6.0.out",
+            [3.248614, 3.254121],
+            [(-0.22006268, -0.10067832), (-0.21991109, -0.10032433)],
+            0,
+        ),
+    ],
+)
+def test_reference_outputs_bandgaps(output_file, gaps_ev, frontiers_au, n_gap_warnings):
+    """Frontier orbitals and gaps come from the final MO group of each output."""
+    parsed_dict = _parse_output((OUTPUTS_DIR / output_file).read_text())
+
+    # Gap numbering restarts in every MO group; RKS mirrors spin 1 to spin 2.
+    assert {key for key in parsed_dict if key.startswith("printed_bandgap_")} == {
+        "printed_bandgap_spin1_ev",
+        "printed_bandgap_spin2_ev",
+    }
+    for spin, gap_ev in enumerate(gaps_ev, start=1):
+        assert parsed_dict[f"printed_bandgap_spin{spin}_ev"] == pytest.approx(gap_ev)
+        bandgap_ev = parsed_dict[f"bandgap_spin{spin}_au"] * HARTREE2EV
+        assert bandgap_ev == pytest.approx(gap_ev)
+    for spin, (homo, lumo) in enumerate(frontiers_au, start=1):
+        assert parsed_dict[f"eigenvalue_homo_spin{spin}_au"] == pytest.approx(homo)
+        assert parsed_dict[f"eigenvalue_lumo_spin{spin}_au"] == pytest.approx(lumo)
+    gap_warnings = [
+        warning
+        for warning in parsed_dict["warnings"]
+        if "differs from CP2K printed gap" in warning
+    ]
+    assert len(gap_warnings) == n_gap_warnings
+
+
+@pytest.mark.parametrize(
+    "electron_counts",
+    [{}, {"init_nel_spin1": 0}],
+    ids=["no_electron_count", "zero_electrons"],
+)
+def test_update_bandgaps_without_usable_electron_count(electron_counts):
+    """Without a usable electron count, only the printed gap is reported."""
+    result_dict = {
+        "warnings": [],
+        "dft_type": "UKS",
+        "eigen_spin1_au": [-0.3, -0.2],
+        "unoccupied_eigen_spin1_au": [0.1],
+        "printed_bandgap_spin1_ev": 8.0,
+        **electron_counts,
+    }
+    _update_bandgaps(result_dict)
+
+    assert result_dict["bandgap_spin1_au"] * HARTREE2EV == pytest.approx(8.0)
+    assert not any(key.startswith("eigenvalue_") for key in result_dict)
+    assert result_dict["warnings"] == []
+
+
+def test_update_bandgaps_warns_when_printed_gap_differs():
+    """Test non-fatal warning for distinct printed and eigenvalue gaps."""
+
+    result_dict = {
+        "warnings": [],
+        "dft_type": "UKS",
+        "init_nel_spin1": 3,
+        "eigen_spin1_au": [-4.1, -3.8, -2.0, -1.6, -1.5],
+        "unoccupied_eigen_spin1_au": [-1.3, -1.0],
+        "printed_bandgap_spin1_ev": 0.2 * HARTREE2EV,
+    }
+    _update_bandgaps(result_dict)
+
+    assert result_dict["bandgap_spin1_au"] == pytest.approx(0.2)
+    assert result_dict["eigenvalue_homo_spin1_au"] == pytest.approx(-2.0)
+    assert result_dict["eigenvalue_lumo_spin1_au"] == pytest.approx(-1.6)
+    assert result_dict["eigenvalue_bandgap_spin1_au"] == pytest.approx(0.4)
+    assert len(result_dict["warnings"]) == 1
+    assert "differs from CP2K printed gap" in result_dict["warnings"][0]
+
+
+@pytest.mark.parametrize(
+    "output_file, marker",
+    [
+        ("OT_RKS_multiple_steps.out", "  Lowest Eigenvalues"),
+        ("OT_UKS_multiple_steps.out", "  Lowest Eigenvalues"),
+        (
+            "OT_UKS_multiple_steps.out",
+            "  Eigenvalues of the occupied subspace spin            2",
+        ),
+    ],
+)
+def test_ot_final_group_without_lumos_has_no_gaps(output_file, marker):
+    """Output that stops before the final LUMOs must not reuse an earlier step."""
+    full, parsed_dict = _parse_truncated(output_file, marker)
+
+    assert "eigen_spin1_au" in parsed_dict
+    for key in ("eigen_spin1_au", "eigen_spin2_au"):
+        if key in parsed_dict:
+            assert parsed_dict[key] == full[key]
+    assert not any(
+        key.startswith(
+            ("unoccupied_eigen_", "printed_bandgap_", "bandgap_", "eigenvalue_")
+        )
+        for key in parsed_dict
+    )
+
+
+@pytest.mark.parametrize(
+    "output_file, marker, printed_spins",
+    [
+        ("OT_RKS_multiple_steps.out", " HOMO - LUMO gap", []),
+        ("OT_UKS_multiple_steps.out", " HOMO - LUMO gap", []),
+        ("OT_UKS_multiple_steps.out", " HOMO - LUMO gap [eV] :    9.049087", [1]),
+    ],
+)
+def test_ot_final_group_without_printed_gaps_uses_eigenvalues(
+    output_file, marker, printed_spins
+):
+    """Missing gap lines fall back to the final group's eigenvalue gap."""
+    full, parsed_dict = _parse_truncated(output_file, marker)
+
+    assert {key for key in parsed_dict if key.startswith("printed_bandgap_")} == {
+        f"printed_bandgap_spin{spin}_ev" for spin in printed_spins
+    }
+    for spin in (1, 2):
+        if spin in printed_spins:
+            expected = full[f"bandgap_spin{spin}_au"]
+        else:
+            expected = full[f"eigenvalue_bandgap_spin{spin}_au"]
+        assert parsed_dict[f"bandgap_spin{spin}_au"] == pytest.approx(expected)
+    assert parsed_dict["warnings"] == []
+
+
+def test_ot_has_small_bandgap_with_and_without_lumo():
+    """The OT small-gap check uses the parsed gap and tolerates its absence."""
+    cp2k_input = {"FORCE_EVAL": {"DFT": {"SCF": {"OT": {}}}}}
+    full, without_lumo = _parse_truncated(
+        "OT_RKS_multiple_steps.out", "  Lowest Eigenvalues"
+    )
+
+    # Final printed gap is 11.791197 eV.
+    assert ot_has_small_bandgap(cp2k_input, full, 12.0)
+    assert not ot_has_small_bandgap(cp2k_input, full, 11.0)
+    assert not ot_has_small_bandgap(cp2k_input, without_lumo, 12.0)
 
 
 def test_trajectory_parser_pbc():

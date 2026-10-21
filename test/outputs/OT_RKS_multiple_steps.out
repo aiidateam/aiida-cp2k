@@ -1,0 +1,45 @@
+ CP2K| version string:                                       CP2K version 2023.1
+ DFT| Spin restricted Kohn-Sham (RKS) calculation                            RKS
+ Number of electrons:                                                          2
+
+  Eigenvalues of the occupied subspace spin            1
+ ---------------------------------------------
+      -0.24536887
+ Fermi Energy [eV] :   -6.676827
+
+  Lowest Eigenvalues of the unoccupied subspace spin            1
+ -----------------------------------------------------
+ OT| Eigensolver reached convergence in 19 iterations
+       0.01988683
+
+ HOMO - LUMO gap [eV] :    7.217975
+
+ ENERGY| Total FORCE_EVAL ( QS ) energy [a.u.]:               -1.074076859621407
+
+  Eigenvalues of the occupied subspace spin            1
+ ---------------------------------------------
+      -0.36726906
+ Fermi Energy [eV] :   -9.993899
+
+  Lowest Eigenvalues of the unoccupied subspace spin            1
+ -----------------------------------------------------
+ OT| Eigensolver reached convergence in 19 iterations
+       0.09450679
+
+ HOMO - LUMO gap [eV] :   12.565560
+
+ ENERGY| Total FORCE_EVAL ( QS ) energy [a.u.]:               -1.161376931703174
+
+  Eigenvalues of the occupied subspace spin            1
+ ---------------------------------------------
+      -0.34398766
+ Fermi Energy [eV] :   -9.360380
+
+  Lowest Eigenvalues of the unoccupied subspace spin            1
+ -----------------------------------------------------
+ OT| Eigensolver reached convergence in 19 iterations
+       0.08933089
+
+ HOMO - LUMO gap [eV] :   11.791197
+
+ ENERGY| Total FORCE_EVAL ( QS ) energy [a.u.]:               -1.159928889407905

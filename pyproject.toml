@@ -35,9 +35,6 @@ name = "The AiiDA team"
 Homepage = "https://github.com/aiidateam/aiida-cp2k"
 
 [project.optional-dependencies]
-output-tools = [
-    "cp2k-output-tools",
-]
 dev = [
     "bumpver==2022.1119",
     "pgtest~=1.3",
@@ -59,7 +56,6 @@ cp2k = "aiida_cp2k.calculations:Cp2kCalculation"
 [project.entry-points."aiida.parsers"]
 cp2k_base_parser = "aiida_cp2k.parsers:Cp2kBaseParser"
 cp2k_advanced_parser = "aiida_cp2k.parsers:Cp2kAdvancedParser"
-cp2k_tools_parser = "aiida_cp2k.parsers:Cp2kToolsParser"
 
 [project.entry-points."aiida.workflows"]
 "cp2k.base" = "aiida_cp2k.workchains:Cp2kBaseWorkChain"

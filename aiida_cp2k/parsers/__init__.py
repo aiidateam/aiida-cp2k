@@ -19,7 +19,24 @@ BandsData = plugins.DataFactory("core.array.bands")
 
 
 def _update_bandgaps(result_dict):
-    """Add printed and eigenvalue-count bandgaps to parsed CP2K output."""
+    """Add printed and eigenvalue-count bandgaps to parsed CP2K output.
+
+    Reads ``eigen_spinN_au``, ``unoccupied_eigen_spinN_au``,
+    ``printed_bandgap_spinN_ev`` and ``init_nel_spinN`` as produced by
+    ``parse_cp2k_output_advanced``. RKS outputs mirror spin 1 to spin 2.
+    Spin channels without occupied eigenvalues are skipped. For each
+    remaining spin N it sets:
+
+    - ``eigenvalue_homo_spinN_au``, ``eigenvalue_lumo_spinN_au`` and
+      ``eigenvalue_bandgap_spinN_au``: orbitals ``nel`` and ``nel + 1`` of the
+      occupied followed by the unoccupied eigenvalues, only when both exist.
+    - ``bandgap_spinN_au``: the printed gap in Hartree if CP2K printed one,
+      otherwise ``eigenvalue_bandgap_spinN_au``. Absent when neither exists,
+      e.g. for OT without printed LUMOs.
+
+    A warning is added when the printed and eigenvalue-count gaps differ by
+    more than 1e-4 eV.
+    """
 
     if "eigen_spin1_au" not in result_dict:
         return

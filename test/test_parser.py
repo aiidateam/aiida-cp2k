@@ -401,8 +401,7 @@ def test_cp2k_output_advanced(output_file, reference_dict):
             [(-0.19515752, 0.15714467), (-0.42953873, -0.09699089)],
             0,
         ),
-        # BSSE fragments have 282, 16 and 298 electrons, but init_nel comes from
-        # the first one, so only the printed gap describes the final group.
+        # init_nel is from the first BSSE fragment, so only the printed gap is valid.
         ("BSSE_output_v5.1_.out", [2.183774, 2.183774], [], 2),
         (
             "GEO_OPT_v2024.3.out",

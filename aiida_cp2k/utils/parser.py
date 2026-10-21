@@ -131,9 +131,7 @@ def parse_cp2k_output_advanced(
                 line_is = f"unoccupied_eigen_spin{spin}_au"
             else:
                 if spin == 1:
-                    # A new MO output group replaces the previous one. Do not
-                    # mix earlier gaps or unoccupied states with newer eigenvalues,
-                    # including when the latest output group is incomplete.
+                    # Spin 1 opens a new MO group: forget the previous one.
                     printed_gap_spin = 1
                     for key in mo_group_keys:
                         result_dict.pop(key, None)
@@ -142,8 +140,7 @@ def parse_cp2k_output_advanced(
             continue
 
         if "HOMO - LUMO gap [eV]" in line:
-            # CP2K prints the gap lines consecutively, in spin order, after
-            # all occupied and unoccupied subspace blocks in this group.
+            # Gap lines follow all MO blocks of the group, in spin order.
             key = f"printed_bandgap_spin{printed_gap_spin}_ev"
             result_dict[key] = float(line.split()[-1])
             printed_gap_spin += 1
@@ -153,8 +150,7 @@ def parse_cp2k_output_advanced(
             try:
                 result_dict[line_is] += [float(x) for x in line.split()]
             except ValueError:
-                # Non-numeric lines inside a block (dashes, warnings, eigensolver
-                # or GPU messages) are skipped unless they end the block.
+                # Skip noise (warnings, solver or GPU messages) until the block ends.
                 if (
                     "Fermi Energy" in line
                     or "HOMO - LUMO" in line

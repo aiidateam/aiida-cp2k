@@ -7,29 +7,10 @@
 ###############################################################################
 """Parse CP2K XYZ trajectory files."""
 
-import contextlib
-import mmap
 import re
 from collections.abc import Iterator
 
-__all__ = ["parse", "parse_iter", "BlockIterator"]
-
-
-@contextlib.contextmanager
-def as_byteorstringlike(fh_or_content):
-    """Yield content and whether it is a Unicode string."""
-
-    if isinstance(fh_or_content, str):
-        yield fh_or_content, True
-    elif isinstance(fh_or_content, bytes):
-        yield fh_or_content, False
-    else:
-        mmapped = mmap.mmap(fh_or_content.fileno(), 0, access=mmap.ACCESS_READ)
-
-        try:
-            yield mmapped, False
-        finally:
-            mmapped.close()
+__all__ = ["parse"]
 
 
 # MULTILINE and VERBOSE regex to match coordinate lines in a frame:
@@ -78,6 +59,9 @@ FRAME_MATCH_REGEX = r"""
 )                                       # A positions block should be one or more lines
 """
 
+FRAME_MATCH = re.compile(FRAME_MATCH_REGEX, re.MULTILINE | re.VERBOSE)
+POS_MATCH = re.compile(POS_MATCH_REGEX, re.MULTILINE | re.VERBOSE)
+
 
 class BlockIterator(Iterator):
     """Extract atom entries from a matched XYZ frame."""
@@ -109,34 +93,14 @@ class BlockIterator(Iterator):
         return (match["sym"], (float(match["x"]), float(match["y"]), float(match["z"])))
 
 
-def parse_iter(fh_or_string):
-    """Yield frame tuples containing atom count, comment, and atom iterator."""
+def parse(content):
+    """Return XYZ frames from a string, with materialized atom lists."""
 
-    with as_byteorstringlike(fh_or_string) as (content, is_string):
-        if is_string:
-            frame_match = re.compile(FRAME_MATCH_REGEX, re.MULTILINE | re.VERBOSE)
-            pos_match = re.compile(POS_MATCH_REGEX, re.MULTILINE | re.VERBOSE)
-        else:
-            frame_match = re.compile(
-                FRAME_MATCH_REGEX.encode("utf8"), re.MULTILINE | re.VERBOSE
-            )
-            pos_match = re.compile(
-                POS_MATCH_REGEX.encode("utf8"), re.MULTILINE | re.VERBOSE
-            )
-
-        for block in frame_match.finditer(content):
-            natoms = int(block["natoms"])
-            yield (
-                natoms,
-                block["comment"] if is_string else block["comment"].decode("utf8"),
-                BlockIterator(pos_match.finditer(block["positions"]), natoms),
-            )
-
-
-def parse(fh_or_string):
-    """Return XYZ frames with materialized atom lists."""
-
-    return [
-        {"natoms": natoms, "comment": comment, "atoms": list(atomiter)}
-        for natoms, comment, atomiter in parse_iter(fh_or_string)
-    ]
+    frames = []
+    for block in FRAME_MATCH.finditer(content):
+        natoms = int(block["natoms"])
+        atoms = BlockIterator(POS_MATCH.finditer(block["positions"]), natoms)
+        frames.append(
+            {"natoms": natoms, "comment": block["comment"], "atoms": list(atoms)}
+        )
+    return frames

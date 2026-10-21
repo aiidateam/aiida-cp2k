@@ -41,30 +41,6 @@ def test_parse_cp2k_xyz():
     ]
 
 
-def test_parse_cp2k_xyz_bytes():
-    """Preserve the upstream byte-input behavior."""
-
-    frames = parse(CP2K_XYZ.encode())
-
-    assert frames[0]["comment"] == " i = 0, time = 0.000, E = -1.2500000000E+01"
-    assert frames[0]["atoms"][0][0] == b"C1"
-
-
-def test_parse_cp2k_xyz_file_handles(tmp_path):
-    """Parse text and binary file handles identically."""
-
-    xyz_file = tmp_path / "trajectory.xyz"
-    xyz_file.write_text(CP2K_XYZ)
-
-    with xyz_file.open() as handle:
-        text_frames = parse(handle)
-    with xyz_file.open("rb") as handle:
-        binary_frames = parse(handle)
-
-    assert text_frames == binary_frames
-    assert text_frames[0]["atoms"][0][0] == b"C1"
-
-
 def test_parse_preserves_restart_frames():
     """Do not silently remove repeated step IDs produced by a restart."""
 

@@ -32,10 +32,12 @@ def pytest_unconfigure(config):
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_sssp_pseudos(aiida_profile):
-    """Create an SSSP pseudo potential family from scratch."""
+    """Install the SSSP family into the isolated pytest profile."""
     subprocess.run(
         [
             "aiida-pseudo",
+            "--profile",
+            aiida_profile.name,
             "install",
             "sssp",
             "-p",
@@ -44,5 +46,6 @@ def setup_sssp_pseudos(aiida_profile):
             "PBE",
             "-v",
             "1.3",
-        ]
+        ],
+        check=True,
     )

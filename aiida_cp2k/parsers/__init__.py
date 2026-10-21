@@ -17,8 +17,6 @@ from .. import utils
 StructureData = plugins.DataFactory("core.structure")
 BandsData = plugins.DataFactory("core.array.bands")
 
-HARTREE_TO_EV = 27.211386245988
-
 
 def _update_bandgaps(result_dict):
     """Add printed and eigenvalue-count bandgaps to parsed CP2K output."""
@@ -73,10 +71,10 @@ def _update_bandgaps(result_dict):
         # occupations, this can differ from the electron-count gap above.
         printed_gap = result_dict.get(printed_gap_key)
         if printed_gap is not None:
-            result_dict[bandgap_key] = printed_gap / HARTREE_TO_EV
+            result_dict[bandgap_key] = printed_gap / utils.HARTREE2EV
             eigenvalue_bandgap = result_dict.get(eigenvalue_bandgap_key)
             if eigenvalue_bandgap is not None:
-                eigenvalue_bandgap_ev = eigenvalue_bandgap * HARTREE_TO_EV
+                eigenvalue_bandgap_ev = eigenvalue_bandgap * utils.HARTREE2EV
                 # A mismatch is useful diagnostic information, but it does not
                 # make the CP2K output unparsable.
                 if abs(eigenvalue_bandgap_ev - printed_gap) > 1e-4:

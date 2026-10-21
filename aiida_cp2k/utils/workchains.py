@@ -14,7 +14,7 @@ from aiida.plugins import DataFactory
 
 StructureData = DataFactory("core.structure")
 
-HARTREE2EV = 27.211399
+HARTREE2EV = 27.211386245988
 HARTREE2KJMOL = 2625.500
 
 

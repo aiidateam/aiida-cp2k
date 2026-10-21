@@ -148,16 +148,11 @@ def parse_cp2k_output_advanced(
 
         # If a tag has been detected, now read the following line knowing what they are
         if line_is in eigenvalue_keys:
-            if (
-                "------" in line
-                or "*** WARNING" in line
-                or "Eigensolver reached convergence" in line
-            ):
-                continue
-            splitted_line = line.split()
             try:
-                result_dict[line_is] += [float(x) for x in splitted_line]
+                result_dict[line_is] += [float(x) for x in line.split()]
             except ValueError:
+                # Non-numeric lines inside a block (dashes, warnings, eigensolver
+                # or GPU messages) are skipped unless they end the block.
                 if (
                     "Fermi Energy" in line
                     or "HOMO - LUMO" in line

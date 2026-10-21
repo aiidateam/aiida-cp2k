@@ -63,22 +63,21 @@ def _update_bandgaps(result_dict):
         eigenvalue_lumo_key = f"eigenvalue_lumo_spin{spin}_au"
         eigenvalue_bandgap_key = f"eigenvalue_bandgap_spin{spin}_au"
 
-        if eigen_key not in result_dict or not result_dict[eigen_key]:
+        if not result_dict.get(eigen_key):
             continue
 
         # The eigenvalue-count gap follows the requested number of electrons:
         # HOMO is orbital nel, LUMO is orbital nel + 1. For OT calculations the
         # LUMO may be printed in the separate unoccupied-subspace block, so we
         # concatenate occupied and unoccupied eigenvalue lists before indexing.
-        lumo_idx = result_dict.get(f"init_nel_spin{spin}")
-        if lumo_idx is not None:
+        nel = result_dict.get(f"init_nel_spin{spin}")
+        if nel is not None:
             all_eigenvalues = result_dict[eigen_key] + result_dict.get(
                 unoccupied_key, []
             )
-            homo_idx = lumo_idx - 1
-            if 0 <= homo_idx < len(all_eigenvalues) and lumo_idx < len(all_eigenvalues):
-                eigenvalue_homo = all_eigenvalues[homo_idx]
-                eigenvalue_lumo = all_eigenvalues[lumo_idx]
+            if 0 < nel < len(all_eigenvalues):
+                eigenvalue_homo = all_eigenvalues[nel - 1]
+                eigenvalue_lumo = all_eigenvalues[nel]
                 result_dict[eigenvalue_homo_key] = eigenvalue_homo
                 result_dict[eigenvalue_lumo_key] = eigenvalue_lumo
                 result_dict[eigenvalue_bandgap_key] = eigenvalue_lumo - eigenvalue_homo

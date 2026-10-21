@@ -44,6 +44,11 @@ def parse_cp2k_output_advanced(
         "unoccupied_eigen_spin1_au",
         "unoccupied_eigen_spin2_au",
     ]
+    # Keys of one MO output group; the next group replaces all of them.
+    mo_group_keys = eigenvalue_keys + [
+        "printed_bandgap_spin1_ev",
+        "printed_bandgap_spin2_ev",
+    ]
     energy = None
     bohr2ang = 0.529177208590000
 
@@ -130,10 +135,7 @@ def parse_cp2k_output_advanced(
                     # mix earlier gaps or unoccupied states with newer eigenvalues,
                     # including when the latest output group is incomplete.
                     printed_gap_spin = 1
-                    for key in eigenvalue_keys + [
-                        "printed_bandgap_spin1_ev",
-                        "printed_bandgap_spin2_ev",
-                    ]:
+                    for key in mo_group_keys:
                         result_dict.pop(key, None)
                 line_is = f"eigen_spin{spin}_au"
             result_dict[line_is] = []

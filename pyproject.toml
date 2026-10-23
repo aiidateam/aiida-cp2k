@@ -24,7 +24,6 @@ dependencies = [
     "aiida-gaussian-datatypes",
     "ase",
     "ruamel.yaml>=0.16.5",
-    "cp2k-output-tools",
     "aiida-pseudo~=1.2",
     "upf-to-json>=0.9",
 ]
@@ -57,7 +56,6 @@ cp2k = "aiida_cp2k.calculations:Cp2kCalculation"
 [project.entry-points."aiida.parsers"]
 cp2k_base_parser = "aiida_cp2k.parsers:Cp2kBaseParser"
 cp2k_advanced_parser = "aiida_cp2k.parsers:Cp2kAdvancedParser"
-cp2k_tools_parser = "aiida_cp2k.parsers:Cp2kToolsParser"
 
 [project.entry-points."aiida.workflows"]
 "cp2k.base" = "aiida_cp2k.workchains:Cp2kBaseWorkChain"

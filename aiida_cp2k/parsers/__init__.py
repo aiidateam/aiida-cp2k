@@ -13,6 +13,7 @@ import numpy as np
 from aiida import common, engine, orm, parsers, plugins
 
 from .. import utils
+from ..utils.xyz import parse as parse_xyz
 
 StructureData = plugins.DataFactory("core.structure")
 BandsData = plugins.DataFactory("core.array.bands")
@@ -234,12 +235,10 @@ class Cp2kBaseParser(parsers.Parser):
         except OSError:
             return self.exit_codes.ERROR_COORDINATES_TRAJECTORY_READ
 
-        from cp2k_output_tools.trajectories.xyz import parse
-
         positions_traj = []
         stepids_traj = []
         energies_traj = []
-        for frame in parse(output_xyz_pos):
+        for frame in parse_xyz(output_xyz_pos):
             _, positions = zip(*frame["atoms"])
             positions_traj.append(positions)
             comment_split = frame["comment"].split(",")
@@ -276,7 +275,7 @@ class Cp2kBaseParser(parsers.Parser):
                     forces_traj_fname
                 )
                 forces_traj = []
-                for frame in parse(output_forces):
+                for frame in parse_xyz(output_forces):
                     _, forces = zip(*frame["atoms"])
                     forces_traj.append(forces)
                 forces_traj = np.array(forces_traj)
@@ -330,47 +329,6 @@ class Cp2kAdvancedParser(Cp2kBaseParser):
                 units=kpoint_data["bands_unit"],
             )
             self.out("output_bands", bnds)
-
-        self.out("output_parameters", orm.Dict(dict=result_dict))
-        return exit_code
-
-
-class Cp2kToolsParser(Cp2kBaseParser):
-    """AiiDA parser class for the output of CP2K based on the cp2k-output-tools project."""
-
-    def _parse_stdout(self):
-        """Very advanced CP2K output file parser."""
-
-        from cp2k_output_tools import parse_iter
-
-        # Read the standard output of CP2K.
-        exit_code, output_string = self._read_stdout()
-        if exit_code:
-            return exit_code
-
-        # Check the standard output for errors.
-        exit_code = self._check_stdout_for_errors(output_string)
-
-        # Return the error code if an error was severe enough to stop the parsing.
-        if exit_code in self.SEVERE_ERRORS:
-            return exit_code
-
-        # Parse the standard output.
-
-        result_dict = {}
-
-        # the CP2K output parser is a block-based parser return blocks of data, each under a block key
-        # merge them into one dict
-        for match in parse_iter(output_string, key_mangling=True):
-            result_dict.update(match)
-
-        try:
-            # the cp2k-output-tools parser is more hierarchical, be compatible with
-            # the basic parser here and provide the total force eval energy as energy
-            result_dict["energy"] = result_dict["energies"]["total_force_eval"]
-            result_dict["energy_units"] = "a.u."
-        except KeyError:
-            pass
 
         self.out("output_parameters", orm.Dict(dict=result_dict))
         return exit_code

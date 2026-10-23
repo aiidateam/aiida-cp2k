@@ -28,7 +28,13 @@ RUN mamba create --yes -c conda-forge -n cp2k cp2k=9.1 && mamba clean --all -f -
 COPY --chown="${SYSTEM_UID}:${SYSTEM_GID}" . /home/aiida/aiida-cp2k
 
 # Pin aiida-core so the plugin install cannot replace the image's version.
-RUN pip install "aiida-core==${AIIDA_VERSION}" ./aiida-cp2k[dev,docs]
+# PyPI cp2k-input-tools 0.9.1 still requires Pint <0.24. Upstream PR #106
+# permits Pint 0.24, which supports NumPy 2; use that exact fix in CI until released.
+RUN pip install \
+    "aiida-core==${AIIDA_VERSION}" \
+    "cp2k-input-tools @ git+https://github.com/cp2k/cp2k-input-tools.git@027cc072012e373265ba8368973a4a7158e33a19" \
+    "pint==0.24.4" \
+    ./aiida-cp2k[dev,docs]
 
 # Install coverals.
 RUN pip install coveralls

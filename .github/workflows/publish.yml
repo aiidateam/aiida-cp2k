@@ -15,12 +15,13 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v7
-      - name: Set up Python 3.8
+      - name: Set up Python 3.12
         uses: actions/setup-python@v7
         with:
-          python-version: '3.8'
+          python-version: '3.12'
+      # flit does not cap flit_core, and a new flit_core major can break `flit publish`.
       - name: Install flit
-        run: pip install flit~=3.4
+        run: pip install "flit~=4.2" "flit_core~=4.2"
       - name: Build and publish
         run: flit publish
         env:

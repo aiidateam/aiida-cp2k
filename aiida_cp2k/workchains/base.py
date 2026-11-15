@@ -85,16 +85,23 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
     ], enabled=False)
     def restart_incomplete_calculation(self, calc):
         """This handler restarts incomplete calculations."""
-        content_string = calc.outputs.retrieved.base.repository.get_object_content(calc.base.attributes.get('output_filename'))
+        retrieved = calc.outputs.retrieved.base.repository
+        content_string = retrieved.get_object_content(calc.base.attributes.get('output_filename'))
+        params = self.ctx.inputs.parameters
+        run_type = params.get_dict().get("GLOBAL", {}).get("RUN_TYPE", "")
+        is_md = str(run_type).upper() in ("MD", "MOLECULAR_DYNAMICS")
 
-        # CP2K was updating geometry.
-        possible_geometry_restart = re.search(r"Max. gradient\s+=", content_string) or re.search(r"OPT\| Maximum gradient\s*[-+]?\d*\.?\d+", content_string) or "MD| Step number" in content_string
+        if is_md:
+            # MD can print a step number before writing its restart file.
+            possible_geometry_restart = Cp2kCalculation._DEFAULT_RESTART_FILE_NAME in retrieved.list_object_names()
+        else:
+            possible_geometry_restart = re.search(r"Max. gradient\s+=", content_string) or re.search(r"OPT\| Maximum gradient\s*[-+]?\d*\.?\d+", content_string) or "MD| Step number" in content_string
 
         # CP2K wrote a wavefunction restart file.
         possible_scf_restart = "Total energy: " in content_string
 
         # External restart file was written.
-        possible_ext_restart = "Writing RESTART" in content_string
+        possible_ext_restart = not is_md and "Writing RESTART" in content_string
 
         # Check if calculation aborted due to SCF convergence failure.
         scf_didnt_converge_and_aborted = "SCF run NOT converged. To continue the calculation regardless" in content_string
@@ -103,6 +110,16 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
             scf_gradient = utils.get_last_convergence_value(content_string)
             scf_restart_thr = 1e-5  # if ABORT for not SCF convergence, but SCF gradient is small, continue
             good_scf_gradient = (scf_gradient is not None) and (scf_gradient < scf_restart_thr)
+
+        if (
+            is_md
+            and not possible_geometry_restart
+            and self.ctx.get('has_md_restart_checkpoint', False)
+            and good_scf_gradient is not False
+        ):
+            # Keep the input parameters and the parent folder that they refer to.
+            self.report("No new MD checkpoint was written. Restarting from the previous checkpoint.")
+            return engine.ProcessHandlerReport(False)
 
         # Condition for allowing restart.
         restart_possible = any([possible_geometry_restart, possible_scf_restart, possible_ext_restart]) and good_scf_gradient is not False
@@ -115,7 +132,6 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
             return engine.ProcessHandlerReport(True, self.exit_codes.NO_RESTART_DATA)
 
         self.ctx.inputs.parent_calc_folder = calc.outputs.remote_folder
-        params = self.ctx.inputs.parameters
 
         params = utils.add_wfn_restart_section(params, orm.Bool('kpoints' in self.ctx.inputs))
 
@@ -130,6 +146,8 @@ class Cp2kBaseWorkChain(engine.BaseRestartWorkChain):
             except KeyError:
                 pass
             params = utils.add_ext_restart_section(params)
+            if is_md:
+                self.ctx.has_md_restart_checkpoint = True
 
         is_geo_opt = params.get_dict().get("GLOBAL", {}).get("RUN_TYPE") in ["GEO_OPT", "CELL_OPT"]
         if is_geo_opt and good_scf_gradient:
